@@ -6,7 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test:frontend": "npm run lint && npm run typecheck && npm run build",
+    "test:backend": "cd backend && python -m compileall app && python -m pytest -p no:cacheprovider tests",
+    "test:dev": "npm run lint && npm run typecheck && npm run test:backend",
+    "test:prod": "npm run test:frontend && npm run test:backend",
+    "deploy:check": "npm run test:prod"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
