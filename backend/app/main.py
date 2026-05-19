@@ -16,7 +16,7 @@ from app.core.errors import (
 )
 from app.core.logging import configure_logging
 from app.api.router import api_router
-from app.core.database import engine, Base
+from app.core.database import Base, engine
 
 
 @asynccontextmanager
@@ -26,9 +26,10 @@ async def lifespan(app: FastAPI):
     settings = get_settings()
     configure_logging(settings.LOG_LEVEL)
     
-    # Create tables (in development, use Alembic in production)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    # Production containers run Alembic migrations before app startup.
+    if not settings.is_production:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
     
     yield
     

@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 
 from app.core.config import get_settings
-from app.core.database import Base
+from app.core.database import Base, get_asyncpg_connect_args
 from app.models import *  # Import all models
 
 settings = get_settings()
@@ -62,7 +62,7 @@ async def run_async_migrations() -> None:
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
-        connect_args={"statement_cache_size": 0, "prepared_statement_cache_size": 0} if "pooler.supabase.com" in config.get_main_option("sqlalchemy.url") else {}
+        connect_args=get_asyncpg_connect_args(config.get_main_option("sqlalchemy.url")),
     )
 
     async with connectable.connect() as connection:
