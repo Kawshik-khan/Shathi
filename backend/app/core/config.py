@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     # Application
     APP_ENV: str = "development"
     DEBUG: bool = False
+    AUTO_CREATE_TABLES: bool = False
     SECRET_KEY: str = "change-me-in-production"
     
     # Database - Supabase is required (no local SQLite fallback)

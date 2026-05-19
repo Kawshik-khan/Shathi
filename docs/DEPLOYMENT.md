@@ -31,6 +31,9 @@ Use `test:prod` before deployment. It runs frontend lint/typecheck/build and bac
 | Variable | Purpose |
 |---|---|
 | `APP_ENV` | `production` in deployed environments. |
+| `DEBUG` | `false` in deployed environments to avoid SQL echo logs. |
+| `AUTO_CREATE_TABLES` | `false` in deployed environments; production schema is managed by Alembic. |
+| `RUN_MIGRATIONS` | `true` for Docker startup migrations, or `false` if migrations are handled separately. |
 | `SECRET_KEY` | Strong JWT signing secret. |
 | `DATABASE_URL` or `SUPABASE_DB_URL` | PostgreSQL connection URL. |
 | `CORS_ORIGINS` | Comma-separated frontend origins. |
@@ -89,6 +92,7 @@ Container behavior:
 - `backend/Dockerfile` builds a Python 3.12 FastAPI image from `backend/requirements.txt`.
 - `backend/docker-entrypoint.sh` runs `python -m alembic upgrade head` before app startup when `RUN_MIGRATIONS=true`.
 - Set `RUN_MIGRATIONS=false` if you want to start the app without applying migrations.
+- The app does not create tables on startup unless `AUTO_CREATE_TABLES=true`.
 
 ## Backend Deploy: Render
 
@@ -105,9 +109,19 @@ Create a Render Blueprint from the GitHub repo, or create a Web Service manually
 
 Set the backend environment variables in Render. Do not commit secrets.
 
+Required production values:
+
+```env
+APP_ENV=production
+DEBUG=false
+AUTO_CREATE_TABLES=false
+RUN_MIGRATIONS=true
+```
+
 After deployment, verify:
 
 ```bash
+curl https://your-render-backend.onrender.com/
 curl https://your-render-backend.onrender.com/health
 ```
 

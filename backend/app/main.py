@@ -5,7 +5,6 @@ from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import ORJSONResponse
 
 from app.core.config import get_settings
 from app.core.errors import (
@@ -26,8 +25,8 @@ async def lifespan(app: FastAPI):
     settings = get_settings()
     configure_logging(settings.LOG_LEVEL)
     
-    # Production containers run Alembic migrations before app startup.
-    if not settings.is_production:
+    # Production schema changes are handled by Alembic migrations.
+    if settings.AUTO_CREATE_TABLES:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
     
@@ -48,7 +47,6 @@ def create_application() -> FastAPI:
         docs_url="/docs" if not settings.is_production else None,
         redoc_url="/redoc" if not settings.is_production else None,
         openapi_url="/openapi.json" if not settings.is_production else None,
-        default_response_class=ORJSONResponse,
         lifespan=lifespan,
     )
     
@@ -78,8 +76,15 @@ def create_application() -> FastAPI:
     
     # API Routes
     app.include_router(api_router, prefix="/api/v1")
+
+    @app.get("/", tags=["health"])
+    async def root_status():
+        return {
+            "status": "ok",
+            "service": "sathi-api",
+            "health": "/health",
+        }
     
-    # Health check
     @app.get("/health", tags=["health"])
     async def health_check():
         return {"status": "healthy", "service": "sathi-api"}
