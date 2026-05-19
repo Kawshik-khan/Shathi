@@ -11,6 +11,9 @@ settings = get_settings()
 
 def get_database_url() -> str:
     """Get database URL based on configuration."""
+    if settings.APP_ENV == "test":
+        return settings.DATABASE_URL or "sqlite+aiosqlite:///:memory:"
+
     if settings.SUPABASE_DB_URL:
         # Use provided URL, convert to asyncpg format if needed
         url = settings.SUPABASE_DB_URL
@@ -23,14 +26,20 @@ def get_database_url() -> str:
     if supabase_url:
         return supabase_url
     
-    # Force Supabase - no local fallback
+    # Force Supabase outside tests - no local fallback
     raise ValueError("Supabase not configured. Please set SUPABASE_DB_URL or SUPABASE_DB_PASSWORD in .env")
 
 # Always use Supabase (no local SQLite/Postgres fallback)
 database_url = get_database_url()
 
 # Create async engine with proper connection arguments
-if "pooler.supabase.com" in database_url:
+if database_url.startswith("sqlite"):
+    engine = create_async_engine(
+        database_url,
+        echo=settings.DEBUG,
+        future=True,
+    )
+elif "pooler.supabase.com" in database_url:
     # Use connection pooler settings for Supabase
     engine = create_async_engine(
         database_url,
