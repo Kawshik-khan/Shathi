@@ -48,6 +48,7 @@ class Conversation(ConversationBase, TimestampedSchema):
     
     id: str
     user_id: str
+    language: Literal["en", "bn"] = "bn"
     summary: Optional[str] = None
     emotion_context: Optional[str] = None
     messages: List[Message] = []
@@ -59,6 +60,7 @@ class ChatRequest(BaseSchema):
     message: str
     conversation_id: Optional[str] = None
     model: Literal["llama-3.3-70b", "deepseek-v4-pro"] = "llama-3.3-70b"
+    language: Optional[Literal["en", "bn"]] = None
     stream: bool = False
 
 

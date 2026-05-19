@@ -10,14 +10,22 @@ from app.core.database import get_db
 from app.core.security import decode_token
 from app.models.user import User
 
-# HTTP Bearer token scheme
-security = HTTPBearer()
+# HTTP Bearer token scheme. Keep auto_error disabled so our API returns the
+# same 401 response shape for missing and invalid credentials.
+security = HTTPBearer(auto_error=False)
 
 
 async def get_current_user_token(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
 ) -> str:
     """Extract and validate JWT token from request."""
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     token = credentials.credentials
     payload, error = decode_token(token)
     

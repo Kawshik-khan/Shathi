@@ -7,11 +7,11 @@ from app.core.database import get_db
 from app.core.dependencies import get_current_active_user
 from app.schemas.journal import Journal as JournalSchema, JournalCreate, JournalUpdate
 from app.services.journal import (
-    create_journal_entry, 
-    get_journal_entries, 
-    get_journal_entry_by_id,
-    update_journal_entry, 
-    delete_journal_entry
+    create_journal_entry as create_journal_entry_service,
+    get_journal_entries as get_journal_entries_service,
+    get_journal_entry_by_id as get_journal_entry_by_id_service,
+    update_journal_entry as update_journal_entry_service,
+    delete_journal_entry as delete_journal_entry_service,
 )
 from app.models.user import User
 from app.models.journal import Journal as JournalModel
@@ -20,14 +20,14 @@ router = APIRouter()
 
 
 @router.post("/entries", response_model=JournalSchema, status_code=status.HTTP_201_CREATED)
-async def create_journal_entry(
+async def create_journal_entry_endpoint(
     entry: JournalCreate,
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
 ) -> JournalSchema:
     """Create a new journal entry."""
     try:
-        journal_entry = await create_journal_entry(db, current_user.id, entry)
+        journal_entry = await create_journal_entry_service(db, current_user.id, entry)
         
         return JournalSchema(
             id=journal_entry.id,
@@ -59,7 +59,7 @@ async def list_journal_entries(
     db: AsyncSession = Depends(get_db),
 ) -> List[JournalSchema]:
     """List journal entries for the current user."""
-    journal_entries = await get_journal_entries(db, current_user.id, limit, offset)
+    journal_entries = await get_journal_entries_service(db, current_user.id, limit, offset)
     
     return [
         JournalSchema(
@@ -88,7 +88,7 @@ async def get_journal_entry(
     db: AsyncSession = Depends(get_db),
 ) -> JournalSchema:
     """Get a specific journal entry."""
-    journal_entry = await get_journal_entry_by_id(db, current_user.id, entry_id)
+    journal_entry = await get_journal_entry_by_id_service(db, current_user.id, entry_id)
     
     if not journal_entry:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Entry not found")
@@ -118,7 +118,7 @@ async def update_journal_entry(
     db: AsyncSession = Depends(get_db),
 ) -> JournalSchema:
     """Update a journal entry."""
-    updated_entry = await update_journal_entry(db, current_user.id, entry_id, update)
+    updated_entry = await update_journal_entry_service(db, current_user.id, entry_id, update)
     
     if not updated_entry:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Entry not found")
@@ -147,7 +147,7 @@ async def delete_journal_entry(
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """Delete a journal entry."""
-    success = await delete_journal_entry(db, current_user.id, entry_id)
+    success = await delete_journal_entry_service(db, current_user.id, entry_id)
     
     if not success:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Entry not found")

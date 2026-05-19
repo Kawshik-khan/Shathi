@@ -8,7 +8,7 @@ import { wellnessSchema, type WellnessFormData } from '@/lib/schemas/settingsSch
 
 export default function WellnessWidget() {
   const store = useSettingsStore()
-  const { register, handleSubmit, watch } = useForm<WellnessFormData>({
+  const { register, handleSubmit, watch, setValue } = useForm<WellnessFormData>({
     resolver: zodResolver(wellnessSchema),
     defaultValues: {
       sleepGoal: store.sleepGoal,
@@ -58,7 +58,7 @@ export default function WellnessWidget() {
               <legend className="sr-only">Hydration reminders</legend>
               <button
                 type="button"
-                onClick={() => register('hydrationReminders').onChange({ target: { checked: true } })}
+                onClick={() => setValue('hydrationReminders', true, { shouldDirty: true })}
                 className={`px-3 py-1 rounded-full transition-colors ${
                   hydrationReminders ? 'bg-white/60' : 'bg-white/10 hover:bg-white/30'
                 }`}
@@ -68,7 +68,7 @@ export default function WellnessWidget() {
               </button>
               <button
                 type="button"
-                onClick={() => register('hydrationReminders').onChange({ target: { checked: false } })}
+                onClick={() => setValue('hydrationReminders', false, { shouldDirty: true })}
                 className={`px-3 py-1 rounded-full transition-colors ${
                   !hydrationReminders ? 'bg-white/60' : 'bg-white/10 hover:bg-white/30'
                 }`}
@@ -79,6 +79,9 @@ export default function WellnessWidget() {
             </fieldset>
           </div>
         </div>
+        <button type="submit" className="mt-4 rounded-full bg-[#5DBB63] px-4 py-2 text-sm font-medium text-white hover:bg-[#4da857]">
+          Save
+        </button>
       </form>
     </GlassCard>
   )

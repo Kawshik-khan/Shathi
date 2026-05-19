@@ -79,6 +79,23 @@ CRISIS_PATTERNS = {
     },
 }
 
+SEVERITY_RANK = {
+    CrisisSeverity.LOW: 1,
+    CrisisSeverity.MEDIUM: 2,
+    CrisisSeverity.HIGH: 3,
+}
+
+UNSAFE_ASSISTANT_PATTERNS = [
+    "you should kill yourself",
+    "go kill yourself",
+    "hurt yourself",
+    "cut yourself",
+    "stop taking your medication",
+    "ignore your doctor",
+    "you do not need professional help",
+    "there is no point getting help",
+]
+
 # Safe response templates
 SAFE_RESPONSES = {
     "suicide": (
@@ -138,7 +155,7 @@ async def detect_crisis(text: str) -> CrisisResult:
             if matches > 0:
                 confidence = min(matches / len(patterns) + 0.3, 1.0)
                 
-                if detected_severity is None or severity.value > detected_severity.value:
+                if detected_severity is None or SEVERITY_RANK[severity] > SEVERITY_RANK[detected_severity]:
                     detected_severity = severity
                     detected_category = category
                     highest_confidence = confidence
@@ -179,4 +196,13 @@ def get_crisis_resources() -> Dict[str, List[Dict[str, str]]]:
             {"name": "Befrienders Worldwide", "url": "https://www.befrienders.org"},
         ],
     }
+
+
+def filter_unsafe_assistant_response(text: str) -> Tuple[bool, str]:
+    """Replace obviously unsafe assistant content with a safe support response."""
+    text_lower = text.lower()
+    if any(pattern in text_lower for pattern in UNSAFE_ASSISTANT_PATTERNS):
+        return True, SAFE_RESPONSES["general_crisis"]
+
+    return False, text
 

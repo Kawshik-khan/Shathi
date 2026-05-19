@@ -16,11 +16,14 @@ structlog==24.4.0
 
 # Optional: Pinecone (pure Python)
 pinecone==5.4.0
+langchain>=0.3.0
+langchain-openai>=0.2.0
 
 # Optional: Supabase (pure Python)
 supabase==2.13.0
 
 # Note: transformers and torch excluded (require compilation)
 # Note: asyncpg excluded (requires C++ build tools)
+# Note: langchain-pinecone excluded on Python 3.14 because it can pull NumPy builds without wheels
 # For AI features, use OpenAI API only
 

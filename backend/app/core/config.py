@@ -73,6 +73,14 @@ class Settings(BaseSettings):
     
     # Logging
     LOG_LEVEL: str = "INFO"
+
+    # Rate limiting
+    RATE_LIMIT_WINDOW_SECONDS: int = 60
+    AUTH_RATE_LIMIT_MAX: int = 20
+    CHAT_RATE_LIMIT_MAX: int = 60
+
+    # Monitoring
+    SENTRY_DSN: Optional[str] = None
     
     @property
     def cors_origins_list(self) -> List[str]:

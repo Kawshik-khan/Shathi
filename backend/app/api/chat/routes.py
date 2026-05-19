@@ -1,5 +1,8 @@
 """Chat API routes."""
+import json
+
 from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
@@ -13,6 +16,7 @@ from app.schemas.chat import (
     Message as MessageSchema
 )
 from app.services.chat import (
+    send_chat_message_stream,
     send_chat_message,
     get_conversations,
     get_conversation_by_id,
@@ -40,6 +44,7 @@ async def send_message(
             message_content=request.message,
             conversation_id=request.conversation_id,
             model=request.model,
+            language=request.language,
         )
 
         return ChatResponse(
@@ -62,6 +67,33 @@ async def send_message(
         )
 
 
+@router.post("/stream")
+async def stream_message(
+    request: ChatRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+) -> StreamingResponse:
+    """Send a message and stream the AI response as SSE chunks."""
+
+    async def event_stream():
+        try:
+            async for event in send_chat_message_stream(
+                db=db,
+                user_id=current_user.id,
+                message_content=request.message,
+                conversation_id=request.conversation_id,
+                model=request.model,
+                language=request.language,
+            ):
+                yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+        except ValueError as exc:
+            yield f"data: {json.dumps({'type': 'error', 'message': str(exc)})}\n\n"
+        except Exception:
+            yield f"data: {json.dumps({'type': 'error', 'message': 'Failed to stream message'})}\n\n"
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+
 @router.get("/conversations", response_model=List[ConversationSchema])
 async def list_conversations(
     limit: int = Query(20, ge=1, le=100),
@@ -76,6 +108,7 @@ async def list_conversations(
         ConversationSchema(
             id=conv.id,
             user_id=conv.user_id,
+            language=conv.language,
             title=conv.title,
             summary=conv.summary,
             emotion_context=conv.emotion_context,
@@ -105,6 +138,7 @@ async def get_conversation_endpoint(
     return ConversationSchema(
         id=conversation.id,
         user_id=conversation.user_id,
+        language=conversation.language,
         title=conversation.title,
         summary=conversation.summary,
         emotion_context=conversation.emotion_context,
@@ -132,17 +166,19 @@ async def get_conversation_endpoint(
 @router.post("/conversations", response_model=ConversationSchema, status_code=status.HTTP_201_CREATED)
 async def create_conversation_endpoint(
     title: str = Query("New Chat"),
+    language: str = Query("bn"),
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
 ) -> ConversationSchema:
     """Create a new conversation."""
     from app.services.chat import create_conversation
     
-    conversation = await create_conversation(db, current_user.id, title)
+    conversation = await create_conversation(db, current_user.id, title, language)
     
     return ConversationSchema(
         id=conversation.id,
         user_id=conversation.user_id,
+        language=conversation.language,
         title=conversation.title,
         summary=conversation.summary,
         emotion_context=conversation.emotion_context,
@@ -185,6 +221,7 @@ async def update_conversation_endpoint(
     return ConversationSchema(
         id=updated_conversation.id,
         user_id=updated_conversation.user_id,
+        language=updated_conversation.language,
         title=updated_conversation.title,
         summary=updated_conversation.summary,
         emotion_context=updated_conversation.emotion_context,

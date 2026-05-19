@@ -22,10 +22,10 @@ from app.core.supabase import get_supabase_db_url
 supabase_url = get_supabase_db_url()
 if supabase_url:
     config.set_main_option("sqlalchemy.url", supabase_url)
-    print("🚀 Using Supabase database for migrations")
+    print("Using Supabase database for migrations")
 else:
     config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
-    print("🏠 Using local database for migrations")
+    print("Using local database for migrations")
 
 # Interpret the config file for Python logging
 if config.config_file_name is not None:

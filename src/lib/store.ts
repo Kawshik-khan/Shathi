@@ -15,6 +15,7 @@ import {
 } from '@/types';
 
 interface AuthState {
+  isHydrated: boolean;
   isAuthenticated: boolean;
   user: AuthUser | null;
   accessToken: string | null;
@@ -22,6 +23,7 @@ interface AuthState {
   refreshTimeout?: NodeJS.Timeout;
   login: (user: AuthUser, tokens: TokenResponse) => void;
   logout: () => void;
+  setUser: (user: AuthUser) => void;
   updateTokens: (tokens: TokenResponse) => void;
   refreshTokens: () => Promise<void>;
 }
@@ -64,7 +66,25 @@ interface DashboardState {
   saveCheckIn: (note: string) => void;
 }
 
+function setAuthCookie() {
+  if (typeof document === 'undefined') return;
+
+  document.cookie = [
+    'sathi_auth=1',
+    'Path=/',
+    'Max-Age=2592000',
+    'SameSite=Lax',
+  ].join('; ');
+}
+
+function clearAuthCookie() {
+  if (typeof document === 'undefined') return;
+
+  document.cookie = 'sathi_auth=; Path=/; Max-Age=0; SameSite=Lax';
+}
+
 export const useAuthStore = create<AuthState>((set) => ({
+  isHydrated: false,
   isAuthenticated: false,
   user: null,
   accessToken: null,
@@ -83,6 +103,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       }, (tokens.expires_in - 300) * 1000); // 5 minutes before expiry
 
       return {
+        isHydrated: true,
         isAuthenticated: true,
         user,
         accessToken: tokens.access_token,
@@ -93,6 +114,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     // Persist to localStorage
     localStorage.setItem('auth', JSON.stringify({ user, ...tokens }));
+    setAuthCookie();
   },
 
   logout: () => {
@@ -101,6 +123,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         clearTimeout(state.refreshTimeout);
       }
       return {
+        isHydrated: true,
         isAuthenticated: false,
         user: null,
         accessToken: null,
@@ -109,6 +132,19 @@ export const useAuthStore = create<AuthState>((set) => ({
       };
     });
     localStorage.removeItem('auth');
+    clearAuthCookie();
+  },
+
+  setUser: (user: AuthUser) => {
+    set({ user, isAuthenticated: true, isHydrated: true });
+
+    const auth = localStorage.getItem('auth');
+    if (auth) {
+      const parsed = JSON.parse(auth);
+      localStorage.setItem('auth', JSON.stringify({ ...parsed, user }));
+    }
+
+    useDashboardStore.getState().setUser(user);
   },
 
   updateTokens: (tokens: TokenResponse) => {
@@ -163,17 +199,33 @@ const initAuth = () => {
   if (typeof window === 'undefined') return; // Only run on client side
 
   const auth = localStorage.getItem('auth');
-  if (auth) {
-    try {
-      const { user, access_token, refresh_token } = JSON.parse(auth);
-      useAuthStore.getState().login(user, { access_token, refresh_token, token_type: 'bearer', expires_in: 1800 });
-      useDashboardStore.getState().setUser(user);
-    } catch (e) {
-      localStorage.removeItem('auth');
+  if (!auth) {
+    clearAuthCookie();
+    useAuthStore.setState({ isHydrated: true });
+    return;
+  }
+
+  try {
+    const { user, access_token, refresh_token } = JSON.parse(auth);
+
+    if (!user || !access_token || !refresh_token) {
+      throw new Error('Invalid stored auth payload');
     }
+
+    useAuthStore.getState().login(user, { access_token, refresh_token, token_type: 'bearer', expires_in: 1800 });
+    useDashboardStore.getState().setUser(user);
+  } catch (e) {
+    localStorage.removeItem('auth');
+    clearAuthCookie();
+    useAuthStore.setState({
+      isHydrated: true,
+      isAuthenticated: false,
+      user: null,
+      accessToken: null,
+      refreshToken: null,
+    });
   }
 };
-initAuth();
 
 // Mock data
 const mockUser: User = {
@@ -286,3 +338,4 @@ function get() {
   return useAuthStore.getState();
 }
 
+initAuth();

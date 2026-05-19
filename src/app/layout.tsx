@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter } from "next/font/google";
+import { Geist, Geist_Mono, Hind_Siliguri, Inter, Noto_Sans_Bengali } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/theme-provider";
+import { I18nProvider } from "@/components/i18n-provider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -19,6 +20,17 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const hindSiliguri = Hind_Siliguri({
+  variable: "--font-bengali",
+  subsets: ["bengali", "latin"],
+  weight: ["300", "400", "500", "600", "700"],
+});
+
+const notoSansBengali = Noto_Sans_Bengali({
+  variable: "--font-noto-bengali",
+  subsets: ["bengali", "latin"],
+});
+
 export const metadata: Metadata = {
   title: "Sathi | AI Mental Wellness Companion",
   description: "Your AI-powered mental wellness and physical health companion. Track mood, sleep, habits, and achieve your wellness goals.",
@@ -32,13 +44,23 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn("h-full", "antialiased", inter.variable, geistSans.variable, geistMono.variable)}
+      className={cn(
+        "h-full",
+        "antialiased",
+        inter.variable,
+        geistSans.variable,
+        geistMono.variable,
+        hindSiliguri.variable,
+        notoSansBengali.variable
+      )}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col font-sans" suppressHydrationWarning={true}>
-        <ThemeProvider>
-          {children}
-        </ThemeProvider>
+        <I18nProvider>
+          <ThemeProvider>
+            {children}
+          </ThemeProvider>
+        </I18nProvider>
       </body>
     </html>
   );

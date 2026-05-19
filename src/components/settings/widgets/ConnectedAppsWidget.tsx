@@ -51,6 +51,9 @@ export default function ConnectedAppsWidget() {
             </div>
           ))}
         </div>
+        <button type="submit" className="mt-4 rounded-full bg-[#5DBB63] px-4 py-2 text-sm font-medium text-white hover:bg-[#4da857]">
+          Save
+        </button>
       </form>
     </GlassCard>
   )

@@ -1,14 +1,46 @@
 'use client';
 
 import { GlassCard } from '@/components/shared/glass-card';
-import { useDashboardStore } from '@/lib/store';
-import { BookHeart, ArrowRight } from 'lucide-react';
+import { getAuthToken, getJournalEntries, type JournalEntry } from '@/lib/api';
+import { BookHeart, ArrowRight, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export function JournalPreview() {
-  const { latestEntry } = useDashboardStore();
   const router = useRouter();
+  const [latestEntry, setLatestEntry] = useState<JournalEntry | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let mounted = true;
+    const token = getAuthToken();
+
+    if (!token) {
+      Promise.resolve().then(() => {
+        if (mounted) setLoading(false);
+      });
+      return () => {
+        mounted = false;
+      };
+    }
+
+    getJournalEntries(1)
+      .then((entries) => {
+        if (mounted) setLatestEntry(entries[0] ?? null);
+      })
+      .catch((err) => {
+        if (mounted) setError(err instanceof Error ? err.message : 'Unable to load journal.');
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <GlassCard className="h-full" delay={0.35}>
@@ -23,24 +55,40 @@ export function JournalPreview() {
       </div>
 
       <div className="flex gap-4">
-        {/* Left Content */}
         <div className="flex-1">
-          <h4 className="text-base font-semibold text-foreground mb-2 flex items-center gap-1">
-            {latestEntry.title}
-            <span className="text-green-500">💚</span>
-          </h4>
-          <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-            {latestEntry.content}
-          </p>
-          <p className="text-xs text-muted-foreground/70">
-            {latestEntry.date}
-          </p>
+          {loading ? (
+            <div className="flex h-24 items-center text-sm text-muted-foreground">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Loading latest entry
+            </div>
+          ) : error ? (
+            <p className="text-sm text-red-500">{error}</p>
+          ) : latestEntry ? (
+            <>
+              <h4 className="text-base font-semibold text-foreground mb-2 flex items-center gap-1">
+                {latestEntry.title || 'Untitled entry'}
+                <BookHeart className="h-4 w-4 text-[#22C55E]" />
+              </h4>
+              <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                {latestEntry.content}
+              </p>
+              <p className="text-xs text-muted-foreground/70">
+                {new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(latestEntry.written_at))}
+              </p>
+            </>
+          ) : (
+            <>
+              <h4 className="text-base font-semibold text-foreground mb-2">No entries yet</h4>
+              <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                Start documenting your wellness journey. Your latest entry will appear here.
+              </p>
+            </>
+          )}
         </div>
 
-        {/* Right Decorative */}
         <motion.div
           animate={{ rotate: [0, 5, -5, 0] }}
-          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
           className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#DCFCE7] to-[#A7F3A0] flex items-center justify-center flex-shrink-0 shadow-lg shadow-green-500/10"
         >
           <BookHeart className="w-7 h-7 text-[#22C55E]" />
@@ -57,4 +105,3 @@ export function JournalPreview() {
     </GlassCard>
   );
 }
-

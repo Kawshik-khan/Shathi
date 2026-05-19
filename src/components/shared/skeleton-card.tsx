@@ -12,6 +12,8 @@ interface SkeletonCardProps {
   hasProgress?: boolean;
 }
 
+const skeletonRowWidths = [92, 78, 86, 70, 82, 74];
+
 export function SkeletonCard({ 
   className, 
   rows = 3, 
@@ -39,7 +41,7 @@ export function SkeletonCard({
           <div 
             key={i} 
             className="h-3 rounded bg-gray-200/50"
-            style={{ width: `${70 + Math.random() * 30}%` }}
+            style={{ width: `${skeletonRowWidths[i % skeletonRowWidths.length]}%` }}
           />
         ))}
       </div>

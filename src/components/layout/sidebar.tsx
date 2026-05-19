@@ -19,23 +19,25 @@ import {
   Crown,
   ChevronDown,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'AI Companion', href: '/ai-companion', icon: Sparkles },
-  { name: 'Mood', href: '/mood', icon: Smile },
-  { name: 'Journal', href: '/journal', icon: BookHeart },
-  { name: 'Habits', href: '/habits', icon: CheckCircle2 },
-  { name: 'Workouts', href: '/workouts', icon: Dumbbell },
-  { name: 'Sleep', href: '/sleep', icon: Moon },
-  { name: 'Insights', href: '/insights', icon: BarChart3 },
-  { name: 'Resources', href: '/resources', icon: Library },
-  { name: 'Settings', href: '/settings', icon: Settings },
+  { key: 'dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { key: 'aiCompanion', href: '/ai-companion', icon: Sparkles },
+  { key: 'mood', href: '/mood', icon: Smile },
+  { key: 'journal', href: '/journal', icon: BookHeart },
+  { key: 'habits', href: '/habits', icon: CheckCircle2 },
+  { key: 'workouts', href: '/workouts', icon: Dumbbell },
+  { key: 'sleep', href: '/sleep', icon: Moon },
+  { key: 'insights', href: '/insights', icon: BarChart3 },
+  { key: 'resources', href: '/resources', icon: Library },
+  { key: 'settings', href: '/settings', icon: Settings },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   const { user } = useDashboardStore();
+  const { t } = useTranslation();
 
   return (
     <motion.aside
@@ -49,7 +51,7 @@ export function Sidebar() {
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7ED957] to-[#22C55E] flex items-center justify-center shadow-lg shadow-green-500/20">
           <span className="text-white font-bold text-lg">S</span>
         </div>
-        <span className="font-semibold text-lg text-foreground">Be.run</span>
+        <span className="font-semibold text-lg text-foreground">Sathi</span>
       </div>
 
       {/* Navigation */}
@@ -60,7 +62,7 @@ export function Sidebar() {
 
           return (
             <motion.div
-              key={item.name}
+              key={item.key}
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.05, duration: 0.3 }}
@@ -75,8 +77,8 @@ export function Sidebar() {
                 )}
               >
                 <Icon className={cn('w-5 h-5', isActive && 'text-[#22C55E]')} />
-                <span>{item.name}</span>
-                {item.name === 'AI Companion' && (
+                <span>{t(`navigation.${item.key}`)}</span>
+                {item.key === 'aiCompanion' && (
                   <span className="ml-auto w-2 h-2 rounded-full bg-[#22C55E] animate-pulse" />
                 )}
               </Link>
@@ -89,27 +91,30 @@ export function Sidebar() {
       <div className="mt-auto mb-4 p-4 rounded-2xl bg-gradient-to-br from-[#DCFCE7] to-[#EEF7EF] border border-[#A7F3A0]/30">
         <div className="flex items-center gap-2 mb-2">
           <Crown className="w-5 h-5 text-[#22C55E]" />
-          <span className="font-semibold text-sm text-foreground">Upgrade to Pro</span>
+          <span className="font-semibold text-sm text-foreground">{t('plan.upgradeToPro')}</span>
         </div>
         <p className="text-xs text-muted-foreground mb-3">
-          Unlock personalized insights and more wellness tools.
+          {t('plan.unlock')}
         </p>
         <button className="w-full py-2 px-4 rounded-full bg-[#22C55E] text-white text-sm font-medium hover:bg-[#16A34A] transition-colors shadow-lg shadow-green-500/20">
-          Upgrade Now
+          {t('actions.upgradeNow')}
         </button>
       </div>
 
       {/* User Profile */}
-      <div className="flex items-center gap-3 px-2 py-3 rounded-xl hover:bg-[#F3FAF4] transition-colors cursor-pointer">
+      <Link
+        href="/profile"
+        className="flex items-center gap-3 px-2 py-3 rounded-xl hover:bg-[#F3FAF4] transition-colors"
+      >
         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#A7F3A0] to-[#7ED957] flex items-center justify-center text-white font-medium">
           {user.name.charAt(0)}
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-foreground truncate">{user.name}</p>
-          <p className="text-xs text-muted-foreground">Premium Plan</p>
+          <p className="text-xs text-muted-foreground">{t('plan.premium')}</p>
         </div>
         <ChevronDown className="w-4 h-4 text-muted-foreground" />
-      </div>
+      </Link>
     </motion.aside>
   );
 }

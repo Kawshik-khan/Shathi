@@ -6,19 +6,57 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.conversation import Conversation, Message
 from app.schemas.chat import Conversation as ConversationSchema, MessageCreate
-from app.services.ai import generate_chat_response
+from app.services.ai import (
+    generate_chat_response,
+    generate_streaming_response,
+    needs_style_rewrite,
+    rewrite_chat_response,
+)
+from app.services.chat_context import build_chat_context
+from app.services.crisis import detect_crisis, filter_unsafe_assistant_response
 from app.services.emotion import detect_emotion
+from app.services.localization import (
+    normalize_language,
+    requests_english,
+    should_switch_to_bangla,
+    should_switch_to_english,
+)
+
+
+def _select_conversation_language(
+    conversation: Conversation,
+    message_content: str,
+    requested_language: Optional[str] = None,
+) -> str:
+    """Choose and persist the language for a conversation."""
+    if requested_language:
+        selected_language = normalize_language(requested_language)
+    elif requests_english(message_content):
+        selected_language = "en"
+    elif should_switch_to_bangla(message_content):
+        selected_language = "bn"
+    elif should_switch_to_english(message_content):
+        selected_language = "en"
+    else:
+        selected_language = normalize_language(conversation.language)
+
+    if conversation.language != selected_language:
+        conversation.language = selected_language
+
+    return selected_language
 
 
 async def create_conversation(
     db: AsyncSession, 
     user_id: str, 
-    title: Optional[str] = None
+    title: Optional[str] = None,
+    language: str = "bn",
 ) -> Conversation:
     """Create a new conversation."""
     conversation = Conversation(
         user_id=user_id,
         title=title,
+        language=normalize_language(language),
     )
     
     db.add(conversation)
@@ -122,7 +160,8 @@ async def send_chat_message(
     user_id: str, 
     message_content: str,
     conversation_id: Optional[str] = None,
-    model: str = "llama-3.3-70b"
+    model: str = "llama-3.3-70b",
+    language: Optional[str] = None,
 ) -> tuple[Conversation, Message, Message]:
     """Send a message and get AI response."""
     # Get or create conversation
@@ -132,7 +171,21 @@ async def send_chat_message(
             raise ValueError("Conversation not found")
     else:
         # Create new conversation
-        conversation = await create_conversation(db, user_id, title="New Chat")
+        initial_language = "en" if should_switch_to_english(message_content) else "bn"
+        conversation = await create_conversation(
+            db,
+            user_id,
+            title="New Chat",
+            language=language or initial_language,
+        )
+
+    selected_language = _select_conversation_language(
+        conversation,
+        message_content,
+        language,
+    )
+
+    crisis_result = await detect_crisis(message_content)
     
     # Detect emotion in user message
     emotion_result = await detect_emotion(message_content)
@@ -145,9 +198,28 @@ async def send_chat_message(
         content=message_content,
         emotion=emotion_result.emotion,
         emotion_confidence=emotion_result.confidence,
-        crisis_flag=emotion_result.emotion in ["sadness", "anxiety", "stress"] and emotion_result.confidence > 0.8,
-        crisis_severity="high" if emotion_result.emotion in ["sadness", "anxiety", "stress"] and emotion_result.confidence > 0.9 else "medium" if emotion_result.emotion in ["sadness", "anxiety", "stress"] and emotion_result.confidence > 0.8 else None,
+        crisis_flag=crisis_result.is_crisis,
+        crisis_severity=crisis_result.severity.value if crisis_result.is_crisis else None,
     )
+
+    if crisis_result.is_crisis:
+        ai_message = await create_message(
+            db=db,
+            conversation_id=conversation.id,
+            role="assistant",
+            content=crisis_result.response_template,
+            emotion="supportive",
+            emotion_confidence=1.0,
+            model_used="crisis-safety",
+            crisis_flag=True,
+            crisis_severity=crisis_result.severity.value,
+        )
+
+        if conversation.title == "New Chat":
+            conversation.title = message_content[:50] + "..." if len(message_content) > 50 else message_content
+            await db.commit()
+
+        return conversation, user_message, ai_message
     
     # Get conversation history for context
     messages = await get_conversation_messages(db, conversation.id)
@@ -159,14 +231,35 @@ async def send_chat_message(
             "role": msg.role,
             "content": msg.content
         })
+
+    chat_context = await build_chat_context(
+        db=db,
+        user_id=user_id,
+        message=message_content,
+        conversation_id=conversation.id,
+        language=selected_language,
+    )
     
     # Generate AI response
     ai_response_content = await generate_chat_response(
         message=message_content,
         conversation_history=conversation_history,
         model=model,
+        language=selected_language,
+        user_context=chat_context.text,
         stream=False,
     )
+    unsafe_response, filtered_response = filter_unsafe_assistant_response(ai_response_content)
+    ai_response_content = filtered_response
+    if not unsafe_response and needs_style_rewrite(ai_response_content):
+        ai_response_content = await rewrite_chat_response(
+            message=message_content,
+            assistant_response=ai_response_content,
+            conversation_history=conversation_history,
+            model=model,
+            language=selected_language,
+            user_context=chat_context.text,
+        )
     
     # Detect emotion in AI response
     ai_emotion_result = await detect_emotion(ai_response_content)
@@ -180,6 +273,8 @@ async def send_chat_message(
         emotion=ai_emotion_result.emotion,
         emotion_confidence=ai_emotion_result.confidence,
         model_used=model,
+        crisis_flag=unsafe_response,
+        crisis_severity="medium" if unsafe_response else None,
     )
     
     # Update conversation title if this is the first exchange
@@ -191,6 +286,147 @@ async def send_chat_message(
         await db.commit()
     
     return conversation, user_message, ai_message
+
+
+async def send_chat_message_stream(
+    db: AsyncSession,
+    user_id: str,
+    message_content: str,
+    conversation_id: Optional[str] = None,
+    model: str = "llama-3.3-70b",
+    language: Optional[str] = None,
+):
+    """Send a message and yield streaming response events."""
+    if conversation_id:
+        conversation = await get_conversation_by_id(db, user_id, conversation_id)
+        if not conversation:
+            raise ValueError("Conversation not found")
+    else:
+        initial_language = "en" if should_switch_to_english(message_content) else "bn"
+        conversation = await create_conversation(
+            db,
+            user_id,
+            title="New Chat",
+            language=language or initial_language,
+        )
+
+    selected_language = _select_conversation_language(
+        conversation,
+        message_content,
+        language,
+    )
+
+    crisis_result = await detect_crisis(message_content)
+    emotion_result = await detect_emotion(message_content)
+
+    user_message = await create_message(
+        db=db,
+        conversation_id=conversation.id,
+        role="user",
+        content=message_content,
+        emotion=emotion_result.emotion,
+        emotion_confidence=emotion_result.confidence,
+        crisis_flag=crisis_result.is_crisis,
+        crisis_severity=crisis_result.severity.value if crisis_result.is_crisis else None,
+    )
+
+    yield {
+        "type": "meta",
+        "conversation_id": conversation.id,
+        "user_message_id": user_message.id,
+        "crisis_flag": crisis_result.is_crisis,
+        "language": selected_language,
+    }
+
+    if crisis_result.is_crisis:
+        ai_message = await create_message(
+            db=db,
+            conversation_id=conversation.id,
+            role="assistant",
+            content=crisis_result.response_template,
+            emotion="supportive",
+            emotion_confidence=1.0,
+            model_used="crisis-safety",
+            crisis_flag=True,
+            crisis_severity=crisis_result.severity.value,
+        )
+        yield {"type": "chunk", "chunk": crisis_result.response_template}
+        yield {
+            "type": "done",
+            "conversation_id": conversation.id,
+            "message_id": ai_message.id,
+            "crisis_flag": True,
+            "model_used": "crisis-safety",
+            "language": selected_language,
+        }
+        return
+
+    messages = await get_conversation_messages(db, conversation.id)
+    conversation_history = [
+        {"role": msg.role, "content": msg.content}
+        for msg in messages
+    ]
+    chat_context = await build_chat_context(
+        db=db,
+        user_id=user_id,
+        message=message_content,
+        conversation_id=conversation.id,
+        language=selected_language,
+    )
+
+    chunks: list[str] = []
+    async for chunk in generate_streaming_response(
+        message=message_content,
+        conversation_history=conversation_history,
+        model=model,
+        language=selected_language,
+        user_context=chat_context.text,
+    ):
+        chunks.append(chunk)
+        yield {"type": "chunk", "chunk": chunk}
+
+    ai_response_content = "".join(chunks)
+    unsafe_response, filtered_response = filter_unsafe_assistant_response(ai_response_content)
+    ai_response_content = filtered_response
+
+    if unsafe_response:
+        yield {"type": "replace", "content": filtered_response}
+    elif needs_style_rewrite(ai_response_content):
+        ai_response_content = await rewrite_chat_response(
+            message=message_content,
+            assistant_response=ai_response_content,
+            conversation_history=conversation_history,
+            model=model,
+            language=selected_language,
+            user_context=chat_context.text,
+        )
+        yield {"type": "replace", "content": ai_response_content}
+
+    ai_emotion_result = await detect_emotion(ai_response_content)
+    ai_message = await create_message(
+        db=db,
+        conversation_id=conversation.id,
+        role="assistant",
+        content=ai_response_content,
+        emotion=ai_emotion_result.emotion,
+        emotion_confidence=ai_emotion_result.confidence,
+        model_used=model,
+        crisis_flag=unsafe_response,
+        crisis_severity="medium" if unsafe_response else None,
+    )
+
+    if conversation.title == "New Chat":
+        conversation.title = message_content[:50] + "..." if len(message_content) > 50 else message_content
+        await db.commit()
+
+    yield {
+        "type": "done",
+        "conversation_id": conversation.id,
+        "message_id": ai_message.id,
+        "crisis_flag": unsafe_response,
+        "model_used": model,
+        "language": selected_language,
+    }
 
 
 async def delete_conversation(

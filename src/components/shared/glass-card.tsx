@@ -10,6 +10,7 @@ interface GlassCardProps {
   animate?: boolean;
   delay?: number;
   onClick?: () => void;
+  ariaLabel?: string;
 }
 
 export function GlassCard({ 
@@ -18,7 +19,8 @@ export function GlassCard({
   glowOnHover = true,
   animate = true,
   delay = 0,
-  onClick 
+  onClick,
+  ariaLabel,
 }: GlassCardProps) {
   const CardWrapper = animate ? motion.div : 'div';
   
@@ -40,6 +42,7 @@ export function GlassCard({
   return (
     <CardWrapper
       onClick={onClick}
+      aria-label={ariaLabel}
       className={cn(
         'glass-card p-6 transition-all duration-300',
         glowOnHover && 'hover-lift cursor-pointer',

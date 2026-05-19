@@ -8,7 +8,7 @@ import { themeSchema, type ThemeFormData } from '@/lib/schemas/settingsSchema'
 
 export default function ThemeWidget() {
   const store = useSettingsStore()
-  const { register, handleSubmit, watch } = useForm<ThemeFormData>({
+  const { register, handleSubmit, watch, setValue } = useForm<ThemeFormData>({
     resolver: zodResolver(themeSchema),
     defaultValues: {
       theme: store.theme,
@@ -41,7 +41,7 @@ export default function ThemeWidget() {
                 <button
                   key={value}
                   type="button"
-                  onClick={() => register('theme').onChange({ target: { value } })}
+                  onClick={() => setValue('theme', value, { shouldDirty: true })}
                   className={`flex-1 py-2 rounded-lg transition-colors ${
                     theme === value ? 'bg-white/60' : 'bg-white/10 hover:bg-white/30'
                   }`}
@@ -65,7 +65,11 @@ export default function ThemeWidget() {
               aria-label="Enable animations and motion effects"
             />
           </div>
+          <p className="text-xs text-slate-500">{motionEnabled ? 'Motion enabled' : 'Reduced motion preference saved'}</p>
         </div>
+        <button type="submit" className="mt-4 rounded-full bg-[#5DBB63] px-4 py-2 text-sm font-medium text-white hover:bg-[#4da857]">
+          Save
+        </button>
       </form>
     </GlassCard>
   )

@@ -179,6 +179,10 @@
   html {
     @apply font-sans antialiased;
   }
+
+  html[data-language="bn"] body {
+    font-family: var(--font-bengali), var(--font-noto-bengali), var(--font-sans), Arial, Helvetica, sans-serif;
+  }
 }
 
 @layer utilities {

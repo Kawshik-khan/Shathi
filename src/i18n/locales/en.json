@@ -1,0 +1,73 @@
+{
+  "actions": {
+    "createAccount": "Create account",
+    "creatingAccount": "Creating account...",
+    "forgotPassword": "Forgot password?",
+    "logIn": "Log in",
+    "loggingIn": "Logging in...",
+    "signUp": "Sign up",
+    "upgradeNow": "Upgrade Now"
+  },
+  "auth": {
+    "alreadyHaveAccount": "Already have an account?",
+    "continueWith": "Or continue with",
+    "createAccountTitle": "Create your account",
+    "createPassword": "Create a password",
+    "dontHaveAccount": "Don't have an account?",
+    "email": "Email",
+    "enterEmail": "Enter your email",
+    "enterFullName": "Enter your full name",
+    "enterPassword": "Enter your password",
+    "fullName": "Full Name",
+    "joinSathi": "Join Sathi and start your wellness journey.",
+    "password": "Password",
+    "passwordConfirm": "Confirm Password",
+    "passwordConfirmPlaceholder": "Confirm your password",
+    "passwordResetSoon": "Password reset functionality coming soon!",
+    "rememberMe": "Remember me",
+    "togglePassword": "Toggle password visibility",
+    "togglePasswordConfirm": "Toggle confirm password visibility",
+    "welcomeBack": "Welcome back",
+    "welcomeSubtitle": "Log in to continue your wellness journey with Sathi."
+  },
+  "errors": {
+    "accountCreationFailed": "Account creation failed",
+    "invalidCredentials": "Invalid credentials",
+    "loginFailed": "Login failed",
+    "network": "Network error - please check your connection",
+    "passwordMismatch": "Passwords don't match",
+    "server": "Server error - please try again later",
+    "signupFailed": "Signup failed"
+  },
+  "header": {
+    "calendar": "Calendar",
+    "greeting": "Hi, {{name}}!",
+    "logout": "Logout",
+    "notifications": "Notifications",
+    "search": "Search anything...",
+    "subtitle": "Let's make today another amazing step towards your best self.",
+    "today": "Today"
+  },
+  "language": {
+    "bn": "BN",
+    "en": "EN",
+    "toggleLabel": "Change language"
+  },
+  "navigation": {
+    "aiCompanion": "AI Companion",
+    "dashboard": "Dashboard",
+    "habits": "Habits",
+    "insights": "Insights",
+    "journal": "Journal",
+    "mood": "Mood",
+    "resources": "Resources",
+    "settings": "Settings",
+    "sleep": "Sleep",
+    "workouts": "Workouts"
+  },
+  "plan": {
+    "premium": "Premium Plan",
+    "unlock": "Unlock personalized insights and more wellness tools.",
+    "upgradeToPro": "Upgrade to Pro"
+  }
+}

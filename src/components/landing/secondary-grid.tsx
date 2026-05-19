@@ -2,9 +2,9 @@
 
 import { motion } from "framer-motion";
 import { DailyGoals } from "@/components/widgets/daily-goals";
-import { HabitsTracker } from "@/components/widgets/habits-tracker";
 import { TrainingCalendar } from "@/components/widgets/training-calendar";
 import { AIInsight } from "@/components/widgets/ai-insight";
+import { HabitsPreviewCard } from "@/components/landing/preview-widgets";
 
 export function SecondaryGrid() {
   return (
@@ -50,7 +50,7 @@ export function SecondaryGrid() {
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
           >
-            <HabitsTracker />
+            <HabitsPreviewCard />
           </motion.div>
 
           {/* Training Calendar */}

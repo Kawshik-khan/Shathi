@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { useAuthStore, useDashboardStore } from "@/lib/store";
 import { apiFetch } from "@/lib/api";
 import { LoginRequest, TokenResponse, AuthUser } from "@/types";
+import { useTranslation } from "react-i18next";
 
 export default function SignupForm() {
   const [name, setName] = useState("");
@@ -15,11 +16,13 @@ export default function SignupForm() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [show, setShow] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const router = useRouter();
   const login = useAuthStore((state) => state.login);
+  const { i18n, t } = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,7 +30,13 @@ export default function SignupForm() {
     setError("");
 
     if (password !== confirmPassword) {
-      setError("Passwords don't match");
+      setError(t('errors.passwordMismatch'));
+      setLoading(false);
+      return;
+    }
+
+    if (!acceptedTerms) {
+      setError("Please accept the terms and privacy policy to create an account.");
       setLoading(false);
       return;
     }
@@ -45,30 +54,38 @@ export default function SignupForm() {
         email: tokens.user!.email,
         name: tokens.user!.name,
         plan: tokens.user!.plan as 'free' | 'premium',
-        avatar: tokens.user!.avatar_url,
+        avatar_url: tokens.user!.avatar_url,
+        language: tokens.user!.language,
+        family_id: tokens.user!.family_id,
       };
 
       login(user, tokens);
+      if (user.language) {
+        await i18n.changeLanguage(user.language);
+      }
       useDashboardStore.getState().setUser(user);
-      router.push("/dashboard");
+      const nextPath = typeof window !== 'undefined'
+        ? new URLSearchParams(window.location.search).get("next")
+        : null;
+      router.push(nextPath || "/dashboard");
     } catch (err) {
       if (err && typeof err === 'object' && 'status' in err) {
         const apiErr = err as unknown as { code?: string; message?: string };
         switch (apiErr.code) {
           case 'NETWORK_ERROR':
-            setError('Network error - please check your connection');
+            setError(t('errors.network'));
             break;
           case 'UNAUTHORIZED':
-            setError('Account creation failed');
+            setError(t('errors.accountCreationFailed'));
             break;
           case 'SERVER_ERROR':
-            setError('Server error - please try again later');
+            setError(t('errors.server'));
             break;
           default:
-          setError(apiErr.message ?? "Signup failed");
+          setError(apiErr.message ?? t('errors.signupFailed'));
         }
       } else {
-        setError(err instanceof Error ? err.message : "Signup failed");
+        setError(err instanceof Error ? err.message : t('errors.signupFailed'));
       }
     } finally {
       setLoading(false);
@@ -79,18 +96,18 @@ export default function SignupForm() {
     <div className="bg-white rounded-xl sm:rounded-2xl p-5 sm:p-6 md:p-8 shadow-sm">
       <div className="text-center mb-5 sm:mb-6">
         <div className="w-8 sm:w-9 h-8 sm:h-9 mx-auto rounded-full bg-[#EAF6EA] flex items-center justify-center text-base sm:text-lg">✦</div>
-        <h2 className="mt-3 sm:mt-4 text-xl sm:text-2xl font-bold text-[#0F172A]">Create your account</h2>
-        <p className="mt-2 text-xs sm:text-sm text-[#64748B] leading-relaxed">Join Sathi and start your wellness journey.</p>
+        <h2 className="mt-3 sm:mt-4 text-xl sm:text-2xl font-bold text-[#0F172A]">{t('auth.createAccountTitle')}</h2>
+        <p className="mt-2 text-xs sm:text-sm text-[#64748B] leading-relaxed">{t('auth.joinSathi')}</p>
       </div>
 
       <form className="space-y-3 sm:space-y-4" onSubmit={handleSubmit}>
         <label className="block">
-          <span className="sr-only">Full Name</span>
+          <span className="sr-only">{t('auth.fullName')}</span>
           <div className="flex items-center gap-3 border border-gray-200 rounded-lg sm:rounded-xl px-3 py-2 sm:py-3 bg-white hover:border-gray-300 transition-colors">
             <User className="text-[#94A3B8] flex-shrink-0" size={18} />
             <input
               className="w-full outline-none text-sm sm:text-base text-[#0F172A] placeholder:text-[#94A3B8] bg-transparent"
-              placeholder="Enter your full name"
+              placeholder={t('auth.enterFullName')}
               value={name}
               onChange={(e) => setName(e.target.value)}
               type="text"
@@ -100,12 +117,12 @@ export default function SignupForm() {
         </label>
 
         <label className="block">
-          <span className="sr-only">Email</span>
+          <span className="sr-only">{t('auth.email')}</span>
           <div className="flex items-center gap-3 border border-gray-200 rounded-lg sm:rounded-xl px-3 py-2 sm:py-3 bg-white hover:border-gray-300 transition-colors">
             <Mail className="text-[#94A3B8] flex-shrink-0" size={18} />
             <input
               className="w-full outline-none text-sm sm:text-base text-[#0F172A] placeholder:text-[#94A3B8] bg-transparent"
-              placeholder="Enter your email"
+              placeholder={t('auth.enterEmail')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               type="email"
@@ -115,36 +132,36 @@ export default function SignupForm() {
         </label>
 
         <label className="block">
-          <span className="sr-only">Password</span>
+          <span className="sr-only">{t('auth.password')}</span>
           <div className="flex items-center gap-3 border border-gray-200 rounded-lg sm:rounded-xl px-3 py-2 sm:py-3 bg-white hover:border-gray-300 transition-colors">
             <Lock className="text-[#94A3B8] flex-shrink-0" size={18} />
             <input
               className="w-full outline-none text-sm sm:text-base text-[#0F172A] placeholder:text-[#94A3B8] bg-transparent"
-              placeholder="Create a password"
+              placeholder={t('auth.createPassword')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               type={show ? "text" : "password"}
               required
             />
-            <button type="button" aria-label="Toggle password visibility" onClick={() => setShow((s) => !s)} className="text-[#94A3B8] flex-shrink-0 hover:text-[#0F172A] transition-colors">
+            <button type="button" aria-label={t('auth.togglePassword')} onClick={() => setShow((s) => !s)} className="text-[#94A3B8] flex-shrink-0 hover:text-[#0F172A] transition-colors">
               {show ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
         </label>
 
         <label className="block">
-          <span className="sr-only">Confirm Password</span>
+          <span className="sr-only">{t('auth.passwordConfirm')}</span>
           <div className="flex items-center gap-3 border border-gray-200 rounded-lg sm:rounded-xl px-3 py-2 sm:py-3 bg-white hover:border-gray-300 transition-colors">
             <Lock className="text-[#94A3B8] flex-shrink-0" size={18} />
             <input
               className="w-full outline-none text-sm sm:text-base text-[#0F172A] placeholder:text-[#94A3B8] bg-transparent"
-              placeholder="Confirm your password"
+              placeholder={t('auth.passwordConfirmPlaceholder')}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               type={showConfirm ? "text" : "password"}
               required
             />
-            <button type="button" aria-label="Toggle confirm password visibility" onClick={() => setShowConfirm((s) => !s)} className="text-[#94A3B8] flex-shrink-0 hover:text-[#0F172A] transition-colors">
+            <button type="button" aria-label={t('auth.togglePasswordConfirm')} onClick={() => setShowConfirm((s) => !s)} className="text-[#94A3B8] flex-shrink-0 hover:text-[#0F172A] transition-colors">
               {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
@@ -154,27 +171,36 @@ export default function SignupForm() {
           <div className="text-red-500 text-sm text-center">{error}</div>
         )}
 
+        <label className="flex items-start gap-2 text-xs sm:text-sm text-[#475569]">
+          <input
+            type="checkbox"
+            checked={acceptedTerms}
+            onChange={(event) => setAcceptedTerms(event.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#22C55E] focus:ring-[#22C55E]"
+          />
+          <span>I agree to the terms, privacy policy, and wellness data handling notice.</span>
+        </label>
+
         <motion.button
           whileHover={{ y: -2 }}
-          disabled={loading}
+          disabled={loading || !acceptedTerms}
           className="w-full py-2.5 sm:py-3 rounded-full text-white font-medium text-sm sm:text-base bg-gradient-to-r from-[#5DBB63] to-[#22C55E] shadow-sm hover:shadow-glow transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading ? "Creating account..." : "Create account"}
+          {loading ? t('actions.creatingAccount') : t('actions.createAccount')}
         </motion.button>
 
         <div className="flex items-center gap-3 my-3 sm:my-4">
           <hr className="flex-1 border-gray-200" />
-          <span className="text-xs sm:text-sm text-[#94A3B8] px-1">Or continue with</span>
+          <span className="text-xs sm:text-sm text-[#94A3B8] px-1">Email signup</span>
           <hr className="flex-1 border-gray-200" />
         </div>
 
-        <div className="grid grid-cols-3 gap-2 sm:gap-3">
-          <button className="py-2.5 sm:py-3 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-colors text-xs sm:text-sm font-medium">Google</button>
-          <button className="py-2.5 sm:py-3 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-colors text-xs sm:text-sm font-medium">Apple</button>
-          <button className="py-2.5 sm:py-3 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-colors text-xs sm:text-sm font-medium">Email</button>
+        <div className="grid grid-cols-2 gap-2 sm:gap-3">
+          <button type="button" disabled className="py-2.5 sm:py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-400 text-xs sm:text-sm font-medium cursor-not-allowed">Google soon</button>
+          <button type="button" disabled className="py-2.5 sm:py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-400 text-xs sm:text-sm font-medium cursor-not-allowed">Apple soon</button>
         </div>
 
-        <p className="text-center text-xs sm:text-sm text-[#64748B] mt-4 sm:mt-5">Already have an account? <a href="/auth/login" className="text-[#22C55E] font-medium hover:underline">Log in</a></p>
+        <p className="text-center text-xs sm:text-sm text-[#64748B] mt-4 sm:mt-5">{t('auth.alreadyHaveAccount')} <a href="/auth/login" className="text-[#22C55E] font-medium hover:underline">{t('actions.logIn')}</a></p>
       </form>
     </div>
   );

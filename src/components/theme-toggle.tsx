@@ -3,11 +3,19 @@
 import { useTheme } from './theme-provider';
 import { Sun, Moon, Monitor } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { cn } from '@/lib/utils';
 
+function subscribeToHydration() {
+  return () => {};
+}
+
+function useHydrated() {
+  return useSyncExternalStore(subscribeToHydration, () => true, () => false);
+}
+
 export function ThemeToggle() {
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
 
   const options = [
@@ -79,11 +87,7 @@ export function ThemeToggle() {
 
 // Simple toggle button for header/toolbar
 export function ThemeToggleSimple() {
-  const [mounted, setMounted] = useState(false);
-  
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useHydrated();
 
   // Prevent hydration mismatch by not rendering until mounted
   if (!mounted) {

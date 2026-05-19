@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useSyncExternalStore } from 'react';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -12,50 +12,55 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('light');
-  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
-  const [mounted, setMounted] = useState(false);
+function getStoredTheme(): Theme {
+  if (typeof window === 'undefined') return 'light';
 
-  useEffect(() => {
-    setMounted(true);
-    // Check localStorage or default to light
-    const saved = localStorage.getItem('Sathi-theme') as Theme | null;
-    if (saved) {
-      setThemeState(saved);
-    }
-  }, []);
+  const saved = localStorage.getItem('Sathi-theme');
+  return saved === 'light' || saved === 'dark' || saved === 'system' ? saved : 'light';
+}
+
+function subscribeToSystemTheme(onStoreChange: () => void) {
+  if (typeof window === 'undefined') return () => {};
+
+  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+  mediaQuery.addEventListener('change', onStoreChange);
+  return () => mediaQuery.removeEventListener('change', onStoreChange);
+}
+
+function getSystemThemeSnapshot(): 'light' | 'dark' {
+  if (typeof window === 'undefined') return 'light';
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function getServerSystemThemeSnapshot(): 'light' | 'dark' {
+  return 'light';
+}
+
+function subscribeToHydration() {
+  return () => {};
+}
+
+function useHydrated() {
+  return useSyncExternalStore(subscribeToHydration, () => true, () => false);
+}
+
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [theme, setThemeState] = useState<Theme>(getStoredTheme);
+  const mounted = useHydrated();
+  const systemTheme = useSyncExternalStore(
+    subscribeToSystemTheme,
+    getSystemThemeSnapshot,
+    getServerSystemThemeSnapshot
+  );
+  const resolvedTheme: 'light' | 'dark' = theme === 'system' ? systemTheme : theme;
 
   useEffect(() => {
     if (!mounted) return;
 
     const root = document.documentElement;
-    
-    if (theme === 'system') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      setResolvedTheme(systemTheme);
-      root.classList.toggle('dark', systemTheme === 'dark');
-    } else {
-      setResolvedTheme(theme);
-      root.classList.toggle('dark', theme === 'dark');
-    }
-
+    root.classList.toggle('dark', resolvedTheme === 'dark');
     localStorage.setItem('Sathi-theme', theme);
-  }, [theme, mounted]);
-
-  // Listen for system theme changes
-  useEffect(() => {
-    if (theme !== 'system') return;
-    
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handler = (e: MediaQueryListEvent) => {
-      setResolvedTheme(e.matches ? 'dark' : 'light');
-      document.documentElement.classList.toggle('dark', e.matches);
-    };
-
-    mediaQuery.addEventListener('change', handler);
-    return () => mediaQuery.removeEventListener('change', handler);
-  }, [theme]);
+  }, [mounted, resolvedTheme, theme]);
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);

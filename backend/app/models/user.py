@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import String, DateTime, Boolean
+from sqlalchemy import String, DateTime, Boolean, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -29,6 +29,12 @@ class User(Base):
     hashed_password: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     avatar_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    language: Mapped[str] = mapped_column(String(10), default="en")
+    family_id: Mapped[Optional[str]] = mapped_column(
+        String(36),
+        ForeignKey("families.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     supabase_uid: Mapped[Optional[str]] = mapped_column(
         String(36),
         unique=True,
@@ -53,4 +59,22 @@ class User(Base):
     journals = relationship("Journal", back_populates="user", lazy="selectin")
     habits = relationship("Habit", back_populates="user", lazy="selectin")
     memories = relationship("Memory", back_populates="user", lazy="selectin")
+    family = relationship("Family", back_populates="members", lazy="selectin")
+    academic_entries = relationship("AcademicTracking", back_populates="user", lazy="selectin")
+    community_posts = relationship("CommunityPost", back_populates="user", lazy="selectin")
+    community_memberships = relationship("CommunityMember", back_populates="user", lazy="selectin")
+    settings = relationship(
+        "UserSettings",
+        back_populates="user",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+        uselist=False,
+    )
+    profile = relationship(
+        "UserProfile",
+        back_populates="user",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+        uselist=False,
+    )
 

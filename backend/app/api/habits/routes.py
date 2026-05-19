@@ -13,7 +13,7 @@ from app.schemas.habit import (
     HabitAnalytics
 )
 from app.services.habit import (
-    create_habit,
+    create_habit as create_habit_service,
     get_habits,
     get_habit_by_id,
     update_habit,
@@ -29,14 +29,14 @@ router = APIRouter()
 
 
 @router.post("/", response_model=HabitSchema, status_code=status.HTTP_201_CREATED)
-async def create_habit(
+async def create_habit_endpoint(
     habit: HabitCreate,
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
 ) -> HabitSchema:
     """Create a new habit."""
     try:
-        new_habit = await create_habit(db, current_user.id, habit)
+        new_habit = await create_habit_service(db, current_user.id, habit)
         
         return HabitSchema(
             id=new_habit.id,

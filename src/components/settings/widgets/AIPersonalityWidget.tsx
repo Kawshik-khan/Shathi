@@ -8,7 +8,7 @@ import { personalitySchema, type PersonalityFormData } from '@/lib/schemas/setti
 
 export default function AIPersonalityWidget() {
   const store = useSettingsStore()
-  const { register, handleSubmit, watch } = useForm<PersonalityFormData>({
+  const { register, handleSubmit, watch, setValue } = useForm<PersonalityFormData>({
     resolver: zodResolver(personalitySchema),
     defaultValues: {
       personalityMode: store.personalityMode,
@@ -43,7 +43,7 @@ export default function AIPersonalityWidget() {
                 <button
                   key={value}
                   type="button"
-                  onClick={() => register('personalityMode').onChange({ target: { value } })}
+                  onClick={() => setValue('personalityMode', value, { shouldDirty: true })}
                   className={`py-2 rounded-lg transition-colors ${
                     personalityMode === value ? 'bg-white/60' : 'bg-white/10 hover:bg-white/30'
                   }`}
@@ -75,6 +75,9 @@ export default function AIPersonalityWidget() {
             />
           </div>
         </div>
+        <button type="submit" className="mt-4 rounded-full bg-[#5DBB63] px-4 py-2 text-sm font-medium text-white hover:bg-[#4da857]">
+          Save
+        </button>
       </form>
     </GlassCard>
   )

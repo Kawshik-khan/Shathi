@@ -77,7 +77,44 @@ export interface AuthUser {
   email: string;
   name: string;
   avatar_url?: string;
+  language?: 'en' | 'bn';
+  family_id?: string | null;
   plan: 'free' | 'premium';
+}
+
+export interface UserProfile {
+  id: string;
+  user_id: string;
+  email: string;
+  name: string;
+  avatar_url?: string | null;
+  language: 'en' | 'bn';
+  bio?: string | null;
+  timezone: string;
+  phone?: string | null;
+  date_of_birth?: string | null;
+  gender?: string | null;
+  wellness_goals: Record<string, unknown>;
+  preferred_support_style?: string | null;
+  emergency_contact_name?: string | null;
+  emergency_contact_phone?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+export interface UserProfileUpdate {
+  name?: string;
+  avatar_url?: string | null;
+  language?: 'en' | 'bn';
+  bio?: string | null;
+  timezone?: string;
+  phone?: string | null;
+  date_of_birth?: string | null;
+  gender?: string | null;
+  wellness_goals?: Record<string, unknown>;
+  preferred_support_style?: string | null;
+  emergency_contact_name?: string | null;
+  emergency_contact_phone?: string | null;
 }
 
 export interface LoginRequest {

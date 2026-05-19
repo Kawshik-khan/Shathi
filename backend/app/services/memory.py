@@ -23,9 +23,22 @@ openai_client = openai.AsyncOpenAI(api_key=settings.OPENAI_API_KEY) if settings.
 # Initialize Pinecone client
 pc: Optional[Pinecone] = None
 pinecone_index = None
-if HAS_PINECONE and settings.PINECONE_API_KEY:
-    pc = Pinecone(api_key=settings.PINECONE_API_KEY)
-    pinecone_index = pc.Index(settings.PINECONE_INDEX_NAME)
+
+
+def get_pinecone_index():
+    """Return a Pinecone index lazily to avoid network calls during import."""
+    global pc, pinecone_index
+    if pinecone_index:
+        return pinecone_index
+    if not HAS_PINECONE or not settings.PINECONE_API_KEY:
+        return None
+
+    try:
+        pc = pc or Pinecone(api_key=settings.PINECONE_API_KEY)
+        pinecone_index = pc.Index(settings.PINECONE_INDEX_NAME)
+        return pinecone_index
+    except Exception:
+        return None
 
 
 async def generate_embedding(text: str) -> List[float]:
@@ -88,7 +101,8 @@ async def store_memory(
     source_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Store a memory in Pinecone."""
-    if not pinecone_index:
+    index = get_pinecone_index()
+    if not index:
         # Fallback: return mock success
         return {
             "id": str(uuid.uuid4()),
@@ -118,7 +132,7 @@ async def store_memory(
     # Store in Pinecone using SDK
     try:
         await asyncio.to_thread(
-            pinecone_index.upsert,
+            index.upsert,
             vectors=[
                 {
                     "id": memory_id,
@@ -152,7 +166,8 @@ async def retrieve_memories(
     emotion_filter: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """Retrieve relevant memories for a user."""
-    if not pinecone_index:
+    index = get_pinecone_index()
+    if not index:
         # Return empty list if Pinecone not configured
         return []
 
@@ -167,7 +182,7 @@ async def retrieve_memories(
     # Query Pinecone using SDK
     try:
         result = await asyncio.to_thread(
-            pinecone_index.query,
+            index.query,
             vector=query_embedding,
             top_k=top_k,
             filter=filter_dict,
@@ -190,14 +205,92 @@ async def retrieve_memories(
         return []
 
 
+async def retrieve_memories_langchain(
+    user_id: str,
+    query: str,
+    top_k: int = 5,
+    emotion_filter: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """Retrieve relevant memories through LangChain when available."""
+    if not settings.OPENAI_API_KEY or not settings.PINECONE_API_KEY:
+        return []
+
+    try:
+        from langchain_openai import OpenAIEmbeddings
+        from langchain_pinecone import PineconeVectorStore
+    except ImportError:
+        return []
+
+    try:
+        embeddings = OpenAIEmbeddings(
+            model="text-embedding-3-small",
+            api_key=settings.OPENAI_API_KEY,
+        )
+        vectorstore = PineconeVectorStore.from_existing_index(
+            index_name=settings.PINECONE_INDEX_NAME,
+            embedding=embeddings,
+        )
+        filter_dict: Dict[str, Any] = {"user_id": user_id}
+        if emotion_filter:
+            filter_dict["emotion"] = emotion_filter
+
+        docs_and_scores = await asyncio.to_thread(
+            vectorstore.similarity_search_with_score,
+            query,
+            k=top_k,
+            filter=filter_dict,
+        )
+
+        memories = []
+        for document, score in docs_and_scores:
+            metadata = document.metadata or {}
+            memories.append({
+                "id": metadata.get("id") or metadata.get("source_id") or "",
+                "score": score,
+                "memory_text": metadata.get("memory_text") or document.page_content,
+                "emotion": metadata.get("emotion", "neutral"),
+                "category": metadata.get("category", "general"),
+                "importance": metadata.get("importance", 0.5),
+            })
+
+        return memories
+    except Exception:
+        return []
+
+
+async def retrieve_relevant_memories(
+    user_id: str,
+    query: str,
+    top_k: int = 5,
+    emotion_filter: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """Retrieve memories with LangChain first, then fallback to the native Pinecone client."""
+    memories = await retrieve_memories_langchain(
+        user_id=user_id,
+        query=query,
+        top_k=top_k,
+        emotion_filter=emotion_filter,
+    )
+    if memories:
+        return memories
+
+    return await retrieve_memories(
+        user_id=user_id,
+        query=query,
+        top_k=top_k,
+        emotion_filter=emotion_filter,
+    )
+
+
 async def delete_memory(user_id: str, memory_id: str) -> bool:
     """Delete a memory from Pinecone."""
-    if not pinecone_index:
+    index = get_pinecone_index()
+    if not index:
         return False
 
     try:
         await asyncio.to_thread(
-            pinecone_index.delete,
+            index.delete,
             ids=[memory_id]
         )
         return True

@@ -2,8 +2,8 @@
 
 import { motion } from "framer-motion";
 import { AICompanionCard } from "@/components/widgets/ai-companion-card";
-import { MoodOverview } from "@/components/widgets/mood-overview";
 import { SleepTracking } from "@/components/widgets/sleep-tracking";
+import { MoodPreviewCard } from "@/components/landing/preview-widgets";
 
 // Note: Using existing widgets which handle their own mock data
 
@@ -52,7 +52,7 @@ export function FeatureGrid() {
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
           >
-            <MoodOverview />
+            <MoodPreviewCard />
           </motion.div>
 
           {/* Sleep Tracking */}

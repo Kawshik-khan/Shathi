@@ -1,9 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { JournalPreview } from "@/components/widgets/journal-preview";
 import { DailyCheckIn } from "@/components/widgets/daily-check-in";
 import { Target, TrendingUp } from "lucide-react";
+import { JournalPreviewCard } from "@/components/landing/preview-widgets";
 
 export function JournalSection() {
   return (
@@ -40,7 +40,7 @@ export function JournalSection() {
             transition={{ delay: 0.1 }}
             className="lg:col-span-2"
           >
-            <JournalPreview />
+            <JournalPreviewCard />
           </motion.div>
 
           {/* Wellness Score */}

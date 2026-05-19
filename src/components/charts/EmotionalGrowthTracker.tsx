@@ -11,6 +11,12 @@ interface GrowthMilestoneProps {
   trend?: 'up' | 'down';
 }
 
+const milestoneIcons = {
+  achievement: Brain,
+  breakthrough: Sparkles,
+  reflection: Heart,
+};
+
 export function GrowthMilestone({ 
   title, 
   description, 
@@ -18,17 +24,6 @@ export function GrowthMilestone({
   type = 'achievement',
   trend = 'up'
 }: GrowthMilestoneProps) {
-  const getIcon = () => {
-    switch (type) {
-      case 'breakthrough':
-        return Sparkles;
-      case 'reflection':
-        return Heart;
-      default:
-        return Brain;
-    }
-  };
-
   const getColor = () => {
     switch (type) {
       case 'breakthrough':
@@ -40,7 +35,7 @@ export function GrowthMilestone({
     }
   };
 
-  const Icon = getIcon();
+  const Icon = milestoneIcons[type];
 
   return (
     <motion.div 

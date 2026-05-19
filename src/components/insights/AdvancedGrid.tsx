@@ -1,7 +1,7 @@
 "use client"
 import React from "react"
 import { motion } from 'framer-motion'
-import GlassCard from "@/components/ui/GlassCard"
+import { GlassCard } from "@/components/ui/GlassCard"
 import LineChartSoft from "@/components/charts/LineChartSoft"
 import BarChartSoft from "@/components/charts/BarChartSoft"
 import EmotionHeatmap from "@/components/charts/EmotionHeatmap"
@@ -137,7 +137,7 @@ export default function AdvancedGrid() {
           <div className="space-y-4">
             <div className="p-4 rounded-2xl bg-gradient-to-r from-[#F8FBF8] to-[#EEF7EF] border border-[#BBF7D0]">
               <p className="text-[#0F172A] text-sm leading-relaxed">
-                <span className="font-semibold">🌱 Week in Review:</span> You've shown improved emotional stability this week despite increased workload. Your morning meditation habit continues to pay dividends.
+                <span className="font-semibold">🌱 Week in Review:</span> You&apos;ve shown improved emotional stability this week despite increased workload. Your morning meditation habit continues to pay dividends.
               </p>
             </div>
 
@@ -159,7 +159,7 @@ export default function AdvancedGrid() {
             <div className="flex items-center gap-2 p-3 rounded-xl bg-[#FEF3C7]">
               <Sparkles className="w-4 h-4 text-[#D97706]" />
               <p className="text-xs text-[#92400E]">
-                <strong>Keep going!</strong> You're building sustainable wellness patterns.
+                <strong>Keep going!</strong> You&apos;re building sustainable wellness patterns.
               </p>
             </div>
           </div>
