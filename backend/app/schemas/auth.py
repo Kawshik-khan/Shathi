@@ -40,6 +40,21 @@ class RegisterRequest(BaseSchema):
     name: str = Field(..., min_length=1, max_length=100, description="User display name")
 
 
+class GoogleProfile(BaseSchema):
+    """Google profile fields forwarded by the frontend auth callback."""
+
+    email: Optional[EmailStr] = None
+    name: Optional[str] = None
+    image: Optional[str] = None
+
+
+class GoogleCallbackRequest(BaseSchema):
+    """Google OAuth callback request schema."""
+
+    googleToken: str = Field(..., min_length=1, description="Google ID token")
+    profile: Optional[GoogleProfile] = None
+
+
 class RefreshTokenRequest(BaseSchema):
     """Refresh token request schema."""
     

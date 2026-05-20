@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     # OpenAI (secondary/fallback)
     OPENAI_API_KEY: Optional[str] = None
     OPENAI_MODEL: str = "gpt-3.5-turbo"
+
+    # OAuth
+    GOOGLE_CLIENT_ID: Optional[str] = None
     
     # Default AI Model
     DEFAULT_AI_MODEL: str = "llama-3.3-70b"

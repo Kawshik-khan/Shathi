@@ -1,16 +1,24 @@
 import NextAuth, { type NextAuthConfig } from "next-auth";
+import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { apiFetch } from "@/lib/api";
-import { TokenResponse } from "@/types";
+import { AuthUser, TokenResponse } from "@/types";
 
 type BackendAuthUser = {
   backendToken?: string;
+  backendRefreshToken?: string;
+  backendExpiresIn?: number;
+  backendUser?: AuthUser;
 };
 
 const config = {
   secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
   trustHost: true,
   providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
     CredentialsProvider({
       name: "Email",
       credentials: {
@@ -41,6 +49,9 @@ const config = {
             name: tokens.user.name,
             image: tokens.user.avatar_url,
             backendToken: tokens.access_token,
+            backendRefreshToken: tokens.refresh_token,
+            backendExpiresIn: tokens.expires_in,
+            backendUser: tokens.user,
           };
         } catch {
           return null;
@@ -57,13 +68,45 @@ const config = {
     maxAge: 7 * 24 * 60 * 60, // 7 days
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id;
         token.email = user.email;
         token.name = user.name;
         token.picture = user.image;
         token.backendToken = (user as BackendAuthUser).backendToken;
+        token.backendRefreshToken = (user as BackendAuthUser).backendRefreshToken;
+        token.backendExpiresIn = (user as BackendAuthUser).backendExpiresIn;
+        token.backendUser = (user as BackendAuthUser).backendUser;
+      }
+
+      if (account?.provider === "google" && account.id_token) {
+        const response = await apiFetch<TokenResponse>(
+          "/api/v1/auth/google-callback",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              googleToken: account.id_token,
+              profile: {
+                email: user?.email,
+                name: user?.name,
+                image: user?.image,
+              },
+            }),
+          },
+          0
+        );
+
+        if (response.user) {
+          token.id = response.user.id;
+          token.email = response.user.email;
+          token.name = response.user.name;
+          token.picture = response.user.avatar_url;
+          token.backendToken = response.access_token;
+          token.backendRefreshToken = response.refresh_token;
+          token.backendExpiresIn = response.expires_in;
+          token.backendUser = response.user;
+        }
       }
 
       return token;
@@ -73,6 +116,10 @@ const config = {
         session.user.id = token.id as string;
         session.user.backendToken = token.backendToken as string;
       }
+      session.backendToken = token.backendToken;
+      session.backendRefreshToken = token.backendRefreshToken;
+      session.backendExpiresIn = token.backendExpiresIn;
+      session.backendUser = token.backendUser;
       return session;
     },
   },

@@ -4,8 +4,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import create_access_token, create_refresh_token
-from app.schemas.auth import Token, LoginRequest, RegisterRequest, RefreshTokenRequest
-from app.services.auth import authenticate_user, create_user, refresh_access_token
+from app.schemas.auth import Token, LoginRequest, RegisterRequest, RefreshTokenRequest, GoogleCallbackRequest
+from app.services.auth import (
+    authenticate_user,
+    create_user,
+    get_or_create_google_user,
+    refresh_access_token,
+    verify_google_id_token,
+)
 
 router = APIRouter()
 
@@ -49,6 +55,32 @@ async def register(
         name=request.name,
     )
     
+    access_token = create_access_token({"sub": user.id})
+    refresh_token = create_refresh_token({"sub": user.id})
+
+    return Token(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="bearer",
+        expires_in=1800,
+        user=user,
+    )
+
+
+@router.post("/google-callback", response_model=Token)
+async def google_callback(
+    request: GoogleCallbackRequest,
+    db: AsyncSession = Depends(get_db),
+) -> Token:
+    """Exchange a verified Google ID token for backend JWT tokens."""
+    google_payload = await verify_google_id_token(request.googleToken)
+    if not google_payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Google token",
+        )
+
+    user = await get_or_create_google_user(db, google_payload)
     access_token = create_access_token({"sub": user.id})
     refresh_token = create_refresh_token({"sub": user.id})
 

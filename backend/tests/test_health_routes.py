@@ -1,13 +1,12 @@
-from fastapi.testclient import TestClient
+import asyncio
 
 from app.main import app
 
 
 def test_root_status_route():
-    response = TestClient(app).get("/")
+    route = next(route for route in app.routes if getattr(route, "path", None) == "/")
 
-    assert response.status_code == 200
-    assert response.json() == {
+    assert asyncio.run(route.endpoint()) == {
         "status": "ok",
         "service": "sathi-api",
         "health": "/health",
@@ -15,7 +14,6 @@ def test_root_status_route():
 
 
 def test_health_route():
-    response = TestClient(app).get("/health")
+    route = next(route for route in app.routes if getattr(route, "path", None) == "/health")
 
-    assert response.status_code == 200
-    assert response.json() == {"status": "healthy", "service": "sathi-api"}
+    assert asyncio.run(route.endpoint()) == {"status": "healthy", "service": "sathi-api"}

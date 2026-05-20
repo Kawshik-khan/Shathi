@@ -1,7 +1,11 @@
 """Authentication service."""
+from typing import Any
+
+import httpx
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.security import (
     verify_password,
     get_password_hash,
@@ -10,6 +14,8 @@ from app.core.security import (
     create_refresh_token,
 )
 from app.models.user import User
+
+settings = get_settings()
 
 
 async def authenticate_user(
@@ -23,7 +29,10 @@ async def authenticate_user(
     
     if not user:
         return None
-    
+
+    if not user.hashed_password:
+        return None
+
     if not verify_password(password, user.hashed_password):
         return None
     
@@ -55,6 +64,74 @@ async def create_user(
     await db.commit()
     await db.refresh(user)
     
+    return user
+
+
+async def verify_google_id_token(id_token: str) -> dict[str, Any] | None:
+    """Validate a Google ID token and return its tokeninfo payload."""
+    if not settings.GOOGLE_CLIENT_ID:
+        return None
+
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            response = await client.get(
+                "https://oauth2.googleapis.com/tokeninfo",
+                params={"id_token": id_token},
+            )
+    except httpx.HTTPError:
+        return None
+
+    if response.status_code != 200:
+        return None
+
+    payload = response.json()
+    email = payload.get("email")
+    email_verified = payload.get("email_verified")
+
+    if payload.get("aud") != settings.GOOGLE_CLIENT_ID:
+        return None
+
+    if not email or email_verified not in (True, "true", "True"):
+        return None
+
+    return payload
+
+
+async def get_or_create_google_user(
+    db: AsyncSession,
+    google_payload: dict[str, Any],
+) -> User:
+    """Find or create a backend user from a verified Google profile."""
+    email = str(google_payload["email"]).lower()
+    google_sub = str(google_payload["sub"])
+    name = str(google_payload.get("name") or email.split("@")[0])
+    avatar_url = google_payload.get("picture")
+
+    result = await db.execute(select(User).where(User.supabase_uid == google_sub))
+    user = result.scalar_one_or_none()
+
+    if not user:
+        result = await db.execute(select(User).where(User.email == email))
+        user = result.scalar_one_or_none()
+
+    if user:
+        user.supabase_uid = user.supabase_uid or google_sub
+        user.avatar_url = user.avatar_url or avatar_url
+        if not user.name:
+            user.name = name
+    else:
+        user = User(
+            email=email,
+            name=name,
+            avatar_url=avatar_url,
+            hashed_password=None,
+            supabase_uid=google_sub,
+        )
+        db.add(user)
+
+    await db.commit()
+    await db.refresh(user)
+
     return user
 
 
