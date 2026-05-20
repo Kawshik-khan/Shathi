@@ -27,8 +27,6 @@ Use `test:prod` before deployment. It runs frontend lint/typecheck/build and bac
 | `NEXT_PUBLIC_API_URL` | Public backend origin, for example `https://api.example.com`. |
 | `AUTH_SECRET` | Required by NextAuth/Auth.js in production. Use a strong random value. |
 | `AUTH_URL` | Public frontend origin, for example `https://shathi.vercel.app`. |
-| `GOOGLE_CLIENT_ID` | Required only if Google sign-in is enabled. |
-| `GOOGLE_CLIENT_SECRET` | Required only if Google sign-in is enabled. |
 
 ## Required Backend Environment
 
@@ -74,8 +72,6 @@ Required Vercel environment variable:
 NEXT_PUBLIC_API_URL=https://shathi.onrender.com
 AUTH_URL=https://shathi.vercel.app
 AUTH_SECRET=<strong-random-secret>
-GOOGLE_CLIENT_ID=<google-oauth-client-id>
-GOOGLE_CLIENT_SECRET=<google-oauth-client-secret>
 ```
 
 ## Backend Docker Environment

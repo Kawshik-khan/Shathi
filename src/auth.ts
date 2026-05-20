@@ -1,5 +1,4 @@
 import NextAuth, { type NextAuthConfig } from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { apiFetch } from "@/lib/api";
 import { TokenResponse } from "@/types";
@@ -12,10 +11,6 @@ const config = {
   secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
   trustHost: true,
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
     CredentialsProvider({
       name: "Email",
       credentials: {
@@ -62,41 +57,13 @@ const config = {
     maxAge: 7 * 24 * 60 * 60, // 7 days
   },
   callbacks: {
-    async jwt({ token, user, account }) {
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
         token.email = user.email;
         token.name = user.name;
         token.picture = user.image;
         token.backendToken = (user as BackendAuthUser).backendToken;
-      }
-
-      // Handle Google OAuth
-      if (account?.provider === "google") {
-        try {
-          // Exchange Google token for backend token
-          const response = await apiFetch<TokenResponse>(
-            "/api/v1/auth/google-callback",
-            {
-              method: "POST",
-              body: JSON.stringify({
-                googleToken: account.id_token,
-                profile: {
-                  email: user?.email,
-                  name: user?.name,
-                  image: user?.image,
-                },
-              }),
-            }
-          );
-
-          if (response?.user) {
-            token.id = response.user.id;
-            token.backendToken = response.access_token;
-          }
-        } catch (error) {
-          console.error("Google callback error:", error);
-        }
       }
 
       return token;
