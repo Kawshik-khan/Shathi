@@ -12,14 +12,10 @@ export default function GoogleSignInButton() {
     setLoading(true);
     setError("");
     try {
-      const result = await signIn("google", {
+      await signIn("google", {
         redirect: true,
         callbackUrl: "/dashboard",
       });
-      
-      if (result?.error) {
-        setError("Failed to sign in with Google");
-      }
     } catch (err) {
       setError("An error occurred during sign in");
       console.error(err);

@@ -2,7 +2,11 @@ import NextAuth, { type NextAuthConfig } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { apiFetch } from "@/lib/api";
-import { TokenResponse, AuthUser } from "@/types";
+import { TokenResponse } from "@/types";
+
+type BackendAuthUser = {
+  backendToken?: string;
+};
 
 const config = {
   providers: [
@@ -41,7 +45,7 @@ const config = {
             image: tokens.user.avatar_url,
             backendToken: tokens.access_token,
           };
-        } catch (error) {
+        } catch {
           return null;
         }
       },
@@ -62,7 +66,7 @@ const config = {
         token.email = user.email;
         token.name = user.name;
         token.picture = user.image;
-        token.backendToken = (user as any).backendToken;
+        token.backendToken = (user as BackendAuthUser).backendToken;
       }
 
       // Handle Google OAuth
@@ -101,13 +105,6 @@ const config = {
         session.user.backendToken = token.backendToken as string;
       }
       return session;
-    },
-  },
-  events: {
-    async signIn({ user, account }) {
-      if (account?.provider === "credentials") {
-        // Credentials provider already handled by authorize callback
-      }
     },
   },
 } satisfies NextAuthConfig;
