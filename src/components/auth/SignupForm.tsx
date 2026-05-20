@@ -8,6 +8,7 @@ import { useAuthStore, useDashboardStore } from "@/lib/store";
 import { apiFetch } from "@/lib/api";
 import { LoginRequest, TokenResponse, AuthUser } from "@/types";
 import { useTranslation } from "react-i18next";
+import GoogleSignInButton from "./GoogleSignInButton";
 
 export default function SignupForm() {
   const [name, setName] = useState("");
@@ -195,10 +196,7 @@ export default function SignupForm() {
           <hr className="flex-1 border-gray-200" />
         </div>
 
-        <div className="grid grid-cols-2 gap-2 sm:gap-3">
-          <button type="button" disabled className="py-2.5 sm:py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-400 text-xs sm:text-sm font-medium cursor-not-allowed">Google soon</button>
-          <button type="button" disabled className="py-2.5 sm:py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-400 text-xs sm:text-sm font-medium cursor-not-allowed">Apple soon</button>
-        </div>
+        <GoogleSignInButton />
 
         <p className="text-center text-xs sm:text-sm text-[#64748B] mt-4 sm:mt-5">{t('auth.alreadyHaveAccount')} <a href="/auth/login" className="text-[#22C55E] font-medium hover:underline">{t('actions.logIn')}</a></p>
       </form>

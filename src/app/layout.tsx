@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/theme-provider";
 import { I18nProvider } from "@/components/i18n-provider";
+import { AuthProvider } from "@/components/auth/AuthProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -56,11 +57,13 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col font-sans" suppressHydrationWarning={true}>
-        <I18nProvider>
-          <ThemeProvider>
-            {children}
-          </ThemeProvider>
-        </I18nProvider>
+        <AuthProvider>
+          <I18nProvider>
+            <ThemeProvider>
+              {children}
+            </ThemeProvider>
+          </I18nProvider>
+        </AuthProvider>
       </body>
     </html>
   );
