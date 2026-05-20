@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, Eye, EyeOff, User } from "lucide-react";
 import { motion } from "framer-motion";
@@ -25,6 +25,10 @@ export default function SignupForm() {
   const login = useAuthStore((state) => state.login);
   const { i18n, t } = useTranslation();
 
+  useEffect(() => {
+    router.prefetch("/dashboard");
+  }, [router]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -47,7 +51,7 @@ export default function SignupForm() {
       const tokens: TokenResponse = await apiFetch<TokenResponse>('/api/v1/auth/register', {
         method: "POST",
         body: JSON.stringify(signupRequest),
-      });
+      }, 0);
 
       // Use user data from response
       const user: AuthUser = {
@@ -62,13 +66,13 @@ export default function SignupForm() {
 
       login(user, tokens);
       if (user.language) {
-        await i18n.changeLanguage(user.language);
+        void i18n.changeLanguage(user.language);
       }
       useDashboardStore.getState().setUser(user);
       const nextPath = typeof window !== 'undefined'
         ? new URLSearchParams(window.location.search).get("next")
         : null;
-      router.push(nextPath || "/dashboard");
+      router.replace(nextPath || "/dashboard");
     } catch (err) {
       if (err && typeof err === 'object' && 'status' in err) {
         const apiErr = err as unknown as { code?: string; message?: string };
@@ -78,6 +82,9 @@ export default function SignupForm() {
             break;
           case 'UNAUTHORIZED':
             setError(t('errors.accountCreationFailed'));
+            break;
+          case 'CONFLICT':
+            setError('An account with this email already exists.');
             break;
           case 'SERVER_ERROR':
             setError(t('errors.server'));

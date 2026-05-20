@@ -23,6 +23,9 @@ from app.services.localization import (
 )
 
 
+CHAT_HISTORY_MESSAGE_LIMIT = 40
+
+
 def _select_conversation_language(
     conversation: Conversation,
     message_content: str,
@@ -144,14 +147,19 @@ async def create_message(
 
 async def get_conversation_messages(
     db: AsyncSession, 
-    conversation_id: str
+    conversation_id: str,
+    limit: Optional[int] = None,
 ) -> List[Message]:
     """Get all messages in a conversation."""
-    result = await db.execute(
-        select(Message)
-        .where(Message.conversation_id == conversation_id)
-        .order_by(Message.created_at)
-    )
+    statement = select(Message).where(Message.conversation_id == conversation_id)
+
+    if limit is not None:
+        result = await db.execute(
+            statement.order_by(desc(Message.created_at)).limit(limit)
+        )
+        return list(reversed(result.scalars().all()))
+
+    result = await db.execute(statement.order_by(Message.created_at))
     return result.scalars().all()
 
 
@@ -222,15 +230,22 @@ async def send_chat_message(
         return conversation, user_message, ai_message
     
     # Get conversation history for context
-    messages = await get_conversation_messages(db, conversation.id)
+    messages = await get_conversation_messages(
+        db,
+        conversation.id,
+        limit=CHAT_HISTORY_MESSAGE_LIMIT + 1,
+    )
     
     # Format messages for AI
     conversation_history = []
     for msg in messages:
+        if msg.id == user_message.id:
+            continue
         conversation_history.append({
             "role": msg.role,
             "content": msg.content
         })
+    conversation_history = conversation_history[-CHAT_HISTORY_MESSAGE_LIMIT:]
 
     chat_context = await build_chat_context(
         db=db,
@@ -278,8 +293,7 @@ async def send_chat_message(
     )
     
     # Update conversation title if this is the first exchange
-    messages_count = len(messages)
-    if messages_count <= 2:  # Just user message and AI response
+    if conversation.title == "New Chat":
         # Generate a title from the first user message
         title = message_content[:50] + "..." if len(message_content) > 50 else message_content
         conversation.title = title
@@ -361,11 +375,17 @@ async def send_chat_message_stream(
         }
         return
 
-    messages = await get_conversation_messages(db, conversation.id)
+    messages = await get_conversation_messages(
+        db,
+        conversation.id,
+        limit=CHAT_HISTORY_MESSAGE_LIMIT + 1,
+    )
     conversation_history = [
         {"role": msg.role, "content": msg.content}
         for msg in messages
+        if msg.id != user_message.id
     ]
+    conversation_history = conversation_history[-CHAT_HISTORY_MESSAGE_LIMIT:]
     chat_context = await build_chat_context(
         db=db,
         user_id=user_id,

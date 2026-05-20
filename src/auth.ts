@@ -2,6 +2,7 @@ import NextAuth, { type NextAuthConfig } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { apiFetch } from "@/lib/api";
+import { exchangeGoogleTokenForBackendTokens } from "@/lib/server/backend-auth";
 import { AuthUser, TokenResponse } from "@/types";
 
 type BackendAuthUser = {
@@ -81,21 +82,14 @@ const config = {
       }
 
       if (account?.provider === "google" && account.id_token) {
-        const response = await apiFetch<TokenResponse>(
-          "/api/v1/auth/google-callback",
-          {
-            method: "POST",
-            body: JSON.stringify({
-              googleToken: account.id_token,
-              profile: {
-                email: user?.email,
-                name: user?.name,
-                image: user?.image,
-              },
-            }),
+        const response = await exchangeGoogleTokenForBackendTokens({
+          googleToken: account.id_token,
+          profile: {
+            email: user?.email,
+            name: user?.name,
+            image: user?.image,
           },
-          0
-        );
+        });
 
         if (response.user) {
           token.id = response.user.id;

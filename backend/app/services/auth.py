@@ -3,7 +3,9 @@ from typing import Any
 
 import httpx
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import raiseload
 
 from app.core.config import get_settings
 from app.core.security import (
@@ -18,13 +20,28 @@ from app.models.user import User
 settings = get_settings()
 
 
+class DuplicateEmailError(ValueError):
+    """Raised when a registration email already belongs to a user."""
+
+
+def normalize_email(email: str) -> str:
+    """Normalize email addresses before auth lookups."""
+    return email.strip().lower()
+
+
+def user_auth_query():
+    """Return a user query that does not eager-load relationship graphs."""
+    return select(User).options(raiseload("*"))
+
+
 async def authenticate_user(
     db: AsyncSession,
     email: str,
     password: str,
 ) -> User | None:
     """Authenticate user with email and password."""
-    result = await db.execute(select(User).where(User.email == email))
+    normalized_email = normalize_email(email)
+    result = await db.execute(user_auth_query().where(User.email == normalized_email))
     user = result.scalar_one_or_none()
     
     if not user:
@@ -46,22 +63,29 @@ async def create_user(
     name: str,
 ) -> User:
     """Create a new user."""
+    normalized_email = normalize_email(email)
+
     # Check if user exists
-    result = await db.execute(select(User).where(User.email == email))
+    result = await db.execute(user_auth_query().where(User.email == normalized_email))
     existing = result.scalar_one_or_none()
     
     if existing:
-        raise ValueError("User with this email already exists")
+        raise DuplicateEmailError("User with this email already exists")
     
     # Create user
     user = User(
-        email=email,
+        email=normalized_email,
         name=name,
         hashed_password=get_password_hash(password),
     )
     
     db.add(user)
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError as exc:
+        await db.rollback()
+        raise DuplicateEmailError("User with this email already exists") from exc
+
     await db.refresh(user)
     
     return user
@@ -107,11 +131,11 @@ async def get_or_create_google_user(
     name = str(google_payload.get("name") or email.split("@")[0])
     avatar_url = google_payload.get("picture")
 
-    result = await db.execute(select(User).where(User.supabase_uid == google_sub))
+    result = await db.execute(user_auth_query().where(User.supabase_uid == google_sub))
     user = result.scalar_one_or_none()
 
     if not user:
-        result = await db.execute(select(User).where(User.email == email))
+        result = await db.execute(user_auth_query().where(User.email == email))
         user = result.scalar_one_or_none()
 
     if user:
@@ -137,7 +161,7 @@ async def get_or_create_google_user(
 
 async def get_user_by_id(db: AsyncSession, user_id: str) -> User | None:
     """Get user by ID."""
-    result = await db.execute(select(User).where(User.id == user_id))
+    result = await db.execute(user_auth_query().where(User.id == user_id))
     return result.scalar_one_or_none()
 
 

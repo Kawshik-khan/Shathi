@@ -2,7 +2,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import String, Text, DateTime, ForeignKey, Float, Integer, Boolean
+from sqlalchemy import String, Text, DateTime, ForeignKey, Float, Integer, Boolean, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -45,9 +45,10 @@ class Conversation(Base):
     messages = relationship(
         "Message",
         back_populates="conversation",
-        lazy="selectin",
+        lazy="raise",
         order_by="Message.created_at",
         cascade="all, delete-orphan",
+        passive_deletes=True,
     )
 
 
@@ -55,6 +56,9 @@ class Message(Base):
     """Chat message model."""
     
     __tablename__ = "messages"
+    __table_args__ = (
+        Index("ix_messages_conversation_id_created_at", "conversation_id", "created_at"),
+    )
     
     id: Mapped[str] = mapped_column(
         String(36),

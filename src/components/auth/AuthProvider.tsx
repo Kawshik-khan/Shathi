@@ -6,7 +6,7 @@ import { useAuthStore, useDashboardStore } from "@/lib/store";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   return (
-    <SessionProvider>
+    <SessionProvider refetchOnWindowFocus={false}>
       <AuthSessionBridge />
       {children}
     </SessionProvider>

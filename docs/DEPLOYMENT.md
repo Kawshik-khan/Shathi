@@ -25,6 +25,7 @@ Use `test:prod` before deployment. It runs frontend lint/typecheck/build and bac
 | Variable | Purpose |
 |---|---|
 | `NEXT_PUBLIC_API_URL` | Public backend origin, for example `https://api.example.com`. |
+| `BACKEND_API_URL` | Server-side backend origin for NextAuth callbacks. Use the same Render backend origin as `NEXT_PUBLIC_API_URL`. |
 | `AUTH_SECRET` | Required by NextAuth/Auth.js in production. Use a strong random value. |
 | `AUTH_URL` | Public frontend origin, for example `https://shathi.vercel.app`. |
 | `GOOGLE_CLIENT_ID` | Google OAuth client ID for sign-in. |
@@ -73,6 +74,7 @@ Required Vercel environment variable:
 
 ```env
 NEXT_PUBLIC_API_URL=https://shathi.onrender.com
+BACKEND_API_URL=https://shathi.onrender.com
 AUTH_URL=https://shathi.vercel.app
 AUTH_SECRET=<strong-random-secret>
 GOOGLE_CLIENT_ID=<google-oauth-client-id>

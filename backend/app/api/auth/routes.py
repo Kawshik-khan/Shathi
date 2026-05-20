@@ -6,6 +6,7 @@ from app.core.database import get_db
 from app.core.security import create_access_token, create_refresh_token
 from app.schemas.auth import Token, LoginRequest, RegisterRequest, RefreshTokenRequest, GoogleCallbackRequest
 from app.services.auth import (
+    DuplicateEmailError,
     authenticate_user,
     create_user,
     get_or_create_google_user,
@@ -48,12 +49,18 @@ async def register(
     db: AsyncSession = Depends(get_db),
 ) -> Token:
     """Register a new user."""
-    user = await create_user(
-        db,
-        email=request.email,
-        password=request.password,
-        name=request.name,
-    )
+    try:
+        user = await create_user(
+            db,
+            email=request.email,
+            password=request.password,
+            name=request.name,
+        )
+    except DuplicateEmailError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
     
     access_token = create_access_token({"sub": user.id})
     refresh_token = create_refresh_token({"sub": user.id})

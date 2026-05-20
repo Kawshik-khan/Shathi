@@ -252,6 +252,7 @@ export async function apiFetch<T = unknown>(
         error.status = response.status;
         error.code = response.status === 401 ? 'UNAUTHORIZED' :
                      response.status === 403 ? 'FORBIDDEN' :
+                     response.status === 409 ? 'CONFLICT' :
                      response.status === 404 ? 'NOT_FOUND' : 'CLIENT_ERROR';
         throw error;
       }
