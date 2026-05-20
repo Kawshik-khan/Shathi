@@ -26,6 +26,31 @@ export default function LoginForm() {
     router.prefetch("/dashboard");
   }, [router]);
 
+  const handleResetSession = () => {
+    const expiredCookie = "Path=/; Max-Age=0; SameSite=Lax";
+    const cookieNames = [
+      "sathi_auth",
+      "authjs.session-token",
+      "__Secure-authjs.session-token",
+      "next-auth.session-token",
+      "__Secure-next-auth.session-token",
+      "authjs.csrf-token",
+      "__Host-authjs.csrf-token",
+      "next-auth.csrf-token",
+      "__Host-next-auth.csrf-token",
+      "authjs.callback-url",
+      "__Secure-authjs.callback-url",
+      "next-auth.callback-url",
+      "__Secure-next-auth.callback-url",
+    ];
+
+    localStorage.removeItem("auth");
+    cookieNames.forEach((name) => {
+      document.cookie = `${name}=; ${expiredCookie}`;
+    });
+    window.location.assign("/auth/login");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -157,6 +182,14 @@ export default function LoginForm() {
         </div>
 
         <GoogleSignInButton />
+
+        <button
+          type="button"
+          onClick={handleResetSession}
+          className="w-full text-center text-xs text-[#64748B] hover:text-[#22C55E] transition-colors"
+        >
+          Having trouble after an update? Reset session
+        </button>
 
         <p className="text-center text-xs sm:text-sm text-[#64748B] mt-4 sm:mt-5">{t('auth.dontHaveAccount')} <a href="/auth/signup" className="text-[#22C55E] font-medium hover:underline">{t('actions.signUp')}</a></p>
       </form>

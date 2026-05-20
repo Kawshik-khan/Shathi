@@ -12,8 +12,29 @@ type BackendAuthUser = {
   backendUser?: AuthUser;
 };
 
+function getAuthSecret(): string | string[] {
+  const primarySecret = process.env.AUTH_SECRET;
+  const fallbackSecret = process.env.NEXTAUTH_SECRET;
+  const isStrictProduction = process.env.VERCEL_ENV === "production";
+  const rotationSecrets = [
+    process.env.AUTH_SECRET_1,
+    process.env.AUTH_SECRET_2,
+    process.env.AUTH_SECRET_3,
+  ].filter((secret): secret is string => Boolean(secret));
+
+  if (isStrictProduction) {
+    if (!primarySecret || primarySecret === "generate_secure_random_string") {
+      throw new Error("AUTH_SECRET must be set to a stable random value in Vercel production.");
+    }
+
+    return [primarySecret, ...rotationSecrets];
+  }
+
+  return primarySecret ?? fallbackSecret ?? "development-auth-secret";
+}
+
 const config = {
-  secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
+  secret: getAuthSecret(),
   trustHost: true,
   providers: [
     GoogleProvider({
