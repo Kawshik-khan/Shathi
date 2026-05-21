@@ -1,10 +1,10 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { useDashboardStore } from '@/lib/store';
+import { useAuthStore, useDashboardStore } from '@/lib/store';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   Sparkles,
@@ -20,6 +20,7 @@ import {
   ChevronDown,
   X,
   Menu,
+  LogOut,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -41,8 +42,16 @@ const navigation = [
 export function MobileSidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   const { user } = useDashboardStore();
+  const logout = useAuthStore((state) => state.logout);
   const { t } = useTranslation();
+
+  const handleLogout = () => {
+    setIsOpen(false);
+    logout();
+    router.push('/landing');
+  };
 
   // Prevent body scroll when sidebar is open
   useEffect(() => {
@@ -60,12 +69,16 @@ export function MobileSidebar() {
     <>
       {/* Mobile Header Bar */}
       <header className="lg:hidden fixed top-0 left-0 right-0 z-50 glass-card-strong px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <Link
+          href="/landing"
+          className="flex items-center gap-3"
+          aria-label="Go to landing page"
+        >
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#7ED957] to-[#22C55E] flex items-center justify-center shadow-lg shadow-green-500/20">
             <span className="text-white font-bold">S</span>
           </div>
           <span className="font-semibold text-foreground">Sathi</span>
-        </div>
+        </Link>
 
         <div className="flex items-center gap-2">
           <LanguageToggle />
@@ -119,12 +132,17 @@ export function MobileSidebar() {
           >
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
+              <Link
+                href="/landing"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-3"
+                aria-label="Go to landing page"
+              >
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7ED957] to-[#22C55E] flex items-center justify-center shadow-lg shadow-green-500/20">
                   <span className="text-white font-bold text-lg">S</span>
                 </div>
                 <span className="font-semibold text-lg text-foreground">Sathi</span>
-              </div>
+              </Link>
               <button
                 onClick={() => setIsOpen(false)}
                 className="p-2 rounded-lg hover:bg-[#F3FAF4] transition-colors"
@@ -197,6 +215,15 @@ export function MobileSidebar() {
               </div>
               <ChevronDown className="w-4 h-4 text-muted-foreground" />
             </Link>
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="mt-2 flex w-full items-center gap-3 px-2 py-3 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+            >
+              <LogOut className="w-5 h-5" />
+              <span>{t('header.logout')}</span>
+            </button>
           </motion.aside>
         )}
       </AnimatePresence>

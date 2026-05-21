@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { Star, Users, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -57,8 +58,8 @@ export function HeroSection() {
               transition={{ delay: 0.5 }}
               className="flex flex-col sm:flex-row gap-4 mb-8"
             >
-              <Button size="lg" className="btn-primary-gradient text-lg px-8 py-4">
-                Start Your Journey
+              <Button asChild size="lg" className="btn-primary-gradient text-lg px-8 py-4">
+                <Link href="/auth/login">Start Your Journey</Link>
               </Button>
               <Button size="lg" variant="outline" className="text-lg px-8 py-4">
                 Watch Demo
