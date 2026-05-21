@@ -1,4 +1,6 @@
 """Main FastAPI application entry point."""
+import asyncio
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
@@ -17,6 +19,8 @@ from app.core.logging import configure_logging
 from app.api.router import api_router
 from app.core.database import Base, engine
 
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -24,6 +28,31 @@ async def lifespan(app: FastAPI):
     # Startup
     settings = get_settings()
     configure_logging(settings.LOG_LEVEL)
+    app.state.pinecone_index = None
+    app.state.redis = None
+
+    if settings.PINECONE_API_KEY:
+        try:
+            from pinecone import Pinecone
+
+            pc = Pinecone(api_key=settings.PINECONE_API_KEY)
+            app.state.pinecone_index = pc.Index(settings.PINECONE_INDEX_NAME)
+        except Exception as exc:
+            logger.warning("Pinecone init failed: %s; vector context disabled", exc)
+
+    try:
+        import redis.asyncio as aioredis
+
+        redis_client = aioredis.from_url(
+            settings.REDIS_URL,
+            decode_responses=True,
+            socket_connect_timeout=1,
+            socket_timeout=1,
+        )
+        await redis_client.ping()
+        app.state.redis = redis_client
+    except Exception as exc:
+        logger.warning("Redis init failed: %s; user context cache disabled", exc)
     
     # Production schema changes are handled by Alembic migrations.
     if settings.AUTO_CREATE_TABLES:
@@ -33,6 +62,8 @@ async def lifespan(app: FastAPI):
     yield
     
     # Shutdown
+    if app.state.redis:
+        await app.state.redis.aclose()
     await engine.dispose()
 
 
@@ -87,7 +118,39 @@ def create_application() -> FastAPI:
     
     @app.get("/health", tags=["health"])
     async def health_check():
-        return {"status": "healthy", "service": "sathi-api"}
+        async def check_redis() -> str:
+            redis_client = getattr(app.state, "redis", None)
+            if not redis_client:
+                return "unavailable"
+            try:
+                async with asyncio.timeout(1.0):
+                    await redis_client.ping()
+                return "connected"
+            except Exception:
+                return "unavailable"
+
+        async def check_pinecone() -> str:
+            pinecone_index = getattr(app.state, "pinecone_index", None)
+            if not pinecone_index:
+                return "unavailable"
+            try:
+                async with asyncio.timeout(1.0):
+                    await asyncio.to_thread(pinecone_index.describe_index_stats)
+                return "connected"
+            except Exception:
+                return "unavailable"
+
+        redis_status, pinecone_status = await asyncio.gather(
+            check_redis(),
+            check_pinecone(),
+        )
+
+        return {
+            "status": "healthy",
+            "service": "sathi-api",
+            "pinecone": pinecone_status,
+            "redis": redis_status,
+        }
     
     return app
 

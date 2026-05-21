@@ -66,6 +66,14 @@ class Settings(BaseSettings):
     PINECONE_API_KEY: Optional[str] = None
     PINECONE_INDEX_NAME: str = "sathi-memories"
     PINECONE_ENVIRONMENT: str = "us-east-1"
+
+    # Redis
+    REDIS_URL: str = "redis://localhost:6379/0"
+
+    # Chat optimization
+    CHAT_HISTORY_LIMIT: int = 12
+    EMBEDDING_TIMEOUT_SECONDS: float = 3.0
+    USER_CONTEXT_CACHE_TTL: int = 300
     
     # Cloudflare KV
     CLOUDFLARE_ACCOUNT_ID: Optional[str] = None

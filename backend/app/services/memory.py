@@ -1,44 +1,19 @@
 """Memory service using Pinecone for vector storage."""
 import asyncio
+import logging
 from typing import List, Dict, Any, Optional
 import uuid
 
 import httpx
 import openai
 
-try:
-    from pinecone import Pinecone
-    HAS_PINECONE = True
-except ImportError:
-    HAS_PINECONE = False
-    Pinecone = None
-
 from app.core.config import get_settings
 
+logger = logging.getLogger(__name__)
 settings = get_settings()
 
 # Initialize OpenAI for embeddings
 openai_client = openai.AsyncOpenAI(api_key=settings.OPENAI_API_KEY) if settings.OPENAI_API_KEY else None
-
-# Initialize Pinecone client
-pc: Optional[Pinecone] = None
-pinecone_index = None
-
-
-def get_pinecone_index():
-    """Return a Pinecone index lazily to avoid network calls during import."""
-    global pc, pinecone_index
-    if pinecone_index:
-        return pinecone_index
-    if not HAS_PINECONE or not settings.PINECONE_API_KEY:
-        return None
-
-    try:
-        pc = pc or Pinecone(api_key=settings.PINECONE_API_KEY)
-        pinecone_index = pc.Index(settings.PINECONE_INDEX_NAME)
-        return pinecone_index
-    except Exception:
-        return None
 
 
 async def generate_embedding(text: str) -> List[float]:
@@ -99,10 +74,10 @@ async def store_memory(
     importance: float = 0.5,
     source_type: Optional[str] = None,
     source_id: Optional[str] = None,
+    pinecone_index=None,
 ) -> Dict[str, Any]:
     """Store a memory in Pinecone."""
-    index = get_pinecone_index()
-    if not index:
+    if not pinecone_index:
         # Fallback: return mock success
         return {
             "id": str(uuid.uuid4()),
@@ -112,35 +87,32 @@ async def store_memory(
             "reason": "Pinecone not configured",
         }
 
-    # Generate embedding
-    embedding = await generate_embedding(memory_text)
-
     # Create unique ID
     memory_id = str(uuid.uuid4())
 
-    # Prepare metadata
-    metadata = {
-        "user_id": user_id,
-        "memory_text": memory_text[:1000],  # Truncate for metadata
-        "emotion": emotion or "neutral",
-        "category": category or "general",
-        "importance": importance,
-        "source_type": source_type or "unknown",
-        "source_id": source_id or "",
-    }
-
     # Store in Pinecone using SDK
     try:
-        await asyncio.to_thread(
-            index.upsert,
-            vectors=[
-                {
-                    "id": memory_id,
-                    "values": embedding,
-                    "metadata": metadata,
-                }
-            ]
-        )
+        async with asyncio.timeout(settings.EMBEDDING_TIMEOUT_SECONDS):
+            embedding = await generate_embedding(memory_text)
+            metadata = {
+                "user_id": user_id,
+                "memory_text": memory_text[:1000],  # Truncate for metadata
+                "emotion": emotion or "neutral",
+                "category": category or "general",
+                "importance": importance,
+                "source_type": source_type or "unknown",
+                "source_id": source_id or "",
+            }
+            await asyncio.to_thread(
+                pinecone_index.upsert,
+                vectors=[
+                    {
+                        "id": memory_id,
+                        "values": embedding,
+                        "metadata": metadata,
+                    }
+                ],
+            )
 
         return {
             "id": memory_id,
@@ -150,6 +122,7 @@ async def store_memory(
             "pinecone_id": memory_id,
         }
     except Exception as e:
+        logger.warning("Pinecone store failed: %s", e)
         return {
             "id": memory_id,
             "user_id": user_id,
@@ -164,30 +137,28 @@ async def retrieve_memories(
     query: str,
     top_k: int = 5,
     emotion_filter: Optional[str] = None,
+    pinecone_index=None,
 ) -> List[Dict[str, Any]]:
     """Retrieve relevant memories for a user."""
-    index = get_pinecone_index()
-    if not index:
+    if not pinecone_index:
         # Return empty list if Pinecone not configured
         return []
 
-    # Generate query embedding
-    query_embedding = await generate_embedding(query)
-
-    # Build filter
-    filter_dict = {"user_id": user_id}
-    if emotion_filter:
-        filter_dict["emotion"] = emotion_filter
-
     # Query Pinecone using SDK
     try:
-        result = await asyncio.to_thread(
-            index.query,
-            vector=query_embedding,
-            top_k=top_k,
-            filter=filter_dict,
-            include_metadata=True,
-        )
+        async with asyncio.timeout(settings.EMBEDDING_TIMEOUT_SECONDS):
+            query_embedding = await generate_embedding(query)
+            filter_dict = {"user_id": user_id}
+            if emotion_filter:
+                filter_dict["emotion"] = emotion_filter
+
+            result = await asyncio.to_thread(
+                pinecone_index.query,
+                vector=query_embedding,
+                top_k=top_k,
+                filter=filter_dict,
+                include_metadata=True,
+            )
 
         memories = []
         for match in result.get("matches", []):
@@ -201,7 +172,8 @@ async def retrieve_memories(
             })
 
         return memories
-    except Exception:
+    except Exception as exc:
+        logger.warning("Pinecone retrieve failed: %s", exc)
         return []
 
 
@@ -254,7 +226,8 @@ async def retrieve_memories_langchain(
             })
 
         return memories
-    except Exception:
+    except Exception as exc:
+        logger.warning("Pinecone retrieve failed: %s", exc)
         return []
 
 
@@ -263,37 +236,31 @@ async def retrieve_relevant_memories(
     query: str,
     top_k: int = 5,
     emotion_filter: Optional[str] = None,
+    pinecone_index=None,
 ) -> List[Dict[str, Any]]:
-    """Retrieve memories with LangChain first, then fallback to the native Pinecone client."""
-    memories = await retrieve_memories_langchain(
-        user_id=user_id,
-        query=query,
-        top_k=top_k,
-        emotion_filter=emotion_filter,
-    )
-    if memories:
-        return memories
-
+    """Retrieve memories through the startup-initialized Pinecone index."""
     return await retrieve_memories(
         user_id=user_id,
         query=query,
         top_k=top_k,
         emotion_filter=emotion_filter,
+        pinecone_index=pinecone_index,
     )
 
 
-async def delete_memory(user_id: str, memory_id: str) -> bool:
+async def delete_memory(user_id: str, memory_id: str, pinecone_index=None) -> bool:
     """Delete a memory from Pinecone."""
-    index = get_pinecone_index()
-    if not index:
+    if not pinecone_index:
         return False
 
     try:
-        await asyncio.to_thread(
-            index.delete,
-            ids=[memory_id]
-        )
+        async with asyncio.timeout(settings.EMBEDDING_TIMEOUT_SECONDS):
+            await asyncio.to_thread(
+                pinecone_index.delete,
+                ids=[memory_id],
+            )
         return True
-    except Exception:
+    except Exception as exc:
+        logger.warning("Pinecone delete failed: %s", exc)
         return False
 

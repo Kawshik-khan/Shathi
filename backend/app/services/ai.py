@@ -257,6 +257,7 @@ def _build_messages(
     dialogue_mode: DialogueMode | None = None,
     style_retry: bool = False,
     user_context: str | None = None,
+    conversation_summary: str | None = None,
 ) -> List[Dict[str, str]]:
     """Build the messages array with system prompt + history + user message."""
     localized_context = cultural_context_for(language)
@@ -286,6 +287,11 @@ def _build_messages(
         )
 
     messages = [{"role": "system", "content": "\n\n".join(system_prompt_parts)}]
+    if conversation_summary:
+        messages.append({
+            "role": "system",
+            "content": f"[Earlier conversation summary]: {conversation_summary}",
+        })
     messages.extend(conversation_history)
     messages.append({"role": "user", "content": message})
     return messages
@@ -311,6 +317,7 @@ async def generate_chat_response(
     model: Literal["llama-3.3-70b", "deepseek-v4-pro"] = "llama-3.3-70b",
     language: str | None = None,
     user_context: str | None = None,
+    conversation_summary: str | None = None,
     stream: bool = False,
 ) -> str:
     """Generate AI chat response with automatic fallback."""
@@ -333,6 +340,7 @@ async def generate_chat_response(
                 selected_language,
                 dialogue_mode,
                 user_context=user_context,
+                conversation_summary=conversation_summary,
             )
             content = await _complete_chat(client, model_id, messages)
             if content and needs_style_rewrite(content):
@@ -362,6 +370,7 @@ async def rewrite_chat_response(
     model: Literal["llama-3.3-70b", "deepseek-v4-pro"] = "llama-3.3-70b",
     language: str | None = None,
     user_context: str | None = None,
+    conversation_summary: str | None = None,
 ) -> str:
     """Rewrite an assistant response that violated casual chat style."""
     client = _get_hf_client()
@@ -377,6 +386,7 @@ async def rewrite_chat_response(
             dialogue_mode,
             style_retry=True,
             user_context=user_context,
+            conversation_summary=conversation_summary,
         )
         messages.extend(
             [
@@ -397,6 +407,7 @@ async def generate_streaming_response(
     model: Literal["llama-3.3-70b", "deepseek-v4-pro"] = "llama-3.3-70b",
     language: str | None = None,
     user_context: str | None = None,
+    conversation_summary: str | None = None,
 ) -> AsyncGenerator[str, None]:
     """Generate streaming AI response via SSE."""
     client = _get_hf_client()
@@ -408,6 +419,7 @@ async def generate_streaming_response(
         selected_language,
         dialogue_mode,
         user_context=user_context,
+        conversation_summary=conversation_summary,
     )
 
     model_id = MODEL_REGISTRY.get(model)
@@ -436,6 +448,7 @@ async def generate_streaming_response(
             model,
             language=selected_language,
             user_context=user_context,
+            conversation_summary=conversation_summary,
             stream=False,
         )
         yield fallback_response

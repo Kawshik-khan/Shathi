@@ -1,9 +1,11 @@
 """Chat service for database operations."""
+import asyncio
 from datetime import datetime, timezone
 from typing import List, Optional
 from sqlalchemy import select, and_, desc, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.models.conversation import Conversation, Message
 from app.schemas.chat import Conversation as ConversationSchema, MessageCreate
 from app.services.ai import (
@@ -21,9 +23,20 @@ from app.services.localization import (
     should_switch_to_bangla,
     should_switch_to_english,
 )
+from app.services.summarization import summarize_conversation_background
 
 
-CHAT_HISTORY_MESSAGE_LIMIT = 40
+def _chat_history_limit() -> int:
+    return get_settings().CHAT_HISTORY_LIMIT
+
+
+async def _maybe_schedule_summary(db: AsyncSession, conversation_id: str) -> None:
+    result = await db.execute(
+        select(func.count(Message.id)).where(Message.conversation_id == conversation_id)
+    )
+    message_count = result.scalar() or 0
+    if message_count > 0 and message_count % 20 == 0:
+        asyncio.create_task(summarize_conversation_background(conversation_id))
 
 
 def _select_conversation_language(
@@ -170,6 +183,8 @@ async def send_chat_message(
     conversation_id: Optional[str] = None,
     model: str = "llama-3.3-70b",
     language: Optional[str] = None,
+    redis=None,
+    pinecone_index=None,
 ) -> tuple[Conversation, Message, Message]:
     """Send a message and get AI response."""
     # Get or create conversation
@@ -230,10 +245,11 @@ async def send_chat_message(
         return conversation, user_message, ai_message
     
     # Get conversation history for context
+    history_limit = _chat_history_limit()
     messages = await get_conversation_messages(
         db,
         conversation.id,
-        limit=CHAT_HISTORY_MESSAGE_LIMIT + 1,
+        limit=history_limit + 1,
     )
     
     # Format messages for AI
@@ -245,7 +261,7 @@ async def send_chat_message(
             "role": msg.role,
             "content": msg.content
         })
-    conversation_history = conversation_history[-CHAT_HISTORY_MESSAGE_LIMIT:]
+    conversation_history = conversation_history[-history_limit:]
 
     chat_context = await build_chat_context(
         db=db,
@@ -253,6 +269,8 @@ async def send_chat_message(
         message=message_content,
         conversation_id=conversation.id,
         language=selected_language,
+        redis=redis,
+        pinecone_index=pinecone_index,
     )
     
     # Generate AI response
@@ -262,6 +280,7 @@ async def send_chat_message(
         model=model,
         language=selected_language,
         user_context=chat_context.text,
+        conversation_summary=conversation.summary,
         stream=False,
     )
     unsafe_response, filtered_response = filter_unsafe_assistant_response(ai_response_content)
@@ -274,6 +293,7 @@ async def send_chat_message(
             model=model,
             language=selected_language,
             user_context=chat_context.text,
+            conversation_summary=conversation.summary,
         )
     
     # Detect emotion in AI response
@@ -291,6 +311,7 @@ async def send_chat_message(
         crisis_flag=unsafe_response,
         crisis_severity="medium" if unsafe_response else None,
     )
+    await _maybe_schedule_summary(db, conversation.id)
     
     # Update conversation title if this is the first exchange
     if conversation.title == "New Chat":
@@ -309,6 +330,8 @@ async def send_chat_message_stream(
     conversation_id: Optional[str] = None,
     model: str = "llama-3.3-70b",
     language: Optional[str] = None,
+    redis=None,
+    pinecone_index=None,
 ):
     """Send a message and yield streaming response events."""
     if conversation_id:
@@ -375,23 +398,26 @@ async def send_chat_message_stream(
         }
         return
 
+    history_limit = _chat_history_limit()
     messages = await get_conversation_messages(
         db,
         conversation.id,
-        limit=CHAT_HISTORY_MESSAGE_LIMIT + 1,
+        limit=history_limit + 1,
     )
     conversation_history = [
         {"role": msg.role, "content": msg.content}
         for msg in messages
         if msg.id != user_message.id
     ]
-    conversation_history = conversation_history[-CHAT_HISTORY_MESSAGE_LIMIT:]
+    conversation_history = conversation_history[-history_limit:]
     chat_context = await build_chat_context(
         db=db,
         user_id=user_id,
         message=message_content,
         conversation_id=conversation.id,
         language=selected_language,
+        redis=redis,
+        pinecone_index=pinecone_index,
     )
 
     chunks: list[str] = []
@@ -401,6 +427,7 @@ async def send_chat_message_stream(
         model=model,
         language=selected_language,
         user_context=chat_context.text,
+        conversation_summary=conversation.summary,
     ):
         chunks.append(chunk)
         yield {"type": "chunk", "chunk": chunk}
@@ -419,6 +446,7 @@ async def send_chat_message_stream(
             model=model,
             language=selected_language,
             user_context=chat_context.text,
+            conversation_summary=conversation.summary,
         )
         yield {"type": "replace", "content": ai_response_content}
 
@@ -434,6 +462,7 @@ async def send_chat_message_stream(
         crisis_flag=unsafe_response,
         crisis_severity="medium" if unsafe_response else None,
     )
+    await _maybe_schedule_summary(db, conversation.id)
 
     if conversation.title == "New Chat":
         conversation.title = message_content[:50] + "..." if len(message_content) > 50 else message_content

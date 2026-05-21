@@ -4,8 +4,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
 from app.core.database import get_db
-from app.core.dependencies import get_current_active_user
+from app.core.dependencies import get_current_active_user, get_redis
 from app.schemas.journal import Journal as JournalSchema, JournalCreate, JournalUpdate
+from app.services.cache_service import invalidate_user_context
 from app.services.journal import (
     create_journal_entry as create_journal_entry_service,
     get_journal_entries as get_journal_entries_service,
@@ -24,10 +25,12 @@ async def create_journal_entry_endpoint(
     entry: JournalCreate,
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
+    redis=Depends(get_redis),
 ) -> JournalSchema:
     """Create a new journal entry."""
     try:
         journal_entry = await create_journal_entry_service(db, current_user.id, entry)
+        await invalidate_user_context(current_user.id, redis)
         
         return JournalSchema(
             id=journal_entry.id,
@@ -116,12 +119,14 @@ async def update_journal_entry(
     update: JournalUpdate,
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
+    redis=Depends(get_redis),
 ) -> JournalSchema:
     """Update a journal entry."""
     updated_entry = await update_journal_entry_service(db, current_user.id, entry_id, update)
     
     if not updated_entry:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Entry not found")
+    await invalidate_user_context(current_user.id, redis)
     
     return JournalSchema(
         id=updated_entry.id,

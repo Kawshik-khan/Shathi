@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
 from app.core.database import get_db
-from app.core.dependencies import get_current_active_user
+from app.core.dependencies import get_current_active_user, get_pinecone_index, get_redis
 from app.schemas.chat import (
     ChatRequest, 
     ChatResponse, 
@@ -35,6 +35,8 @@ async def send_message(
     request: ChatRequest,
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
+    redis=Depends(get_redis),
+    pinecone_index=Depends(get_pinecone_index),
 ) -> ChatResponse:
     """Send a message to the AI and get a response."""
     try:
@@ -45,6 +47,8 @@ async def send_message(
             conversation_id=request.conversation_id,
             model=request.model,
             language=request.language,
+            redis=redis,
+            pinecone_index=pinecone_index,
         )
 
         return ChatResponse(
@@ -72,6 +76,8 @@ async def stream_message(
     request: ChatRequest,
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
+    redis=Depends(get_redis),
+    pinecone_index=Depends(get_pinecone_index),
 ) -> StreamingResponse:
     """Send a message and stream the AI response as SSE chunks."""
 
@@ -84,6 +90,8 @@ async def stream_message(
                 conversation_id=request.conversation_id,
                 model=request.model,
                 language=request.language,
+                redis=redis,
+                pinecone_index=pinecone_index,
             ):
                 yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
         except ValueError as exc:

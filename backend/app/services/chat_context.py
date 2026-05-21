@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -12,7 +14,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.journal import Journal
 from app.models.mood import MoodLog
 from app.models.profile import UserProfile
+from app.services.cache_service import get_user_context_cached
 from app.services.memory import retrieve_relevant_memories
+
+logger = logging.getLogger(__name__)
 
 
 MAX_CONTEXT_CHARS = 1600
@@ -124,11 +129,12 @@ async def _get_journal_context(db: AsyncSession, user_id: str) -> list[str]:
     return parts
 
 
-async def _get_memory_context(user_id: str, message: str) -> tuple[list[str], int]:
+async def _get_memory_context(user_id: str, message: str, pinecone_index=None) -> tuple[list[str], int]:
     memories = await retrieve_relevant_memories(
         user_id=user_id,
         query=message,
         top_k=3,
+        pinecone_index=pinecone_index,
     )
     parts = [
         f"Relevant memory: {_truncate(memory.get('memory_text', ''), MAX_MEMORY_CHARS)}."
@@ -136,6 +142,69 @@ async def _get_memory_context(user_id: str, message: str) -> tuple[list[str], in
         if memory.get("memory_text")
     ]
     return parts, len(parts)
+
+
+def _format_cached_user_context(context: dict[str, Any]) -> tuple[list[str], str | None, str | None]:
+    parts: list[str] = []
+
+    profile = context.get("profile") or {}
+    support_style = profile.get("preferred_support_style")
+    if support_style:
+        parts.append(f"Preferred support style: {support_style}.")
+
+    wellness_goals = profile.get("wellness_goals")
+    if isinstance(wellness_goals, dict):
+        goals = ", ".join(str(item) for item in wellness_goals.values() if item)
+        if goals:
+            parts.append(f"Wellness goals: {_truncate(goals, 180)}.")
+
+    timezone_value = profile.get("timezone")
+    if timezone_value:
+        parts.append(f"Timezone: {timezone_value}.")
+
+    moods = context.get("moods") or []
+    recent = moods[:3]
+    older = moods[3:8]
+    mood_signal = None
+    prediction = None
+    if recent:
+        recent_avg = sum(item["mood"] for item in recent) / len(recent)
+        older_avg = (
+            sum(item["mood"] for item in older) / len(older)
+            if older
+            else recent_avg
+        )
+        stress_values = [
+            item["stress"]
+            for item in recent
+            if item.get("stress") is not None
+        ]
+        stress_avg = sum(stress_values) / len(stress_values) if stress_values else None
+
+        if recent_avg <= 4 or recent_avg < older_avg - 1:
+            mood_signal = "recent mood is low or trending down"
+            prediction = "needs gentle support"
+        elif recent_avg >= 7 and recent_avg > older_avg:
+            mood_signal = "recent mood is positive or improving"
+            prediction = "can use upbeat energy"
+        else:
+            mood_signal = "recent mood is stable"
+            prediction = "use normal casual tone"
+
+        if stress_avg is not None and stress_avg >= 7:
+            mood_signal = f"{mood_signal}; recent stress is high"
+            prediction = "may be stressed, keep reply calm and practical"
+
+        parts.append(f"Mood signal: {mood_signal}.")
+        if prediction:
+            parts.append(f"Predicted response need: {prediction}.")
+
+    for journal in context.get("journals") or []:
+        summary = journal.get("summary")
+        if summary:
+            parts.append(f"Recent journal theme: {_truncate(summary, MAX_JOURNAL_CHARS)}.")
+
+    return parts, mood_signal, prediction
 
 
 def _finalize_context(parts: list[str]) -> str:
@@ -157,17 +226,40 @@ async def build_chat_context(
     message: str,
     conversation_id: str | None = None,
     language: str | None = None,
+    redis=None,
+    pinecone_index=None,
 ) -> ChatContext:
     """Build compact RAG and analytics context for the current chat turn."""
-    profile_parts = await _get_profile_context(db, user_id)
-    mood_parts, mood_signal, prediction = await _get_mood_context(db, user_id)
-    journal_parts = await _get_journal_context(db, user_id)
-    memory_parts, memory_count = await _get_memory_context(user_id, message)
+    user_context: dict[str, Any] = {}
+    memory_parts: list[str] = []
+    memory_count = 0
+
+    try:
+        async with asyncio.timeout(5.0):
+            user_context_result, memory_result = await asyncio.gather(
+                get_user_context_cached(user_id, redis, db),
+                _get_memory_context(user_id, message, pinecone_index),
+                return_exceptions=True,
+            )
+    except Exception as exc:
+        logger.warning("Chat context fetch timed out or failed: %s", exc)
+        user_context_result = {}
+        memory_result = ([], 0)
+
+    if isinstance(user_context_result, Exception):
+        logger.warning("User context fetch failed: %s", user_context_result)
+    elif isinstance(user_context_result, dict):
+        user_context = user_context_result
+
+    if isinstance(memory_result, Exception):
+        logger.warning("Memory context fetch failed: %s", memory_result)
+    else:
+        memory_parts, memory_count = memory_result
+
+    user_parts, mood_signal, prediction = _format_cached_user_context(user_context)
 
     parts = [
-        *profile_parts,
-        *mood_parts,
-        *journal_parts,
+        *user_parts,
         *memory_parts,
     ]
     if language:

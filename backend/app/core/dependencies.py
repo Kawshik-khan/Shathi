@@ -1,7 +1,7 @@
 """FastAPI dependencies for authentication and authorization."""
 from typing import Optional
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -14,6 +14,16 @@ from app.models.user import User
 # HTTP Bearer token scheme. Keep auto_error disabled so our API returns the
 # same 401 response shape for missing and invalid credentials.
 security = HTTPBearer(auto_error=False)
+
+
+def get_pinecone_index(request: Request):
+    """Return the startup-initialized Pinecone index, if available."""
+    return getattr(request.app.state, "pinecone_index", None)
+
+
+def get_redis(request: Request):
+    """Return the startup-initialized Redis client, if available."""
+    return getattr(request.app.state, "redis", None)
 
 
 async def get_current_user_token(
