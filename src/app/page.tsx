@@ -5,7 +5,6 @@ import { SecondaryGrid } from "@/components/landing/secondary-grid";
 import { JournalSection } from "@/components/landing/journal-section";
 import { CTASection } from "@/components/landing/cta-section";
 import { Footer } from "@/components/landing/footer";
-import { MobileCTA } from "@/components/landing/mobile-cta";
 
 export default function LandingPage() {
   return (
@@ -19,7 +18,6 @@ export default function LandingPage() {
         <CTASection />
       </main>
       <Footer />
-      <MobileCTA />
     </div>
   );
 }
