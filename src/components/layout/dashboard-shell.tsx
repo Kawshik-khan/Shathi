@@ -4,6 +4,7 @@ import { Sidebar } from './sidebar';
 import { MobileSidebar } from './mobile-sidebar';
 import { Header } from './header';
 import { motion } from 'framer-motion';
+import { Suspense } from 'react';
 
 interface DashboardShellProps {
   children: React.ReactNode;
@@ -14,11 +15,15 @@ export function DashboardShell({ children }: DashboardShellProps) {
     <div className="min-h-screen">
       {/* Desktop Sidebar - hidden on mobile */}
       <div className="hidden lg:block">
-        <Sidebar />
+        <Suspense fallback={null}>
+          <Sidebar />
+        </Suspense>
       </div>
 
       {/* Mobile Sidebar */}
-      <MobileSidebar />
+      <Suspense fallback={null}>
+        <MobileSidebar />
+      </Suspense>
 
       {/* Main Content - responsive margins */}
       <main className="lg:ml-72 lg:mr-4 px-4 lg:px-0 py-6 min-h-screen">

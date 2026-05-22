@@ -6,6 +6,7 @@ import { Mail, Lock, Eye, EyeOff, User } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuthStore, useDashboardStore } from "@/lib/store";
 import { register as registerWithBackendSession } from "@/lib/api";
+import { getPostAuthRedirect } from "@/lib/auth-redirect";
 import { LoginRequest, TokenResponse, AuthUser } from "@/types";
 import { useTranslation } from "react-i18next";
 import GoogleSignInButton from "./GoogleSignInButton";
@@ -78,7 +79,7 @@ export default function SignupForm() {
       const nextPath = typeof window !== 'undefined'
         ? new URLSearchParams(window.location.search).get("next")
         : null;
-      router.replace(nextPath || "/dashboard");
+      router.replace(getPostAuthRedirect(user, nextPath));
     } catch (err) {
       if (err && typeof err === 'object' && 'status' in err) {
         const apiErr = err as unknown as { code?: string; message?: string };

@@ -2,9 +2,11 @@
 
 import { cn } from '@/lib/utils';
 import { useAuthStore, useDashboardStore } from '@/lib/store';
+import { SidebarPlanCard } from '@/components/layout/sidebar-plan-card';
+import { adminNavigationItems } from '@/components/layout/admin-navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import {
   LayoutDashboard,
   Sparkles,
@@ -16,9 +18,7 @@ import {
   BarChart3,
   Library,
   Settings,
-  Crown,
   ChevronDown,
-  Shield,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -29,7 +29,7 @@ type NavigationItem = {
   icon: typeof LayoutDashboard;
 };
 
-const navigation: NavigationItem[] = [
+const userNavigation: NavigationItem[] = [
   { key: 'dashboard', href: '/dashboard', icon: LayoutDashboard },
   { key: 'aiCompanion', href: '/ai-companion', icon: Sparkles },
   { key: 'mood', href: '/mood', icon: Smile },
@@ -42,20 +42,17 @@ const navigation: NavigationItem[] = [
   { key: 'settings', href: '/settings', icon: Settings },
 ];
 
-const adminNavigation: NavigationItem[] = [
-  { key: 'admin', label: 'Admin', href: '/admin', icon: Shield },
-];
-
 export function Sidebar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { user } = useDashboardStore();
   const authUser = useAuthStore((state) => state.user);
   const { t } = useTranslation();
-  const navigationItems = authUser?.system_role === 'admin'
-    ? [...navigation, ...adminNavigation]
-    : navigation;
-  const planLabel = user.plan === 'free'
-    ? t('plan.upgradeToPro')
+  const isAdmin = authUser?.system_role === 'admin';
+  const activeAdminTab = searchParams.get('tab') ?? 'overview';
+  const navigationItems = isAdmin ? adminNavigationItems : userNavigation;
+  const profilePlanLabel = user.plan === 'free'
+    ? 'Free Plan'
     : `${user.plan.charAt(0).toUpperCase()}${user.plan.slice(1)} Plan`;
 
   return (
@@ -76,7 +73,9 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 space-y-1 overflow-y-auto custom-scrollbar">
         {navigationItems.map((item, index) => {
-          const isActive = pathname === item.href;
+          const isActive = isAdmin
+            ? pathname === '/admin' && item.key === activeAdminTab
+            : pathname === item.href;
           const Icon = item.icon;
 
           return (
@@ -97,7 +96,7 @@ export function Sidebar() {
               >
                 <Icon className={cn('w-5 h-5', isActive && 'text-[#22C55E]')} />
                 <span>{item.label ?? t(`navigation.${item.key}`)}</span>
-                {item.key === 'aiCompanion' && (
+                {!isAdmin && item.key === 'aiCompanion' && (
                   <span className="ml-auto w-2 h-2 rounded-full bg-[#22C55E] animate-pulse" />
                 )}
               </Link>
@@ -106,22 +105,7 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Upgrade Card */}
-      <div className="mt-auto mb-4 p-4 rounded-2xl bg-gradient-to-br from-[#DCFCE7] to-[#EEF7EF] border border-[#A7F3A0]/30">
-        <div className="flex items-center gap-2 mb-2">
-          <Crown className="w-5 h-5 text-[#22C55E]" />
-          <span className="font-semibold text-sm text-foreground">{planLabel}</span>
-        </div>
-        <p className="text-xs text-muted-foreground mb-3">
-          {t('plan.unlock')}
-        </p>
-        <Link
-          href="/subscription"
-          className="block w-full py-2 px-4 rounded-full bg-[#22C55E] text-center text-white text-sm font-medium hover:bg-[#16A34A] transition-colors shadow-lg shadow-green-500/20"
-        >
-          {user.plan === 'free' ? t('actions.upgradeNow') : 'View plan'}
-        </Link>
-      </div>
+      {!isAdmin && <SidebarPlanCard fallbackPlan={user.plan} />}
 
       {/* User Profile */}
       <Link
@@ -133,7 +117,7 @@ export function Sidebar() {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-foreground truncate">{user.name}</p>
-          <p className="text-xs text-muted-foreground">{user.plan === 'free' ? 'Free Plan' : planLabel}</p>
+          <p className="text-xs text-muted-foreground">{isAdmin ? 'Administrator' : profilePlanLabel}</p>
         </div>
         <ChevronDown className="w-4 h-4 text-muted-foreground" />
       </Link>

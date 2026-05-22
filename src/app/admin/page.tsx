@@ -1,6 +1,11 @@
 'use client';
 
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import {
+  adminNavigationItems,
+  isAdminTab,
+  type AdminTab,
+} from '@/components/layout/admin-navigation';
 import { DashboardShell } from '@/components/layout/dashboard-shell';
 import { GlassCard } from '@/components/shared/glass-card';
 import {
@@ -42,6 +47,7 @@ import {
 } from '@/lib/api';
 import { useAuthStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Activity,
   AlertTriangle,
@@ -56,35 +62,13 @@ import {
   RotateCcw,
   Save,
   Search,
-  Server,
   Shield,
   Users,
   X,
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 
-type AdminTab =
-  | 'overview'
-  | 'users'
-  | 'subscriptions'
-  | 'content'
-  | 'safety'
-  | 'moderation'
-  | 'analytics'
-  | 'health'
-  | 'audit';
-
-const tabs: Array<{ key: AdminTab; label: string; icon: typeof Shield }> = [
-  { key: 'overview', label: 'Overview', icon: Shield },
-  { key: 'users', label: 'Users', icon: Users },
-  { key: 'subscriptions', label: 'Plans', icon: Crown },
-  { key: 'content', label: 'Content', icon: FileText },
-  { key: 'safety', label: 'Safety', icon: HeartPulse },
-  { key: 'moderation', label: 'Moderation', icon: ClipboardList },
-  { key: 'analytics', label: 'Analytics', icon: BarChart3 },
-  { key: 'health', label: 'Health', icon: Server },
-  { key: 'audit', label: 'Audit', icon: Activity },
-];
+const tabs = adminNavigationItems;
 
 const emptyContent: AdminLocalizedContentPayload = {
   content_type: 'article',
@@ -157,7 +141,9 @@ export default function AdminPage() {
   return (
     <ProtectedRoute>
       <DashboardShell>
-        <AdminWorkspace />
+        <Suspense fallback={null}>
+          <AdminWorkspace />
+        </Suspense>
       </DashboardShell>
     </ProtectedRoute>
   );
@@ -165,7 +151,10 @@ export default function AdminPage() {
 
 function AdminWorkspace() {
   const { user } = useAuthStore();
-  const [tab, setTab] = useState<AdminTab>('overview');
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const tab = isAdminTab(tabParam) ? tabParam : 'overview';
   const [overview, setOverview] = useState<AdminOverview | null>(null);
   const [users, setUsers] = useState<AdminUserSummary[]>([]);
   const [requests, setRequests] = useState<AdminSubscriptionRequest[]>([]);
@@ -192,6 +181,16 @@ function AdminWorkspace() {
   const [resourceDraft, setResourceDraft] = useState<AdminCrisisResourcePayload>(emptyResource);
 
   const isAdmin = user?.system_role === 'admin';
+
+  useEffect(() => {
+    if (tabParam && !isAdminTab(tabParam)) {
+      router.replace('/admin?tab=overview', { scroll: false });
+    }
+  }, [router, tabParam]);
+
+  const handleTabChange = useCallback((nextTab: AdminTab) => {
+    router.replace(`/admin?tab=${nextTab}`, { scroll: false });
+  }, [router]);
 
   const fetchAdminData = useCallback(() => {
     return Promise.all([
@@ -467,7 +466,7 @@ function AdminWorkspace() {
               <button
                 key={item.key}
                 type="button"
-                onClick={() => setTab(item.key)}
+                onClick={() => handleTabChange(item.key)}
                 className={cn(
                   'flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition-colors',
                   tab === item.key
