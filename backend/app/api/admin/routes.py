@@ -199,6 +199,9 @@ async def log_admin_event(
     target_id: str,
     metadata: dict[str, Any] | None = None,
 ) -> AdminAuditEventModel:
+    if not target_id:
+        raise ValueError("Admin audit event target_id is required")
+
     event = AdminAuditEventModel(
         admin_user_id=admin_user.id,
         action=action,
@@ -466,6 +469,7 @@ async def create_admin_content(
 ) -> AdminLocalizedContent:
     item = LocalizedContentModel(**payload.model_dump())
     db.add(item)
+    await db.flush()
     await log_admin_event(db, admin_user=admin_user, action="content.created", target_type="localized_content", target_id=item.id, metadata={"title": item.title})
     await db.commit()
     await db.refresh(item)
@@ -539,6 +543,7 @@ async def create_admin_crisis_resource(
 ) -> AdminCrisisResource:
     resource = CrisisResourceModel(**payload.model_dump())
     db.add(resource)
+    await db.flush()
     await log_admin_event(db, admin_user=admin_user, action="crisis_resource.created", target_type="crisis_resource", target_id=resource.id, metadata={"name": resource.name})
     await db.commit()
     await db.refresh(resource)
