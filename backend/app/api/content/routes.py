@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.dependencies import get_current_active_user
+from app.core.dependencies import require_system_role
 from app.models.localization import LocalizedContent as LocalizedContentModel
 from app.models.user import User
 from app.schemas.localization import (
@@ -17,6 +17,7 @@ from app.schemas.localization import (
 )
 
 router = APIRouter()
+ADMIN_ONLY = require_system_role("admin")
 
 
 @router.get("/localized", response_model=List[LocalizedContent])
@@ -45,7 +46,7 @@ async def get_localized_content(
 @router.post("/admin", response_model=LocalizedContent, status_code=status.HTTP_201_CREATED)
 async def create_content(
     content: LocalizedContentCreate,
-    _: User = Depends(get_current_active_user),
+    _: User = Depends(ADMIN_ONLY),
     db: AsyncSession = Depends(get_db),
 ) -> LocalizedContentModel:
     """Create localized content."""
@@ -60,7 +61,7 @@ async def create_content(
 async def update_content(
     content_id: str,
     content: LocalizedContentUpdate,
-    _: User = Depends(get_current_active_user),
+    _: User = Depends(ADMIN_ONLY),
     db: AsyncSession = Depends(get_db),
 ) -> LocalizedContentModel:
     """Update localized content."""

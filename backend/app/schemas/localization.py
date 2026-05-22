@@ -62,6 +62,9 @@ class CrisisResourceBase(BaseSchema):
     type: str
     language: str = "bn"
     is_24_7: bool = False
+    description: Optional[str] = None
+    url: Optional[str] = None
+    active: bool = True
 
 
 class CrisisResource(CrisisResourceBase):
@@ -69,6 +72,7 @@ class CrisisResource(CrisisResourceBase):
 
     id: str
     created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
 
 class FamilyCreate(BaseSchema):
@@ -183,4 +187,9 @@ class CommunityPost(BaseSchema):
     content: str
     language: str
     is_anonymous: bool
+    moderation_status: str = "visible"
+    moderation_reason: Optional[str] = None
+    hidden_at: Optional[datetime] = None
+    hidden_by: Optional[str] = None
+    reviewed_at: Optional[datetime] = None
     created_at: datetime

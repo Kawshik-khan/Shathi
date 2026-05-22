@@ -82,7 +82,12 @@ class User(Base):
     memories = relationship("Memory", back_populates="user", lazy="selectin")
     family = relationship("Family", back_populates="members", lazy="selectin")
     academic_entries = relationship("AcademicTracking", back_populates="user", lazy="selectin")
-    community_posts = relationship("CommunityPost", back_populates="user", lazy="selectin")
+    community_posts = relationship(
+        "CommunityPost",
+        back_populates="user",
+        lazy="selectin",
+        foreign_keys="CommunityPost.user_id",
+    )
     community_memberships = relationship("CommunityMember", back_populates="user", lazy="selectin")
     settings = relationship(
         "UserSettings",

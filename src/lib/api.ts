@@ -1,3 +1,5 @@
+import type { TokenResponse } from '@/types';
+
 export interface ApiError extends Error {
   status?: number;
   code?: string;
@@ -48,6 +50,177 @@ export interface SubscriptionRequest {
 export interface SubscriptionRequestCreate {
   requested_plan: 'premium' | 'family';
   message?: string | null;
+}
+
+export interface AdminUserSummary {
+  id: string;
+  email: string;
+  name: string;
+  avatar_url?: string | null;
+  is_active: boolean;
+  system_role: 'user' | 'admin';
+  plan: 'free' | 'premium' | 'family';
+  subscription_status: 'active' | 'trialing' | 'past_due' | 'canceled';
+  subscription_started_at?: string | null;
+  subscription_ends_at?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+export interface AdminUserUpdate {
+  is_active?: boolean;
+  system_role?: 'user' | 'admin';
+  plan?: 'free' | 'premium' | 'family';
+  subscription_status?: 'active' | 'trialing' | 'past_due' | 'canceled';
+  subscription_ends_at?: string | null;
+}
+
+export interface AdminAuditEvent {
+  id: string;
+  admin_user_id?: string | null;
+  action: string;
+  target_type: string;
+  target_id: string;
+  event_metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface AdminSubscriptionRequest extends SubscriptionRequest {
+  user: AdminUserSummary;
+}
+
+export interface AdminCommunityPost {
+  id: string;
+  user_id: string;
+  community_id: string;
+  content: string;
+  language: 'en' | 'bn' | string;
+  is_anonymous: boolean;
+  moderation_status: 'visible' | 'hidden' | 'reviewed' | string;
+  moderation_reason?: string | null;
+  hidden_at?: string | null;
+  hidden_by?: string | null;
+  reviewed_at?: string | null;
+  created_at: string;
+  author_name?: string | null;
+  author_email?: string | null;
+  community_name?: string | null;
+}
+
+export interface AdminOverview {
+  total_users: number;
+  active_users: number;
+  pending_subscription_requests: number;
+  open_safety_reviews: number;
+  crisis_messages: number;
+  content_drafts: number;
+  hidden_community_posts: number;
+  plan_counts: Record<string, number>;
+  recent_users: AdminUserSummary[];
+  recent_audit_events: AdminAuditEvent[];
+}
+
+export interface AdminLocalizedContent {
+  id: string;
+  content_type: string;
+  language: 'en' | 'bn' | string;
+  title: string;
+  body: string;
+  region?: string | null;
+  published: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminLocalizedContentPayload {
+  content_type: string;
+  language: 'en' | 'bn' | string;
+  title: string;
+  body: string;
+  region?: string | null;
+  published: boolean;
+}
+
+export interface AdminCrisisResource {
+  id: string;
+  name: string;
+  phone?: string | null;
+  region?: string | null;
+  type: string;
+  language: 'en' | 'bn' | string;
+  is_24_7: boolean;
+  description?: string | null;
+  url?: string | null;
+  active: boolean;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface AdminCrisisResourcePayload {
+  name: string;
+  phone?: string | null;
+  region?: string | null;
+  type: string;
+  language: 'en' | 'bn' | string;
+  is_24_7: boolean;
+  description?: string | null;
+  url?: string | null;
+  active: boolean;
+}
+
+export interface AdminSafetyReview {
+  id?: string | null;
+  message_id: string;
+  user_id: string;
+  conversation_id: string;
+  excerpt: string;
+  language?: string | null;
+  emotion?: string | null;
+  crisis_severity?: string | null;
+  model_used?: string | null;
+  message_created_at: string;
+  status: 'open' | 'reviewed' | 'escalated' | 'dismissed' | string;
+  escalation_level?: string | null;
+  admin_note?: string | null;
+  reviewed_by?: string | null;
+  reviewed_at?: string | null;
+}
+
+export interface AdminAnalyticsPoint {
+  date: string;
+  users: number;
+  mood_logs: number;
+  messages: number;
+  crisis_messages: number;
+  usage_events: number;
+}
+
+export interface AdminAnalytics {
+  range_days: number;
+  totals: Record<string, number>;
+  plan_counts: Record<string, number>;
+  subscription_request_counts: Record<string, number>;
+  safety_counts: Record<string, number>;
+  daily: AdminAnalyticsPoint[];
+}
+
+export interface AdminSystemHealth {
+  status: string;
+  service: string;
+  environment: string;
+  database: string;
+  redis: string;
+  pinecone: string;
+  audit_table: string;
+  safety_table: string;
+}
+
+export interface AdminUserListFilters {
+  query?: string;
+  plan?: 'free' | 'premium' | 'family' | '';
+  subscription_status?: 'active' | 'trialing' | 'past_due' | 'canceled' | '';
+  system_role?: 'user' | 'admin' | '';
+  is_active?: boolean | '';
 }
 
 export interface UserProfileResponse {
@@ -329,17 +502,59 @@ export async function apiFetch<T = unknown>(
   throw lastError!;
 }
 
+async function localApiFetch<T = unknown>(
+  url: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const response = await fetch(url, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+    ...options,
+  });
+
+  if (response.ok) {
+    if (response.status === 204) {
+      return undefined as T;
+    }
+    return response.json() as Promise<T>;
+  }
+
+  let errorMessage = 'Request failed';
+  try {
+    const errorData = await response.json();
+    errorMessage = errorData.error?.message || errorData.detail || errorData.message || errorMessage;
+  } catch {
+    // Ignore parse errors for error responses.
+  }
+
+  const error: ApiError = new Error(errorMessage);
+  error.status = response.status;
+  error.code = response.status === 401 ? 'UNAUTHORIZED' :
+               response.status === 403 ? 'FORBIDDEN' :
+               response.status === 409 ? 'CONFLICT' :
+               response.status === 404 ? 'NOT_FOUND' : 'CLIENT_ERROR';
+  throw error;
+}
+
 export async function login(email: string, password: string) {
-  return apiFetch('/api/v1/auth/login', {
+  return localApiFetch<TokenResponse>('/api/backend-auth/login', {
     method: 'POST',
     body: JSON.stringify({ email, password }),
   });
 }
 
 export async function register(email: string, password: string, name: string) {
-  return apiFetch('/api/v1/auth/register', {
+  return localApiFetch<TokenResponse>('/api/backend-auth/register', {
     method: 'POST',
     body: JSON.stringify({ name, email, password }),
+  });
+}
+
+export async function logoutBackendSession() {
+  return localApiFetch<{ ok: boolean }>('/api/backend-auth/logout', {
+    method: 'POST',
   });
 }
 
@@ -360,6 +575,157 @@ export function createSubscriptionRequest(payload: SubscriptionRequestCreate) {
     method: 'POST',
     body: JSON.stringify(payload),
   });
+}
+
+function queryString(params: Record<string, string | number | boolean | undefined | null>) {
+  const search = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      search.set(key, String(value));
+    }
+  });
+  const value = search.toString();
+  return value ? `?${value}` : '';
+}
+
+export function getAdminOverview() {
+  return apiFetch<AdminOverview>('/api/v1/admin/overview');
+}
+
+export function getAdminUsers(filters: AdminUserListFilters = {}) {
+  return apiFetch<AdminUserSummary[]>(
+    `/api/v1/admin/users${queryString({ ...filters })}`
+  );
+}
+
+export function updateAdminUser(userId: string, payload: AdminUserUpdate) {
+  return apiFetch<AdminUserSummary>(`/api/v1/admin/users/${userId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getAdminSubscriptionRequests(status?: SubscriptionRequestStatus | '') {
+  return apiFetch<AdminSubscriptionRequest[]>(
+    `/api/v1/admin/subscription-requests${queryString({ status })}`
+  );
+}
+
+export function approveAdminSubscriptionRequest(requestId: string, adminNote?: string) {
+  return apiFetch<AdminSubscriptionRequest>(
+    `/api/v1/admin/subscription-requests/${requestId}/approve`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ admin_note: adminNote?.trim() || null }),
+    }
+  );
+}
+
+export function rejectAdminSubscriptionRequest(requestId: string, adminNote?: string) {
+  return apiFetch<AdminSubscriptionRequest>(
+    `/api/v1/admin/subscription-requests/${requestId}/reject`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ admin_note: adminNote?.trim() || null }),
+    }
+  );
+}
+
+export function getAdminCommunityPosts() {
+  return apiFetch<AdminCommunityPost[]>('/api/v1/admin/moderation/community-posts');
+}
+
+export function getAdminAuditEvents() {
+  return apiFetch<AdminAuditEvent[]>('/api/v1/admin/audit-events');
+}
+
+export function getAdminContent(filters: {
+  language?: string;
+  region?: string;
+  content_type?: string;
+  published?: boolean | '';
+} = {}) {
+  return apiFetch<AdminLocalizedContent[]>(
+    `/api/v1/admin/content${queryString(filters)}`
+  );
+}
+
+export function createAdminContent(payload: AdminLocalizedContentPayload) {
+  return apiFetch<AdminLocalizedContent>('/api/v1/admin/content', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateAdminContent(contentId: string, payload: Partial<AdminLocalizedContentPayload>) {
+  return apiFetch<AdminLocalizedContent>(`/api/v1/admin/content/${contentId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteAdminContent(contentId: string) {
+  return apiFetch<void>(`/api/v1/admin/content/${contentId}`, {
+    method: 'DELETE',
+  });
+}
+
+export function getAdminCrisisResources(active?: boolean | '') {
+  return apiFetch<AdminCrisisResource[]>(
+    `/api/v1/admin/crisis-resources${queryString({ active })}`
+  );
+}
+
+export function createAdminCrisisResource(payload: AdminCrisisResourcePayload) {
+  return apiFetch<AdminCrisisResource>('/api/v1/admin/crisis-resources', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateAdminCrisisResource(resourceId: string, payload: Partial<AdminCrisisResourcePayload>) {
+  return apiFetch<AdminCrisisResource>(`/api/v1/admin/crisis-resources/${resourceId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getAdminSafetyReviews(status?: string | '') {
+  return apiFetch<AdminSafetyReview[]>(
+    `/api/v1/admin/safety-reviews${queryString({ status })}`
+  );
+}
+
+export function reviewAdminSafetyMessage(
+  messageId: string,
+  payload: { status: string; escalation_level?: string | null; admin_note?: string | null }
+) {
+  return apiFetch<AdminSafetyReview>(`/api/v1/admin/safety-reviews/${messageId}/review`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function hideAdminCommunityPost(postId: string, reason?: string) {
+  return apiFetch<AdminCommunityPost>(`/api/v1/admin/moderation/community-posts/${postId}/hide`, {
+    method: 'POST',
+    body: JSON.stringify({ reason: reason?.trim() || null }),
+  });
+}
+
+export function restoreAdminCommunityPost(postId: string, reason?: string) {
+  return apiFetch<AdminCommunityPost>(`/api/v1/admin/moderation/community-posts/${postId}/restore`, {
+    method: 'POST',
+    body: JSON.stringify({ reason: reason?.trim() || null }),
+  });
+}
+
+export function getAdminAnalytics(range = 30) {
+  return apiFetch<AdminAnalytics>(`/api/v1/admin/analytics?range=${range}`);
+}
+
+export function getAdminSystemHealth() {
+  return apiFetch<AdminSystemHealth>('/api/v1/admin/system-health');
 }
 
 export function getUserProfile() {

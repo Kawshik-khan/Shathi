@@ -2,6 +2,7 @@
 from fastapi import APIRouter
 
 from app.api.auth import router as auth_router
+from app.api.admin import router as admin_router
 from app.api.chat import router as chat_router
 from app.api.mood import router as mood_router
 from app.api.journal import router as journal_router
@@ -22,6 +23,7 @@ api_router = APIRouter()
 
 # Include sub-routers
 api_router.include_router(auth_router, prefix="/auth", tags=["authentication"])
+api_router.include_router(admin_router, prefix="/admin", tags=["admin"])
 api_router.include_router(user_router, prefix="/users", tags=["users"])
 api_router.include_router(chat_router, prefix="/chat", tags=["chat"])
 api_router.include_router(mood_router, prefix="/mood", tags=["mood"])

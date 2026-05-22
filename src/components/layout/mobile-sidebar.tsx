@@ -21,12 +21,20 @@ import {
   X,
   Menu,
   LogOut,
+  Shield,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LanguageToggle } from '@/components/language-toggle';
 
-const navigation = [
+type NavigationItem = {
+  key: string;
+  label?: string;
+  href: string;
+  icon: typeof LayoutDashboard;
+};
+
+const navigation: NavigationItem[] = [
   { key: 'dashboard', href: '/dashboard', icon: LayoutDashboard },
   { key: 'aiCompanion', href: '/ai-companion', icon: Sparkles },
   { key: 'mood', href: '/mood', icon: Smile },
@@ -39,13 +47,21 @@ const navigation = [
   { key: 'settings', href: '/settings', icon: Settings },
 ];
 
+const adminNavigation: NavigationItem[] = [
+  { key: 'admin', label: 'Admin', href: '/admin', icon: Shield },
+];
+
 export function MobileSidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { user } = useDashboardStore();
+  const authUser = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const { t } = useTranslation();
+  const navigationItems = authUser?.system_role === 'admin'
+    ? [...navigation, ...adminNavigation]
+    : navigation;
   const planLabel = user.plan === 'free'
     ? t('plan.upgradeToPro')
     : `${user.plan.charAt(0).toUpperCase()}${user.plan.slice(1)} Plan`;
@@ -157,7 +173,7 @@ export function MobileSidebar() {
 
             {/* Navigation */}
             <nav className="flex-1 space-y-1 overflow-y-auto custom-scrollbar">
-              {navigation.map((item, index) => {
+              {navigationItems.map((item, index) => {
                 const isActive = pathname === item.href;
                 const Icon = item.icon;
 
@@ -179,7 +195,7 @@ export function MobileSidebar() {
                       )}
                     >
                       <Icon className={cn('w-5 h-5', isActive && 'text-[#22C55E]')} />
-                      <span>{t(`navigation.${item.key}`)}</span>
+                      <span>{item.label ?? t(`navigation.${item.key}`)}</span>
                       {item.key === 'aiCompanion' && (
                         <span className="ml-auto w-2 h-2 rounded-full bg-[#22C55E] animate-pulse" />
                       )}

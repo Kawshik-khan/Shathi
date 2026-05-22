@@ -11,6 +11,18 @@ type GoogleCallbackPayload = {
   };
 };
 
+export class BackendAuthError extends Error {
+  status: number;
+  detail: string;
+
+  constructor(message: string, status: number, detail?: string) {
+    super(message);
+    this.name = "BackendAuthError";
+    this.status = status;
+    this.detail = detail || message;
+  }
+}
+
 function getBackendApiBaseUrl(): string {
   const configuredUrl = process.env.BACKEND_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
   const fallbackUrl = process.env.NODE_ENV === "production" ? "" : "http://localhost:8000";
@@ -51,7 +63,7 @@ function backendHost(url: string): string {
   }
 }
 
-async function fetchBackendAuth<T>(
+export async function fetchBackendAuth<T>(
   path: string,
   payload: unknown,
   label: string,
@@ -71,17 +83,28 @@ async function fetchBackendAuth<T>(
     });
 
     if (!response.ok) {
+      let detail = `${label} failed with status ${response.status}`;
+      try {
+        const payload = await response.json();
+        detail = payload.detail || payload.message || detail;
+      } catch {
+        // Keep the status-based detail when the backend response is not JSON.
+      }
       console.error("[auth] backend exchange failed", {
         label,
         host: backendHost(url),
         status: response.status,
         elapsedMs: Date.now() - startedAt,
       });
-      throw new Error(`${label} failed with status ${response.status}`);
+      throw new BackendAuthError(`${label} failed with status ${response.status}`, response.status, detail);
     }
 
     return (await response.json()) as T;
   } catch (error) {
+    if (error instanceof BackendAuthError) {
+      throw error;
+    }
+
     const isAbort = error instanceof DOMException && error.name === "AbortError";
     console.error("[auth] backend exchange error", {
       label,

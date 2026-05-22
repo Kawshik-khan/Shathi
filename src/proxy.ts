@@ -12,13 +12,29 @@ const protectedRoutes = [
   '/sleep',
   '/workouts',
   '/resources',
+  '/subscription',
+  '/admin',
 ];
 
 const authRoutes = ['/auth/login', '/auth/signup'];
+const authCookieNames = [
+  'sathi_auth',
+  'authjs.session-token',
+  '__Secure-authjs.session-token',
+  'next-auth.session-token',
+  '__Secure-next-auth.session-token',
+];
+
+function hasServerAuthCookie(request: NextRequest) {
+  return authCookieNames.some((name) => {
+    const value = request.cookies.get(name)?.value;
+    return name === 'sathi_auth' ? value === '1' : Boolean(value);
+  });
+}
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const hasAuthCookie = request.cookies.get('sathi_auth')?.value === '1';
+  const hasAuthCookie = hasServerAuthCookie(request);
   const isProtectedRoute = protectedRoutes.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   );
@@ -50,6 +66,8 @@ export const config = {
     '/sleep/:path*',
     '/workouts/:path*',
     '/resources/:path*',
+    '/subscription/:path*',
+    '/admin/:path*',
     '/auth/login',
     '/auth/signup',
   ],

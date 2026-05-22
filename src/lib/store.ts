@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { apiFetch } from './api';
+import { apiFetch, logoutBackendSession } from './api';
 import {
   User,
   AuthUser,
@@ -66,21 +66,17 @@ interface DashboardState {
   saveCheckIn: (note: string) => void;
 }
 
-function setAuthCookie() {
-  if (typeof document === 'undefined') return;
-
-  document.cookie = [
-    'sathi_auth=1',
-    'Path=/',
-    'Max-Age=2592000',
-    'SameSite=Lax',
-  ].join('; ');
-}
-
 function clearAuthCookie() {
   if (typeof document === 'undefined') return;
 
   document.cookie = 'sathi_auth=; Path=/; Max-Age=0; SameSite=Lax';
+}
+
+function clearServerAuthCookie() {
+  if (typeof window === 'undefined') return;
+  void logoutBackendSession().catch(() => {
+    // Local auth state is still cleared even if the marker cookie clear fails.
+  });
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -114,7 +110,6 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     // Persist to localStorage
     localStorage.setItem('auth', JSON.stringify({ user, ...tokens }));
-    setAuthCookie();
   },
 
   logout: () => {
@@ -133,6 +128,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
     localStorage.removeItem('auth');
     clearAuthCookie();
+    clearServerAuthCookie();
   },
 
   setUser: (user: AuthUser) => {

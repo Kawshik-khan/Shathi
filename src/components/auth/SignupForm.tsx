@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Mail, Lock, Eye, EyeOff, User } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuthStore, useDashboardStore } from "@/lib/store";
-import { apiFetch } from "@/lib/api";
+import { register as registerWithBackendSession } from "@/lib/api";
 import { LoginRequest, TokenResponse, AuthUser } from "@/types";
 import { useTranslation } from "react-i18next";
 import GoogleSignInButton from "./GoogleSignInButton";
@@ -48,10 +48,11 @@ export default function SignupForm() {
 
     try {
       const signupRequest = { name, email, password } as LoginRequest & { name: string };
-      const tokens: TokenResponse = await apiFetch<TokenResponse>('/api/v1/auth/register', {
-        method: "POST",
-        body: JSON.stringify(signupRequest),
-      }, 0);
+      const tokens: TokenResponse = await registerWithBackendSession(
+        signupRequest.email,
+        signupRequest.password,
+        signupRequest.name,
+      );
 
       // Use user data from response
       const user: AuthUser = {

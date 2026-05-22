@@ -66,9 +66,17 @@ class CrisisResource(Base):
     type: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     language: Mapped[str] = mapped_column(String(10), nullable=False, default="bn")
     is_24_7: Mapped[bool] = mapped_column(Boolean, default=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
     )
 
 
@@ -161,12 +169,22 @@ class CommunityPost(Base):
     content: Mapped[str] = mapped_column(Text, nullable=False)
     language: Mapped[str] = mapped_column(String(10), nullable=False, default="bn")
     is_anonymous: Mapped[bool] = mapped_column(Boolean, default=False)
+    moderation_status: Mapped[str] = mapped_column(String(30), nullable=False, default="visible", index=True)
+    moderation_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    hidden_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    hidden_by: Mapped[Optional[str]] = mapped_column(
+        String(36),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
     )
 
-    user = relationship("User", back_populates="community_posts")
+    user = relationship("User", back_populates="community_posts", foreign_keys=[user_id])
     community = relationship("Community", back_populates="posts")
 
 

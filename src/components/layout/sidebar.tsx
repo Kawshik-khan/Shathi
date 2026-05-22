@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { useDashboardStore } from '@/lib/store';
+import { useAuthStore, useDashboardStore } from '@/lib/store';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -18,10 +18,18 @@ import {
   Settings,
   Crown,
   ChevronDown,
+  Shield,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-const navigation = [
+type NavigationItem = {
+  key: string;
+  label?: string;
+  href: string;
+  icon: typeof LayoutDashboard;
+};
+
+const navigation: NavigationItem[] = [
   { key: 'dashboard', href: '/dashboard', icon: LayoutDashboard },
   { key: 'aiCompanion', href: '/ai-companion', icon: Sparkles },
   { key: 'mood', href: '/mood', icon: Smile },
@@ -34,10 +42,18 @@ const navigation = [
   { key: 'settings', href: '/settings', icon: Settings },
 ];
 
+const adminNavigation: NavigationItem[] = [
+  { key: 'admin', label: 'Admin', href: '/admin', icon: Shield },
+];
+
 export function Sidebar() {
   const pathname = usePathname();
   const { user } = useDashboardStore();
+  const authUser = useAuthStore((state) => state.user);
   const { t } = useTranslation();
+  const navigationItems = authUser?.system_role === 'admin'
+    ? [...navigation, ...adminNavigation]
+    : navigation;
   const planLabel = user.plan === 'free'
     ? t('plan.upgradeToPro')
     : `${user.plan.charAt(0).toUpperCase()}${user.plan.slice(1)} Plan`;
@@ -59,7 +75,7 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 overflow-y-auto custom-scrollbar">
-        {navigation.map((item, index) => {
+        {navigationItems.map((item, index) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
 
@@ -80,7 +96,7 @@ export function Sidebar() {
                 )}
               >
                 <Icon className={cn('w-5 h-5', isActive && 'text-[#22C55E]')} />
-                <span>{t(`navigation.${item.key}`)}</span>
+                <span>{item.label ?? t(`navigation.${item.key}`)}</span>
                 {item.key === 'aiCompanion' && (
                   <span className="ml-auto w-2 h-2 rounded-full bg-[#22C55E] animate-pulse" />
                 )}

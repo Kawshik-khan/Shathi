@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuthStore, useDashboardStore } from "@/lib/store";
-import { apiFetch } from "@/lib/api";
-import { LoginRequest, TokenResponse, AuthUser } from "@/types";
+import { login as loginWithBackendSession, logoutBackendSession } from "@/lib/api";
+import { TokenResponse, AuthUser } from "@/types";
 import { useTranslation } from "react-i18next";
 import GoogleSignInButton from "./GoogleSignInButton";
 
@@ -26,7 +26,7 @@ export default function LoginForm() {
     router.prefetch("/dashboard");
   }, [router]);
 
-  const handleResetSession = () => {
+  const handleResetSession = async () => {
     const expiredCookie = "Path=/; Max-Age=0; SameSite=Lax";
     const cookieNames = [
       "sathi_auth",
@@ -45,6 +45,7 @@ export default function LoginForm() {
     ];
 
     localStorage.removeItem("auth");
+    await logoutBackendSession().catch(() => undefined);
     cookieNames.forEach((name) => {
       document.cookie = `${name}=; ${expiredCookie}`;
     });
@@ -57,10 +58,7 @@ export default function LoginForm() {
     setError("");
 
     try {
-      const tokens: TokenResponse = await apiFetch<TokenResponse>('/api/v1/auth/login', {
-        method: "POST",
-        body: JSON.stringify({ email, password } as LoginRequest),
-      }, 0);
+      const tokens: TokenResponse = await loginWithBackendSession(email, password);
 
       // Use user data from response
       const user: AuthUser = {
