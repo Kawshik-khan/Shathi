@@ -7,6 +7,7 @@ from app.models.habit import Habit, HabitCompletion
 from app.models.memory import Memory
 from app.models.settings import UserSettings
 from app.models.profile import UserProfile
+from app.models.subscription import SubscriptionRequest, UsageEvent
 from app.models.localization import (
     AcademicTracking,
     Community,
@@ -29,6 +30,8 @@ __all__ = [
     "Memory",
     "UserSettings",
     "UserProfile",
+    "UsageEvent",
+    "SubscriptionRequest",
     "AcademicTracking",
     "Community",
     "CommunityMember",

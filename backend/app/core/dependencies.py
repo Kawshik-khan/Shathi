@@ -10,6 +10,7 @@ from sqlalchemy.orm import raiseload
 from app.core.database import get_db
 from app.core.security import decode_token
 from app.models.user import User
+from app.services.subscription import assert_feature_enabled
 
 # HTTP Bearer token scheme. Keep auto_error disabled so our API returns the
 # same 401 response shape for missing and invalid credentials.
@@ -111,6 +112,40 @@ async def get_current_active_user(
             detail="Inactive user"
         )
     return current_user
+
+
+def require_system_role(required_role: str):
+    """Return a dependency that requires a specific global system role."""
+
+    async def dependency(
+        current_user: User = Depends(get_current_active_user),
+    ) -> User:
+        if current_user.system_role != required_role:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Insufficient permissions",
+            )
+        return current_user
+
+    return dependency
+
+
+def require_feature(feature_key: str):
+    """Return a dependency that requires a plan entitlement."""
+
+    async def dependency(
+        current_user: User = Depends(get_current_active_user),
+    ) -> User:
+        try:
+            assert_feature_enabled(current_user, feature_key)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=str(exc),
+            ) from exc
+        return current_user
+
+    return dependency
 
 
 # Optional dependency that doesn't raise exception if no token

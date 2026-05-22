@@ -188,6 +188,7 @@ class CommunityMember(Base):
         nullable=False,
         index=True,
     )
+    role: Mapped[str] = mapped_column(String(30), nullable=False, default="member")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),

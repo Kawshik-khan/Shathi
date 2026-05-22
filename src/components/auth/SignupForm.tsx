@@ -58,10 +58,15 @@ export default function SignupForm() {
         id: tokens.user!.id,
         email: tokens.user!.email,
         name: tokens.user!.name,
-        plan: tokens.user!.plan as 'free' | 'premium',
+        plan: tokens.user!.plan,
         avatar_url: tokens.user!.avatar_url,
         language: tokens.user!.language,
         family_id: tokens.user!.family_id,
+        family_role: tokens.user!.family_role,
+        system_role: tokens.user!.system_role,
+        subscription_status: tokens.user!.subscription_status,
+        subscription_started_at: tokens.user!.subscription_started_at,
+        subscription_ends_at: tokens.user!.subscription_ends_at,
       };
 
       login(user, tokens);

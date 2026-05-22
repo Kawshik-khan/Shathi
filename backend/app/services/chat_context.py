@@ -144,6 +144,10 @@ async def _get_memory_context(user_id: str, message: str, pinecone_index=None) -
     return parts, len(parts)
 
 
+async def _empty_memory_context() -> tuple[list[str], int]:
+    return [], 0
+
+
 def _format_cached_user_context(context: dict[str, Any]) -> tuple[list[str], str | None, str | None]:
     parts: list[str] = []
 
@@ -228,6 +232,7 @@ async def build_chat_context(
     language: str | None = None,
     redis=None,
     pinecone_index=None,
+    include_memory: bool = True,
 ) -> ChatContext:
     """Build compact RAG and analytics context for the current chat turn."""
     user_context: dict[str, Any] = {}
@@ -236,9 +241,14 @@ async def build_chat_context(
 
     try:
         async with asyncio.timeout(5.0):
+            memory_task = (
+                _get_memory_context(user_id, message, pinecone_index)
+                if include_memory
+                else _empty_memory_context()
+            )
             user_context_result, memory_result = await asyncio.gather(
                 get_user_context_cached(user_id, redis, db),
-                _get_memory_context(user_id, message, pinecone_index),
+                memory_task,
                 return_exceptions=True,
             )
     except Exception as exc:

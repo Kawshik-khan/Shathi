@@ -18,8 +18,18 @@ from app.schemas.localization import (
     FamilyInvite,
     FamilyMember,
 )
+from app.services.subscription import FeatureLimitExceeded, assert_feature_enabled, get_plan_limits
 
 router = APIRouter()
+
+
+def ensure_family_owner(current_user: User) -> None:
+    """Require owner permissions for managing a family account."""
+    if current_user.family_role != "owner":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only family owners can manage this family",
+        )
 
 
 @router.post("/create", response_model=Family, status_code=status.HTTP_201_CREATED)
@@ -29,10 +39,19 @@ async def create_family_account(
     db: AsyncSession = Depends(get_db),
 ) -> FamilyModel:
     """Create a family account and attach the current user."""
+    try:
+        assert_feature_enabled(current_user, "family_members")
+    except FeatureLimitExceeded as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(exc),
+        ) from exc
+
     family = FamilyModel(name=request.name)
     db.add(family)
     await db.flush()
     current_user.family_id = family.id
+    current_user.family_role = "owner"
     await db.commit()
     await db.refresh(family)
     return family
@@ -42,10 +61,21 @@ async def create_family_account(
 async def invite_family_member(
     request: FamilyInvite,
     current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Create a family invitation placeholder."""
     if not current_user.family_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Create a family first")
+    ensure_family_owner(current_user)
+    member_count = await db.scalar(
+        select(func.count(User.id)).where(User.family_id == current_user.family_id)
+    )
+    member_limit = get_plan_limits(current_user)["family_members"]
+    if member_limit is not None and int(member_count or 0) >= member_limit:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Your plan limit for family members is {member_limit}.",
+        )
     return {
         "status": "pending",
         "email": request.email,
@@ -104,6 +134,7 @@ async def create_family_activity(
     """Create a family wellness activity."""
     if not current_user.family_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Create a family first")
+    ensure_family_owner(current_user)
 
     activity = FamilyActivityModel(
         family_id=current_user.family_id,

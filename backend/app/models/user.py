@@ -30,11 +30,32 @@ class User(Base):
     avatar_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     language: Mapped[str] = mapped_column(String(10), default="en")
+    system_role: Mapped[str] = mapped_column(String(30), default="user", nullable=False)
+    plan: Mapped[str] = mapped_column(String(30), default="free", nullable=False)
+    subscription_status: Mapped[str] = mapped_column(
+        String(30),
+        default="active",
+        nullable=False,
+    )
+    subscription_started_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    subscription_ends_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    billing_customer_id: Mapped[Optional[str]] = mapped_column(
+        String(255),
+        nullable=True,
+        index=True,
+    )
     family_id: Mapped[Optional[str]] = mapped_column(
         String(36),
         ForeignKey("families.id", ondelete="SET NULL"),
         nullable=True,
     )
+    family_role: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
     supabase_uid: Mapped[Optional[str]] = mapped_column(
         String(36),
         unique=True,
@@ -76,5 +97,18 @@ class User(Base):
         lazy="selectin",
         cascade="all, delete-orphan",
         uselist=False,
+    )
+    usage_events = relationship(
+        "UsageEvent",
+        back_populates="user",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+    )
+    subscription_requests = relationship(
+        "SubscriptionRequest",
+        back_populates="user",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+        foreign_keys="SubscriptionRequest.user_id",
     )
 

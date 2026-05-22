@@ -1,9 +1,14 @@
 // Sathi Dashboard Types
 
+export type UserPlan = 'free' | 'premium' | 'family';
+export type SubscriptionStatus = 'active' | 'trialing' | 'past_due' | 'canceled';
+export type SystemRole = 'user' | 'admin';
+export type FamilyRole = 'owner' | 'member';
+
 export interface User {
   name: string;
   avatar: string;
-  plan: 'free' | 'premium';
+  plan: UserPlan;
 }
 
 export interface MoodData {
@@ -79,7 +84,12 @@ export interface AuthUser {
   avatar_url?: string;
   language?: 'en' | 'bn';
   family_id?: string | null;
-  plan: 'free' | 'premium';
+  family_role?: FamilyRole | null;
+  system_role?: SystemRole;
+  plan: UserPlan;
+  subscription_status?: SubscriptionStatus;
+  subscription_started_at?: string | null;
+  subscription_ends_at?: string | null;
 }
 
 export interface UserProfile {

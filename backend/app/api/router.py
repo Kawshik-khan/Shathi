@@ -15,6 +15,7 @@ from app.api.families import router as families_router
 from app.api.i18n import router as i18n_router
 from app.api.offline import router as offline_router
 from app.api.sms import router as sms_router
+from app.api.subscription_requests import router as subscription_requests_router
 
 # Create main API router
 api_router = APIRouter()
@@ -34,4 +35,9 @@ api_router.include_router(families_router, prefix="/families", tags=["families"]
 api_router.include_router(communities_router, prefix="/communities", tags=["communities"])
 api_router.include_router(offline_router, prefix="/offline", tags=["offline"])
 api_router.include_router(sms_router, prefix="/sms", tags=["sms"])
+api_router.include_router(
+    subscription_requests_router,
+    prefix="/subscription-requests",
+    tags=["subscription-requests"],
+)
 

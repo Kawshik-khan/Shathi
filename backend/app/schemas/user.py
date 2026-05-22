@@ -12,7 +12,9 @@ class UserBase(BaseSchema):
 
     email: EmailStr
     name: str
-    plan: str = 'free'
+    system_role: str = "user"
+    plan: str = "free"
+    subscription_status: str = "active"
     avatar_url: Optional[str] = None
     language: str = 'en'
 
@@ -38,7 +40,10 @@ class User(UserBase, TimestampedSchema):
     id: str
     is_active: bool
     family_id: Optional[str] = None
+    family_role: Optional[str] = None
     supabase_uid: Optional[str] = None
+    subscription_started_at: Optional[datetime] = None
+    subscription_ends_at: Optional[datetime] = None
 
 
 class UserProfileUpdate(BaseSchema):
@@ -114,4 +119,18 @@ class SessionInfo(BaseSchema):
     current: bool = True
     auth_model: str = "custom_jwt"
     note: str
+
+
+class SubscriptionSummary(BaseSchema):
+    """Current plan, limits, and usage for the authenticated user."""
+
+    plan: str
+    effective_plan: str
+    subscription_status: str
+    system_role: str
+    subscription_started_at: Optional[datetime] = None
+    subscription_ends_at: Optional[datetime] = None
+    limits: dict[str, Any]
+    usage: dict[str, int]
+    entitlements: dict[str, bool]
 

@@ -160,7 +160,12 @@ function ProfileContent() {
         avatar_url: updated.avatar_url ?? undefined,
         language: updated.language,
         family_id: currentUser?.family_id ?? null,
+        family_role: currentUser?.family_role ?? null,
+        system_role: currentUser?.system_role,
         plan: currentUser?.plan ?? 'free',
+        subscription_status: currentUser?.subscription_status,
+        subscription_started_at: currentUser?.subscription_started_at,
+        subscription_ends_at: currentUser?.subscription_ends_at,
       };
       setAuthUser(nextAuthUser);
       setSavedMessage('Profile saved.');

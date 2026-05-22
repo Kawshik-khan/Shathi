@@ -38,6 +38,9 @@ export function Sidebar() {
   const pathname = usePathname();
   const { user } = useDashboardStore();
   const { t } = useTranslation();
+  const planLabel = user.plan === 'free'
+    ? t('plan.upgradeToPro')
+    : `${user.plan.charAt(0).toUpperCase()}${user.plan.slice(1)} Plan`;
 
   return (
     <motion.aside
@@ -91,14 +94,17 @@ export function Sidebar() {
       <div className="mt-auto mb-4 p-4 rounded-2xl bg-gradient-to-br from-[#DCFCE7] to-[#EEF7EF] border border-[#A7F3A0]/30">
         <div className="flex items-center gap-2 mb-2">
           <Crown className="w-5 h-5 text-[#22C55E]" />
-          <span className="font-semibold text-sm text-foreground">{t('plan.upgradeToPro')}</span>
+          <span className="font-semibold text-sm text-foreground">{planLabel}</span>
         </div>
         <p className="text-xs text-muted-foreground mb-3">
           {t('plan.unlock')}
         </p>
-        <button className="w-full py-2 px-4 rounded-full bg-[#22C55E] text-white text-sm font-medium hover:bg-[#16A34A] transition-colors shadow-lg shadow-green-500/20">
-          {t('actions.upgradeNow')}
-        </button>
+        <Link
+          href="/subscription"
+          className="block w-full py-2 px-4 rounded-full bg-[#22C55E] text-center text-white text-sm font-medium hover:bg-[#16A34A] transition-colors shadow-lg shadow-green-500/20"
+        >
+          {user.plan === 'free' ? t('actions.upgradeNow') : 'View plan'}
+        </Link>
       </div>
 
       {/* User Profile */}
@@ -111,7 +117,7 @@ export function Sidebar() {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-foreground truncate">{user.name}</p>
-          <p className="text-xs text-muted-foreground">{t('plan.premium')}</p>
+          <p className="text-xs text-muted-foreground">{user.plan === 'free' ? 'Free Plan' : planLabel}</p>
         </div>
         <ChevronDown className="w-4 h-4 text-muted-foreground" />
       </Link>

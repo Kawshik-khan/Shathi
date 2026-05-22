@@ -22,6 +22,7 @@ from app.services.habit import (
     get_habit_analytics,
     get_habit_completions
 )
+from app.services.subscription import FeatureLimitExceeded, assert_habit_create_allowed
 from app.models.user import User
 from app.models.habit import Habit as HabitModel, HabitCompletion as HabitCompletionModel
 
@@ -36,6 +37,7 @@ async def create_habit_endpoint(
 ) -> HabitSchema:
     """Create a new habit."""
     try:
+        await assert_habit_create_allowed(db, current_user)
         new_habit = await create_habit_service(db, current_user.id, habit)
         
         return HabitSchema(
@@ -53,6 +55,11 @@ async def create_habit_endpoint(
             is_active=new_habit.is_active,
             created_at=new_habit.created_at,
             updated_at=new_habit.updated_at,
+        )
+    except FeatureLimitExceeded as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
         )
     except ValueError as e:
         raise HTTPException(

@@ -24,6 +24,14 @@ from app.services.chat import (
     delete_conversation,
     update_conversation
 )
+from app.services.crisis import detect_crisis
+from app.services.subscription import (
+    FeatureLimitExceeded,
+    USAGE_FEATURE_AI_MESSAGE,
+    assert_ai_message_quota,
+    has_feature,
+    record_usage_event,
+)
 from app.models.user import User
 from app.models.conversation import Conversation as ConversationModel, Message as MessageModel
 
@@ -40,6 +48,10 @@ async def send_message(
 ) -> ChatResponse:
     """Send a message to the AI and get a response."""
     try:
+        crisis_result = await detect_crisis(request.message)
+        if not crisis_result.is_crisis:
+            await assert_ai_message_quota(db, current_user)
+
         conversation, user_message, ai_message = await send_chat_message(
             db=db,
             user_id=current_user.id,
@@ -49,7 +61,14 @@ async def send_message(
             language=request.language,
             redis=redis,
             pinecone_index=pinecone_index,
+            include_memory=has_feature(current_user, "ai_memory"),
         )
+        if not crisis_result.is_crisis:
+            await record_usage_event(
+                db,
+                current_user.id,
+                USAGE_FEATURE_AI_MESSAGE,
+            )
 
         return ChatResponse(
             response=ai_message.content,
@@ -58,6 +77,11 @@ async def send_message(
             emotion_detected=ai_message.emotion,
             crisis_flag=ai_message.crisis_flag,
             model_used=ai_message.model_used,
+        )
+    except FeatureLimitExceeded as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
         )
     except ValueError as e:
         raise HTTPException(
@@ -83,6 +107,10 @@ async def stream_message(
 
     async def event_stream():
         try:
+            crisis_result = await detect_crisis(request.message)
+            if not crisis_result.is_crisis:
+                await assert_ai_message_quota(db, current_user)
+
             async for event in send_chat_message_stream(
                 db=db,
                 user_id=current_user.id,
@@ -92,8 +120,17 @@ async def stream_message(
                 language=request.language,
                 redis=redis,
                 pinecone_index=pinecone_index,
+                include_memory=has_feature(current_user, "ai_memory"),
             ):
                 yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+                if event.get("type") == "done" and not crisis_result.is_crisis:
+                    await record_usage_event(
+                        db,
+                        current_user.id,
+                        USAGE_FEATURE_AI_MESSAGE,
+                    )
+        except FeatureLimitExceeded as exc:
+            yield f"data: {json.dumps({'type': 'error', 'message': str(exc)})}\n\n"
         except ValueError as exc:
             yield f"data: {json.dumps({'type': 'error', 'message': str(exc)})}\n\n"
         except Exception:

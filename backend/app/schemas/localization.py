@@ -98,6 +98,7 @@ class FamilyMember(BaseSchema):
     name: str
     email: str
     language: str = "en"
+    family_role: Optional[str] = None
 
 
 class FamilyActivityCreate(BaseSchema):

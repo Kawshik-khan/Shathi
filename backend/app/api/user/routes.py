@@ -9,6 +9,7 @@ from app.schemas.user import (
     AccountDeleteRequest,
     PasswordUpdate,
     SessionInfo,
+    SubscriptionSummary,
     User,
     UserProfile,
     UserProfileUpdate,
@@ -26,9 +27,32 @@ from app.services.user import (
     update_user_password,
     update_user_settings,
 )
+from app.services.subscription import build_subscription_summary
 from app.models.user import User as UserModel
 
 router = APIRouter()
+
+
+def user_response(user: UserModel) -> User:
+    """Build the public authenticated user response."""
+    return User(
+        id=user.id,
+        email=user.email,
+        name=user.name,
+        avatar_url=user.avatar_url,
+        language=user.language,
+        system_role=user.system_role,
+        plan=user.plan,
+        subscription_status=user.subscription_status,
+        subscription_started_at=user.subscription_started_at,
+        subscription_ends_at=user.subscription_ends_at,
+        family_id=user.family_id,
+        family_role=user.family_role,
+        is_active=user.is_active,
+        supabase_uid=user.supabase_uid,
+        created_at=user.created_at,
+        updated_at=user.updated_at,
+    )
 
 
 def profile_response(user: UserModel, profile) -> UserProfile:
@@ -59,18 +83,7 @@ async def get_current_user(
     current_user: UserModel = Depends(get_current_active_user),
 ) -> User:
     """Get current user profile."""
-    return User(
-        id=current_user.id,
-        email=current_user.email,
-        name=current_user.name,
-        avatar_url=current_user.avatar_url,
-        language=current_user.language,
-        family_id=current_user.family_id,
-        is_active=current_user.is_active,
-        supabase_uid=current_user.supabase_uid,
-        created_at=current_user.created_at,
-        updated_at=current_user.updated_at,
-    )
+    return user_response(current_user)
 
 
 @router.put("/me", response_model=User)
@@ -88,18 +101,16 @@ async def update_current_user(
             detail="User not found"
         )
     
-    return User(
-        id=updated_user.id,
-        email=updated_user.email,
-        name=updated_user.name,
-        avatar_url=updated_user.avatar_url,
-        language=updated_user.language,
-        family_id=updated_user.family_id,
-        is_active=updated_user.is_active,
-        supabase_uid=updated_user.supabase_uid,
-        created_at=updated_user.created_at,
-        updated_at=updated_user.updated_at,
-    )
+    return user_response(updated_user)
+
+
+@router.get("/me/subscription", response_model=SubscriptionSummary)
+async def get_current_user_subscription(
+    current_user: UserModel = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+) -> SubscriptionSummary:
+    """Get current user's plan, entitlements, and metered usage."""
+    return SubscriptionSummary(**await build_subscription_summary(db, current_user))
 
 
 @router.put("/language", response_model=User)
@@ -127,18 +138,7 @@ async def update_language_preference(
             detail="User not found",
         )
 
-    return User(
-        id=updated_user.id,
-        email=updated_user.email,
-        name=updated_user.name,
-        avatar_url=updated_user.avatar_url,
-        language=updated_user.language,
-        family_id=updated_user.family_id,
-        is_active=updated_user.is_active,
-        supabase_uid=updated_user.supabase_uid,
-        created_at=updated_user.created_at,
-        updated_at=updated_user.updated_at,
-    )
+    return user_response(updated_user)
 
 
 @router.get("/me/profile", response_model=UserProfile)

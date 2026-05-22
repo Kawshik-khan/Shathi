@@ -12,6 +12,7 @@ from app.schemas.chat import (
 from app.schemas.mood import MoodLog, MoodLogCreate, MoodAnalytics
 from app.schemas.journal import Journal, JournalCreate, JournalUpdate
 from app.schemas.habit import Habit, HabitCreate, HabitCompletion, HabitCompletionCreate
+from app.schemas.subscription import SubscriptionRequest, SubscriptionRequestCreate
 
 __all__ = [
     "User",
@@ -37,5 +38,7 @@ __all__ = [
     "HabitCreate",
     "HabitCompletion",
     "HabitCompletionCreate",
+    "SubscriptionRequest",
+    "SubscriptionRequestCreate",
 ]
 

@@ -185,6 +185,7 @@ async def send_chat_message(
     language: Optional[str] = None,
     redis=None,
     pinecone_index=None,
+    include_memory: bool = True,
 ) -> tuple[Conversation, Message, Message]:
     """Send a message and get AI response."""
     # Get or create conversation
@@ -271,6 +272,7 @@ async def send_chat_message(
         language=selected_language,
         redis=redis,
         pinecone_index=pinecone_index,
+        include_memory=include_memory,
     )
     
     # Generate AI response
@@ -332,6 +334,7 @@ async def send_chat_message_stream(
     language: Optional[str] = None,
     redis=None,
     pinecone_index=None,
+    include_memory: bool = True,
 ):
     """Send a message and yield streaming response events."""
     if conversation_id:
@@ -418,6 +421,7 @@ async def send_chat_message_stream(
         language=selected_language,
         redis=redis,
         pinecone_index=pinecone_index,
+        include_memory=include_memory,
     )
 
     chunks: list[str] = []

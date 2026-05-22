@@ -10,7 +10,44 @@ export interface BackendUser {
   avatar_url?: string;
   language?: 'en' | 'bn';
   family_id?: string | null;
-  plan?: 'free' | 'premium';
+  family_role?: 'owner' | 'member' | null;
+  system_role?: 'user' | 'admin';
+  plan?: 'free' | 'premium' | 'family';
+  subscription_status?: 'active' | 'trialing' | 'past_due' | 'canceled';
+  subscription_started_at?: string | null;
+  subscription_ends_at?: string | null;
+}
+
+export interface SubscriptionSummary {
+  plan: 'free' | 'premium' | 'family';
+  effective_plan: 'free' | 'premium' | 'family';
+  subscription_status: 'active' | 'trialing' | 'past_due' | 'canceled';
+  system_role: 'user' | 'admin';
+  subscription_started_at?: string | null;
+  subscription_ends_at?: string | null;
+  limits: Record<string, number | boolean | null>;
+  usage: Record<string, number>;
+  entitlements: Record<string, boolean>;
+}
+
+export type SubscriptionRequestStatus = 'pending' | 'approved' | 'rejected' | 'canceled';
+
+export interface SubscriptionRequest {
+  id: string;
+  user_id: string;
+  requested_plan: 'premium' | 'family';
+  status: SubscriptionRequestStatus;
+  message?: string | null;
+  admin_note?: string | null;
+  reviewed_by?: string | null;
+  reviewed_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SubscriptionRequestCreate {
+  requested_plan: 'premium' | 'family';
+  message?: string | null;
 }
 
 export interface UserProfileResponse {
@@ -307,7 +344,22 @@ export async function register(email: string, password: string, name: string) {
 }
 
 export async function getProfile() {
-  return apiFetch('/api/v1/users/me');
+  return apiFetch<BackendUser>('/api/v1/users/me');
+}
+
+export function getSubscription() {
+  return apiFetch<SubscriptionSummary>('/api/v1/users/me/subscription');
+}
+
+export function getMySubscriptionRequests() {
+  return apiFetch<SubscriptionRequest[]>('/api/v1/subscription-requests/me');
+}
+
+export function createSubscriptionRequest(payload: SubscriptionRequestCreate) {
+  return apiFetch<SubscriptionRequest>('/api/v1/subscription-requests', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
 }
 
 export function getUserProfile() {
