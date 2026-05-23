@@ -62,8 +62,7 @@
     "mood": "Mood",
     "resources": "Resources",
     "settings": "Settings",
-    "sleep": "Sleep",
-    "workouts": "Workouts"
+    "sleep": "Sleep"
   },
   "plan": {
     "premium": "Premium Plan",
