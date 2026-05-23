@@ -2,6 +2,7 @@
 
 import logging
 import re
+from dataclasses import dataclass
 from typing import AsyncGenerator, Dict, List, Literal
 
 from openai import AsyncOpenAI
@@ -12,6 +13,12 @@ from app.services.localization import (
     cultural_context_for,
     detect_language,
     normalize_language,
+)
+from app.services.token_usage import (
+    TokenUsageBreakdown,
+    combine_token_usage,
+    estimate_messages_tokens,
+    estimate_text_tokens,
 )
 
 logger = logging.getLogger(__name__)
@@ -40,6 +47,12 @@ GENERATION_OPTIONS = {
     "frequency_penalty": 0.5,
     "max_tokens": 220,
 }
+
+
+@dataclass(frozen=True)
+class GeneratedChatResult:
+    content: str
+    token_usage: TokenUsageBreakdown | None = None
 
 BANNED_THERAPY_PHRASES = (
     "আপনি বলছেন",
@@ -302,16 +315,84 @@ async def _complete_chat(
     model_id: str,
     messages: List[Dict[str, str]],
 ) -> str | None:
+    result = await _complete_chat_with_usage(client, model_id, messages)
+    return result.content if result else None
+
+
+def _get_usage_value(value, key: str) -> int:
+    if value is None:
+        return 0
+    if isinstance(value, dict):
+        return int(value.get(key) or 0)
+    return int(getattr(value, key, 0) or 0)
+
+
+def _extract_token_usage(usage) -> TokenUsageBreakdown | None:
+    if usage is None:
+        return None
+
+    prompt_tokens = _get_usage_value(usage, "prompt_tokens") or _get_usage_value(usage, "input_tokens")
+    completion_tokens = _get_usage_value(usage, "completion_tokens") or _get_usage_value(usage, "output_tokens")
+    total_tokens = _get_usage_value(usage, "total_tokens")
+
+    prompt_details = None
+    if isinstance(usage, dict):
+        prompt_details = usage.get("prompt_tokens_details") or usage.get("input_tokens_details")
+    else:
+        prompt_details = getattr(usage, "prompt_tokens_details", None) or getattr(usage, "input_tokens_details", None)
+
+    cached_tokens = (
+        _get_usage_value(prompt_details, "cached_tokens")
+        or _get_usage_value(prompt_details, "cache_read")
+        or _get_usage_value(prompt_details, "cached")
+    )
+
+    if prompt_tokens == 0 and completion_tokens == 0 and total_tokens == 0:
+        return None
+
+    return TokenUsageBreakdown(
+        input_tokens=prompt_tokens,
+        output_tokens=completion_tokens,
+        cache_tokens=cached_tokens,
+        total_tokens=total_tokens or prompt_tokens + completion_tokens,
+        usage_source="provider",
+    )
+
+
+async def _complete_chat_with_usage(
+    client: AsyncOpenAI,
+    model_id: str,
+    messages: List[Dict[str, str]],
+) -> GeneratedChatResult | None:
     response = await client.chat.completions.create(
         model=model_id,
         messages=messages,
         stream=False,
         **GENERATION_OPTIONS,
     )
-    return response.choices[0].message.content
+    content = response.choices[0].message.content
+    if not content:
+        return None
+    usage = _extract_token_usage(getattr(response, "usage", None))
+    return GeneratedChatResult(content=content, token_usage=usage)
 
 
-async def generate_chat_response(
+def _estimated_completion_usage(
+    messages: List[Dict[str, str]],
+    content: str,
+) -> TokenUsageBreakdown:
+    input_tokens = estimate_messages_tokens(messages)
+    output_tokens = estimate_text_tokens(content)
+    return TokenUsageBreakdown(
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        cache_tokens=0,
+        total_tokens=input_tokens + output_tokens,
+        usage_source="estimated",
+    )
+
+
+async def generate_chat_response_with_usage(
     message: str,
     conversation_history: List[Dict[str, str]],
     model: Literal["llama-3.3-70b", "deepseek-v4-pro"] = "llama-3.3-70b",
@@ -319,8 +400,8 @@ async def generate_chat_response(
     user_context: str | None = None,
     conversation_summary: str | None = None,
     stream: bool = False,
-) -> str:
-    """Generate AI chat response with automatic fallback."""
+) -> GeneratedChatResult:
+    """Generate AI chat response with automatic fallback and token metadata."""
     client = _get_hf_client()
     selected_language = normalize_language(language) if language else detect_language(message)
     dialogue_mode = classify_dialogue_mode(message)
@@ -342,28 +423,60 @@ async def generate_chat_response(
                 user_context=user_context,
                 conversation_summary=conversation_summary,
             )
-            content = await _complete_chat(client, model_id, messages)
+            result = await _complete_chat_with_usage(client, model_id, messages)
+            content = result.content if result else None
+            token_usage = result.token_usage if result else None
+            if content and token_usage is None:
+                token_usage = _estimated_completion_usage(messages, content)
+
             if content and needs_style_rewrite(content):
                 retry_messages = messages + [
                     {"role": "assistant", "content": content},
                     _style_retry_message(selected_language, dialogue_mode),
                 ]
-                retry_content = await _complete_chat(client, model_id, retry_messages)
-                if retry_content:
-                    content = retry_content
+                retry_result = await _complete_chat_with_usage(client, model_id, retry_messages)
+                if retry_result and retry_result.content:
+                    retry_usage = retry_result.token_usage or _estimated_completion_usage(
+                        retry_messages,
+                        retry_result.content,
+                    )
+                    token_usage = combine_token_usage(token_usage, retry_usage)
+                    content = retry_result.content
 
             if content:
                 logger.info("Got response from %s (%d chars)", model_name, len(content))
-                return content
+                return GeneratedChatResult(content=content, token_usage=token_usage)
         except Exception as e:
             last_error = e
             logger.warning("Model %s failed: %s; trying next fallback", model_name, e)
 
     logger.error("All models failed. Last error: %s", last_error)
-    return SAFE_FALLBACK_RESPONSE
+    return GeneratedChatResult(content=SAFE_FALLBACK_RESPONSE)
 
 
-async def rewrite_chat_response(
+async def generate_chat_response(
+    message: str,
+    conversation_history: List[Dict[str, str]],
+    model: Literal["llama-3.3-70b", "deepseek-v4-pro"] = "llama-3.3-70b",
+    language: str | None = None,
+    user_context: str | None = None,
+    conversation_summary: str | None = None,
+    stream: bool = False,
+) -> str:
+    """Generate AI chat response with automatic fallback."""
+    result = await generate_chat_response_with_usage(
+        message=message,
+        conversation_history=conversation_history,
+        model=model,
+        language=language,
+        user_context=user_context,
+        conversation_summary=conversation_summary,
+        stream=stream,
+    )
+    return result.content
+
+
+async def rewrite_chat_response_with_usage(
     message: str,
     assistant_response: str,
     conversation_history: List[Dict[str, str]],
@@ -371,7 +484,7 @@ async def rewrite_chat_response(
     language: str | None = None,
     user_context: str | None = None,
     conversation_summary: str | None = None,
-) -> str:
+) -> GeneratedChatResult:
     """Rewrite an assistant response that violated casual chat style."""
     client = _get_hf_client()
     selected_language = normalize_language(language) if language else detect_language(message)
@@ -394,11 +507,36 @@ async def rewrite_chat_response(
                 _style_retry_message(selected_language, dialogue_mode),
             ]
         )
-        content = await _complete_chat(client, model_id, messages)
-        return content or assistant_response
+        result = await _complete_chat_with_usage(client, model_id, messages)
+        if not result:
+            return GeneratedChatResult(content=assistant_response)
+        token_usage = result.token_usage or _estimated_completion_usage(messages, result.content)
+        return GeneratedChatResult(content=result.content, token_usage=token_usage)
     except Exception as e:
         logger.warning("Style rewrite failed: %s", e)
-        return assistant_response
+        return GeneratedChatResult(content=assistant_response)
+
+
+async def rewrite_chat_response(
+    message: str,
+    assistant_response: str,
+    conversation_history: List[Dict[str, str]],
+    model: Literal["llama-3.3-70b", "deepseek-v4-pro"] = "llama-3.3-70b",
+    language: str | None = None,
+    user_context: str | None = None,
+    conversation_summary: str | None = None,
+) -> str:
+    """Rewrite an assistant response that violated casual chat style."""
+    result = await rewrite_chat_response_with_usage(
+        message=message,
+        assistant_response=assistant_response,
+        conversation_history=conversation_history,
+        model=model,
+        language=language,
+        user_context=user_context,
+        conversation_summary=conversation_summary,
+    )
+    return result.content
 
 
 async def generate_streaming_response(

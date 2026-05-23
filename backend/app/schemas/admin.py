@@ -192,6 +192,51 @@ class AdminAnalytics(BaseSchema):
     daily: list[AdminAnalyticsPoint]
 
 
+class AdminTokenUsageTotals(BaseSchema):
+    user_messages: int = 0
+    assistant_messages: int = 0
+    input_tokens: int = 0
+    output_tokens: int = 0
+    cache_tokens: int = 0
+    total_tokens: int = 0
+
+
+class AdminUserTokenUsage(BaseSchema):
+    user_id: str
+    name: str
+    email: str
+    message_count: int = 0
+    input_tokens: int = 0
+    output_tokens: int = 0
+    cache_tokens: int = 0
+    total_tokens: int = 0
+    last_message_at: Optional[datetime] = None
+
+
+class AdminMessageTokenUsage(BaseSchema):
+    id: str
+    user_id: str
+    name: str
+    email: str
+    conversation_id: str
+    user_message_id: Optional[str] = None
+    assistant_message_id: Optional[str] = None
+    model_used: Optional[str] = None
+    input_tokens: int = 0
+    output_tokens: int = 0
+    cache_tokens: int = 0
+    total_tokens: int = 0
+    usage_source: str = "estimated"
+    created_at: datetime
+
+
+class AdminTokenUsage(BaseSchema):
+    range_days: int
+    totals: AdminTokenUsageTotals
+    users: list[AdminUserTokenUsage]
+    recent_messages: list[AdminMessageTokenUsage]
+
+
 class AdminSystemHealth(BaseSchema):
     status: str
     service: str

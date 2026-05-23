@@ -9,10 +9,10 @@ from app.core.config import get_settings
 from app.models.conversation import Conversation, Message
 from app.schemas.chat import Conversation as ConversationSchema, MessageCreate
 from app.services.ai import (
-    generate_chat_response,
+    generate_chat_response_with_usage,
     generate_streaming_response,
     needs_style_rewrite,
-    rewrite_chat_response,
+    rewrite_chat_response_with_usage,
 )
 from app.services.chat_context import build_chat_context
 from app.services.crisis import detect_crisis, filter_unsafe_assistant_response
@@ -24,6 +24,12 @@ from app.services.localization import (
     should_switch_to_english,
 )
 from app.services.summarization import summarize_conversation_background
+from app.services.token_usage import (
+    combine_token_usage,
+    estimate_chat_turn_usage,
+    estimate_text_tokens,
+    record_chat_token_usage,
+)
 
 
 def _chat_history_limit() -> int:
@@ -222,6 +228,7 @@ async def send_chat_message(
         content=message_content,
         emotion=emotion_result.emotion,
         emotion_confidence=emotion_result.confidence,
+        token_count=estimate_text_tokens(message_content),
         crisis_flag=crisis_result.is_crisis,
         crisis_severity=crisis_result.severity.value if crisis_result.is_crisis else None,
     )
@@ -276,7 +283,7 @@ async def send_chat_message(
     )
     
     # Generate AI response
-    ai_response_content = await generate_chat_response(
+    generation_result = await generate_chat_response_with_usage(
         message=message_content,
         conversation_history=conversation_history,
         model=model,
@@ -285,10 +292,12 @@ async def send_chat_message(
         conversation_summary=conversation.summary,
         stream=False,
     )
+    ai_response_content = generation_result.content
+    token_usage = generation_result.token_usage
     unsafe_response, filtered_response = filter_unsafe_assistant_response(ai_response_content)
     ai_response_content = filtered_response
     if not unsafe_response and needs_style_rewrite(ai_response_content):
-        ai_response_content = await rewrite_chat_response(
+        rewrite_result = await rewrite_chat_response_with_usage(
             message=message_content,
             assistant_response=ai_response_content,
             conversation_history=conversation_history,
@@ -296,6 +305,19 @@ async def send_chat_message(
             language=selected_language,
             user_context=chat_context.text,
             conversation_summary=conversation.summary,
+        )
+        ai_response_content = rewrite_result.content
+        token_usage = combine_token_usage(token_usage, rewrite_result.token_usage)
+
+    if token_usage is None:
+        token_usage = estimate_chat_turn_usage(
+            input_texts=[
+                message_content,
+                conversation.summary,
+                chat_context.text,
+                *[msg["content"] for msg in conversation_history],
+            ],
+            output_text=ai_response_content,
         )
     
     # Detect emotion in AI response
@@ -310,8 +332,18 @@ async def send_chat_message(
         emotion=ai_emotion_result.emotion,
         emotion_confidence=ai_emotion_result.confidence,
         model_used=model,
+        token_count=token_usage.output_tokens,
         crisis_flag=unsafe_response,
         crisis_severity="medium" if unsafe_response else None,
+    )
+    await record_chat_token_usage(
+        db,
+        user_id=user_id,
+        conversation_id=conversation.id,
+        user_message_id=user_message.id,
+        assistant_message_id=ai_message.id,
+        model_used=model,
+        usage=token_usage,
     )
     await _maybe_schedule_summary(db, conversation.id)
     
@@ -366,6 +398,7 @@ async def send_chat_message_stream(
         content=message_content,
         emotion=emotion_result.emotion,
         emotion_confidence=emotion_result.confidence,
+        token_count=estimate_text_tokens(message_content),
         crisis_flag=crisis_result.is_crisis,
         crisis_severity=crisis_result.severity.value if crisis_result.is_crisis else None,
     )
@@ -437,13 +470,22 @@ async def send_chat_message_stream(
         yield {"type": "chunk", "chunk": chunk}
 
     ai_response_content = "".join(chunks)
+    token_usage = estimate_chat_turn_usage(
+        input_texts=[
+            message_content,
+            conversation.summary,
+            chat_context.text,
+            *[msg["content"] for msg in conversation_history],
+        ],
+        output_text=ai_response_content,
+    )
     unsafe_response, filtered_response = filter_unsafe_assistant_response(ai_response_content)
     ai_response_content = filtered_response
 
     if unsafe_response:
         yield {"type": "replace", "content": filtered_response}
     elif needs_style_rewrite(ai_response_content):
-        ai_response_content = await rewrite_chat_response(
+        rewrite_result = await rewrite_chat_response_with_usage(
             message=message_content,
             assistant_response=ai_response_content,
             conversation_history=conversation_history,
@@ -452,6 +494,8 @@ async def send_chat_message_stream(
             user_context=chat_context.text,
             conversation_summary=conversation.summary,
         )
+        ai_response_content = rewrite_result.content
+        token_usage = combine_token_usage(token_usage, rewrite_result.token_usage)
         yield {"type": "replace", "content": ai_response_content}
 
     ai_emotion_result = await detect_emotion(ai_response_content)
@@ -463,8 +507,18 @@ async def send_chat_message_stream(
         emotion=ai_emotion_result.emotion,
         emotion_confidence=ai_emotion_result.confidence,
         model_used=model,
+        token_count=token_usage.output_tokens,
         crisis_flag=unsafe_response,
         crisis_severity="medium" if unsafe_response else None,
+    )
+    await record_chat_token_usage(
+        db,
+        user_id=user_id,
+        conversation_id=conversation.id,
+        user_message_id=user_message.id,
+        assistant_message_id=ai_message.id,
+        model_used=model,
+        usage=token_usage,
     )
     await _maybe_schedule_summary(db, conversation.id)
 

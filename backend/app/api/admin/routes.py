@@ -25,6 +25,7 @@ from app.models.localization import (
 )
 from app.models.mood import MoodLog
 from app.models.subscription import (
+    ChatTokenUsage,
     SubscriptionRequest as SubscriptionRequestModel,
     UsageEvent,
 )
@@ -47,7 +48,11 @@ from app.schemas.admin import (
     AdminSubscriptionRequest,
     AdminSubscriptionRequestReview,
     AdminSystemHealth,
+    AdminMessageTokenUsage,
+    AdminTokenUsage,
+    AdminTokenUsageTotals,
     AdminUserSummary,
+    AdminUserTokenUsage,
     AdminUserUpdate,
 )
 
@@ -705,6 +710,127 @@ async def set_community_post_moderation(
     await log_admin_event(db, admin_user=admin_user, action=f"community_post.{moderation_status}", target_type="community_post", target_id=post.id, metadata={"reason": post.moderation_reason})
     await db.commit()
     return community_post_response(post, author_name, author_email, community_name)
+
+
+@router.get("/token-usage", response_model=AdminTokenUsage)
+async def get_admin_token_usage(
+    range_days: int = Query(30, alias="range", ge=7, le=90),
+    query: Optional[str] = Query(None),
+    limit: int = Query(25, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    _: User = Depends(ADMIN_ONLY),
+    db: AsyncSession = Depends(get_db),
+) -> AdminTokenUsage:
+    since_dt = datetime.now(timezone.utc) - timedelta(days=range_days)
+    filters = [ChatTokenUsage.created_at >= since_dt]
+    if query:
+        search = f"%{query.strip()}%"
+        filters.append(User.email.ilike(search) | User.name.ilike(search))
+
+    totals_row = await db.execute(
+        select(
+            func.count(ChatTokenUsage.user_message_id),
+            func.count(ChatTokenUsage.assistant_message_id),
+            func.coalesce(func.sum(ChatTokenUsage.input_tokens), 0),
+            func.coalesce(func.sum(ChatTokenUsage.output_tokens), 0),
+            func.coalesce(func.sum(ChatTokenUsage.cache_tokens), 0),
+            func.coalesce(func.sum(ChatTokenUsage.total_tokens), 0),
+        )
+        .select_from(ChatTokenUsage)
+        .join(User, User.id == ChatTokenUsage.user_id)
+        .where(*filters)
+    )
+    (
+        user_messages,
+        assistant_messages,
+        input_tokens,
+        output_tokens,
+        cache_tokens,
+        total_tokens,
+    ) = totals_row.one()
+
+    user_rows = await db.execute(
+        select(
+            ChatTokenUsage.user_id,
+            User.name,
+            User.email,
+            func.count(ChatTokenUsage.user_message_id).label("message_count"),
+            func.coalesce(func.sum(ChatTokenUsage.input_tokens), 0).label("input_tokens"),
+            func.coalesce(func.sum(ChatTokenUsage.output_tokens), 0).label("output_tokens"),
+            func.coalesce(func.sum(ChatTokenUsage.cache_tokens), 0).label("cache_tokens"),
+            func.coalesce(func.sum(ChatTokenUsage.total_tokens), 0).label("total_tokens"),
+            func.max(ChatTokenUsage.created_at).label("last_message_at"),
+        )
+        .join(User, User.id == ChatTokenUsage.user_id)
+        .where(*filters)
+        .group_by(ChatTokenUsage.user_id, User.name, User.email)
+        .order_by(func.coalesce(func.sum(ChatTokenUsage.total_tokens), 0).desc())
+        .offset(offset)
+        .limit(limit)
+    )
+
+    recent_rows = await db.execute(
+        select(ChatTokenUsage, User.name, User.email)
+        .join(User, User.id == ChatTokenUsage.user_id)
+        .where(*filters)
+        .order_by(ChatTokenUsage.created_at.desc())
+        .limit(limit)
+    )
+
+    return AdminTokenUsage(
+        range_days=range_days,
+        totals=AdminTokenUsageTotals(
+            user_messages=user_messages or 0,
+            assistant_messages=assistant_messages or 0,
+            input_tokens=input_tokens or 0,
+            output_tokens=output_tokens or 0,
+            cache_tokens=cache_tokens or 0,
+            total_tokens=total_tokens or 0,
+        ),
+        users=[
+            AdminUserTokenUsage(
+                user_id=user_id,
+                name=name,
+                email=email,
+                message_count=message_count or 0,
+                input_tokens=row_input_tokens or 0,
+                output_tokens=row_output_tokens or 0,
+                cache_tokens=row_cache_tokens or 0,
+                total_tokens=row_total_tokens or 0,
+                last_message_at=last_message_at,
+            )
+            for (
+                user_id,
+                name,
+                email,
+                message_count,
+                row_input_tokens,
+                row_output_tokens,
+                row_cache_tokens,
+                row_total_tokens,
+                last_message_at,
+            ) in user_rows.all()
+        ],
+        recent_messages=[
+            AdminMessageTokenUsage(
+                id=row.id,
+                user_id=row.user_id,
+                name=name,
+                email=email,
+                conversation_id=row.conversation_id,
+                user_message_id=row.user_message_id,
+                assistant_message_id=row.assistant_message_id,
+                model_used=row.model_used,
+                input_tokens=row.input_tokens,
+                output_tokens=row.output_tokens,
+                cache_tokens=row.cache_tokens,
+                total_tokens=row.total_tokens,
+                usage_source=row.usage_source,
+                created_at=row.created_at,
+            )
+            for row, name, email in recent_rows.all()
+        ],
+    )
 
 
 @router.get("/analytics", response_model=AdminAnalytics)

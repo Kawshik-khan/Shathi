@@ -22,6 +22,7 @@ import {
   getAdminSafetyReviews,
   getAdminSubscriptionRequests,
   getAdminSystemHealth,
+  getAdminTokenUsage,
   getAdminUsers,
   hideAdminCommunityPost,
   rejectAdminSubscriptionRequest,
@@ -41,6 +42,7 @@ import {
   type AdminSafetyReview,
   type AdminSubscriptionRequest,
   type AdminSystemHealth,
+  type AdminTokenUsage,
   type AdminUserSummary,
   type AdminUserUpdate,
   type SubscriptionRequestStatus,
@@ -57,6 +59,7 @@ import {
   Crown,
   EyeOff,
   FileText,
+  Gauge,
   HeartPulse,
   Loader2,
   RotateCcw,
@@ -163,6 +166,7 @@ function AdminWorkspace() {
   const [resources, setResources] = useState<AdminCrisisResource[]>([]);
   const [safetyReviews, setSafetyReviews] = useState<AdminSafetyReview[]>([]);
   const [analytics, setAnalytics] = useState<AdminAnalytics | null>(null);
+  const [tokenUsage, setTokenUsage] = useState<AdminTokenUsage | null>(null);
   const [health, setHealth] = useState<AdminSystemHealth | null>(null);
   const [auditEvents, setAuditEvents] = useState<AdminAuditEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -170,6 +174,7 @@ function AdminWorkspace() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [userQuery, setUserQuery] = useState('');
+  const [tokenQuery, setTokenQuery] = useState('');
   const [requestStatus, setRequestStatus] = useState<SubscriptionRequestStatus | ''>('pending');
   const [safetyStatus, setSafetyStatus] = useState('open');
   const [moderationStatus, setModerationStatus] = useState('');
@@ -203,9 +208,10 @@ function AdminWorkspace() {
       getAdminCrisisResources(),
       getAdminSafetyReviews(safetyStatus),
       getAdminAnalytics(30),
+      getAdminTokenUsage({ range: 30, query: tokenQuery }),
       getAdminSystemHealth(),
     ]);
-  }, [requestStatus, safetyStatus, userQuery]);
+  }, [requestStatus, safetyStatus, tokenQuery, userQuery]);
 
   const applyAdminData = useCallback((
     data: Awaited<ReturnType<typeof fetchAdminData>>,
@@ -220,6 +226,7 @@ function AdminWorkspace() {
       resourceResponse,
       safetyResponse,
       analyticsResponse,
+      tokenUsageResponse,
       healthResponse,
     ] = data;
     setOverview(overviewResponse);
@@ -235,6 +242,7 @@ function AdminWorkspace() {
     setResources(resourceResponse);
     setSafetyReviews(safetyResponse);
     setAnalytics(analyticsResponse);
+    setTokenUsage(tokenUsageResponse);
     setHealth(healthResponse);
   }, [moderationStatus]);
 
@@ -551,6 +559,14 @@ function AdminWorkspace() {
             />
           )}
           {tab === 'analytics' && <AnalyticsPanel analytics={analytics} />}
+          {tab === 'usage' && (
+            <UsagePanel
+              usage={tokenUsage}
+              tokenQuery={tokenQuery}
+              setTokenQuery={setTokenQuery}
+              reload={loadAdminData}
+            />
+          )}
           {tab === 'health' && <HealthPanel health={health} />}
           {tab === 'audit' && <AuditPanel auditEvents={auditEvents} />}
         </>
@@ -1069,6 +1085,128 @@ function ModerationPanel({
         </div>
       </GlassCard>
       <NoteCard title="Moderation reason" note={moderationReason} setNote={setModerationReason} placeholder="Reason saved with the next hide or restore action." />
+    </div>
+  );
+}
+
+function UsagePanel({
+  usage,
+  tokenQuery,
+  setTokenQuery,
+  reload,
+}: {
+  usage: AdminTokenUsage | null;
+  tokenQuery: string;
+  setTokenQuery: (value: string) => void;
+  reload: () => void;
+}) {
+  const totals = usage?.totals ?? {
+    user_messages: 0,
+    assistant_messages: 0,
+    input_tokens: 0,
+    output_tokens: 0,
+    cache_tokens: 0,
+    total_tokens: 0,
+  };
+
+  return (
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
+      <KpiCard icon={Gauge} label="Total tokens" value={totals.total_tokens} />
+      <KpiCard icon={BarChart3} label="Input tokens" value={totals.input_tokens} />
+      <KpiCard icon={Activity} label="Output tokens" value={totals.output_tokens} />
+      <KpiCard icon={ClipboardList} label="Cache tokens" value={totals.cache_tokens} />
+
+      <GlassCard className="lg:col-span-4" glowOnHover={false}>
+        <PanelHeader eyebrow={`${usage?.range_days ?? 30} day range`} title="User token usage">
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <div className="flex items-center gap-2 rounded-full bg-white/70 px-4 py-2">
+              <Search className="h-4 w-4 text-muted-foreground" />
+              <input value={tokenQuery} onChange={(event) => setTokenQuery(event.target.value)} placeholder="Search users" className="w-44 bg-transparent text-sm outline-none sm:w-64" />
+            </div>
+            <button type="button" onClick={reload} className="rounded-full bg-[#22C55E] px-4 py-2 text-sm font-medium text-white shadow-lg shadow-green-500/20">Load</button>
+          </div>
+        </PanelHeader>
+        <div className="mt-5 overflow-x-auto">
+          {(usage?.users ?? []).length === 0 ? (
+            <EmptyText>No token usage found.</EmptyText>
+          ) : (
+            <table className="w-full min-w-[920px] text-left text-sm">
+              <thead className="text-xs uppercase text-muted-foreground">
+                <tr className="border-b border-white/50">
+                  <th className="py-3 pr-4 font-medium">User</th>
+                  <th className="py-3 pr-4 font-medium">Messages</th>
+                  <th className="py-3 pr-4 font-medium">Input</th>
+                  <th className="py-3 pr-4 font-medium">Output</th>
+                  <th className="py-3 pr-4 font-medium">Cache</th>
+                  <th className="py-3 pr-4 font-medium">Total</th>
+                  <th className="py-3 pr-4 font-medium">Last message</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(usage?.users ?? []).map((row) => (
+                  <tr key={row.user_id} className="border-b border-white/40 last:border-0">
+                    <td className="py-4 pr-4">
+                      <p className="font-medium">{row.name}</p>
+                      <p className="text-xs text-muted-foreground">{row.email}</p>
+                    </td>
+                    <td className="py-4 pr-4">{row.message_count.toLocaleString()}</td>
+                    <td className="py-4 pr-4">{row.input_tokens.toLocaleString()}</td>
+                    <td className="py-4 pr-4">{row.output_tokens.toLocaleString()}</td>
+                    <td className="py-4 pr-4">{row.cache_tokens.toLocaleString()}</td>
+                    <td className="py-4 pr-4 font-semibold">{row.total_tokens.toLocaleString()}</td>
+                    <td className="py-4 pr-4 text-muted-foreground">{formatDate(row.last_message_at)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </GlassCard>
+
+      <GlassCard className="lg:col-span-4" glowOnHover={false}>
+        <PanelHeader eyebrow="Recent chat turns" title="Message token breakdown" />
+        <div className="mt-5 overflow-x-auto">
+          {(usage?.recent_messages ?? []).length === 0 ? (
+            <EmptyText>No recent token rows found.</EmptyText>
+          ) : (
+            <table className="w-full min-w-[1040px] text-left text-sm">
+              <thead className="text-xs uppercase text-muted-foreground">
+                <tr className="border-b border-white/50">
+                  <th className="py-3 pr-4 font-medium">User</th>
+                  <th className="py-3 pr-4 font-medium">Model</th>
+                  <th className="py-3 pr-4 font-medium">Source</th>
+                  <th className="py-3 pr-4 font-medium">Input</th>
+                  <th className="py-3 pr-4 font-medium">Output</th>
+                  <th className="py-3 pr-4 font-medium">Cache</th>
+                  <th className="py-3 pr-4 font-medium">Total</th>
+                  <th className="py-3 pr-4 font-medium">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(usage?.recent_messages ?? []).map((row) => (
+                  <tr key={row.id} className="border-b border-white/40 last:border-0">
+                    <td className="py-4 pr-4">
+                      <p className="font-medium">{row.name}</p>
+                      <p className="text-xs text-muted-foreground">{row.email}</p>
+                    </td>
+                    <td className="py-4 pr-4 text-muted-foreground">{row.model_used || 'unknown'}</td>
+                    <td className="py-4 pr-4">
+                      <Chip className={row.usage_source === 'provider' ? statusChipClass('connected') : statusChipClass('pending')}>
+                        {titleCase(row.usage_source)}
+                      </Chip>
+                    </td>
+                    <td className="py-4 pr-4">{row.input_tokens.toLocaleString()}</td>
+                    <td className="py-4 pr-4">{row.output_tokens.toLocaleString()}</td>
+                    <td className="py-4 pr-4">{row.cache_tokens.toLocaleString()}</td>
+                    <td className="py-4 pr-4 font-semibold">{row.total_tokens.toLocaleString()}</td>
+                    <td className="py-4 pr-4 text-muted-foreground">{formatDate(row.created_at)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </GlassCard>
     </div>
   );
 }

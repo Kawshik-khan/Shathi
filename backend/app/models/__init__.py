@@ -8,7 +8,7 @@ from app.models.memory import Memory
 from app.models.settings import UserSettings
 from app.models.profile import UserProfile
 from app.models.admin import AdminAuditEvent, SafetyReview
-from app.models.subscription import SubscriptionRequest, UsageEvent
+from app.models.subscription import ChatTokenUsage, SubscriptionRequest, UsageEvent
 from app.models.localization import (
     AcademicTracking,
     Community,
@@ -34,6 +34,7 @@ __all__ = [
     "AdminAuditEvent",
     "SafetyReview",
     "UsageEvent",
+    "ChatTokenUsage",
     "SubscriptionRequest",
     "AcademicTracking",
     "Community",

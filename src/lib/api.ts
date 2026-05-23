@@ -204,6 +204,51 @@ export interface AdminAnalytics {
   daily: AdminAnalyticsPoint[];
 }
 
+export interface AdminTokenUsageTotals {
+  user_messages: number;
+  assistant_messages: number;
+  input_tokens: number;
+  output_tokens: number;
+  cache_tokens: number;
+  total_tokens: number;
+}
+
+export interface AdminUserTokenUsage {
+  user_id: string;
+  name: string;
+  email: string;
+  message_count: number;
+  input_tokens: number;
+  output_tokens: number;
+  cache_tokens: number;
+  total_tokens: number;
+  last_message_at?: string | null;
+}
+
+export interface AdminMessageTokenUsage {
+  id: string;
+  user_id: string;
+  name: string;
+  email: string;
+  conversation_id: string;
+  user_message_id?: string | null;
+  assistant_message_id?: string | null;
+  model_used?: string | null;
+  input_tokens: number;
+  output_tokens: number;
+  cache_tokens: number;
+  total_tokens: number;
+  usage_source: 'provider' | 'estimated' | string;
+  created_at: string;
+}
+
+export interface AdminTokenUsage {
+  range_days: number;
+  totals: AdminTokenUsageTotals;
+  users: AdminUserTokenUsage[];
+  recent_messages: AdminMessageTokenUsage[];
+}
+
 export interface AdminSystemHealth {
   status: string;
   service: string;
@@ -722,6 +767,22 @@ export function restoreAdminCommunityPost(postId: string, reason?: string) {
 
 export function getAdminAnalytics(range = 30) {
   return apiFetch<AdminAnalytics>(`/api/v1/admin/analytics?range=${range}`);
+}
+
+export function getAdminTokenUsage(filters: {
+  range?: number;
+  query?: string;
+  limit?: number;
+  offset?: number;
+} = {}) {
+  return apiFetch<AdminTokenUsage>(
+    `/api/v1/admin/token-usage${queryString({
+      range: filters.range ?? 30,
+      query: filters.query,
+      limit: filters.limit,
+      offset: filters.offset,
+    })}`
+  );
 }
 
 export function getAdminSystemHealth() {

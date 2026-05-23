@@ -5,6 +5,7 @@ import {
   Crown,
   FileText,
   HeartPulse,
+  Gauge,
   Server,
   Shield,
   Users,
@@ -18,6 +19,7 @@ export type AdminTab =
   | 'safety'
   | 'moderation'
   | 'analytics'
+  | 'usage'
   | 'health'
   | 'audit';
 
@@ -36,6 +38,7 @@ export const adminNavigationItems: AdminNavigationItem[] = [
   { key: 'safety', label: 'Safety', href: '/admin?tab=safety', icon: HeartPulse },
   { key: 'moderation', label: 'Moderation', href: '/admin?tab=moderation', icon: ClipboardList },
   { key: 'analytics', label: 'Analytics', href: '/admin?tab=analytics', icon: BarChart3 },
+  { key: 'usage', label: 'Usage', href: '/admin?tab=usage', icon: Gauge },
   { key: 'health', label: 'Health', href: '/admin?tab=health', icon: Server },
   { key: 'audit', label: 'Audit', href: '/admin?tab=audit', icon: Activity },
 ];

@@ -27,6 +27,7 @@ class Message(MessageBase, TimestampedSchema):
     emotion: Optional[str] = None
     emotion_confidence: Optional[float] = None
     model_used: Optional[str] = None
+    token_count: Optional[int] = None
     crisis_flag: bool = False
     crisis_severity: Optional[str] = None
 

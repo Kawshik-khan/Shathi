@@ -6,6 +6,7 @@ from fastapi import HTTPException
 
 from app.api.admin.routes import (
     approve_admin_subscription_request,
+    get_admin_token_usage,
     hide_admin_community_post,
     review_admin_safety_message,
     reject_admin_subscription_request,
@@ -72,6 +73,12 @@ class Result:
         return self.value
 
     def one_or_none(self):
+        return self.value
+
+    def one(self):
+        return self.value
+
+    def all(self):
         return self.value
 
 
@@ -232,3 +239,45 @@ async def test_hide_community_post_updates_moderation_fields_and_audit_event():
     assert post.moderation_reason == "Unsafe"
     assert db.added[0].action == "community_post.hidden"
     assert db.committed is True
+
+
+@pytest.mark.anyio
+async def test_admin_token_usage_returns_totals_user_rows_and_recent_messages():
+    admin = make_user(id="admin-1", system_role="admin")
+    usage_row = SimpleNamespace(
+        id="usage-1",
+        user_id="user-1",
+        conversation_id="conversation-1",
+        user_message_id="message-user-1",
+        assistant_message_id="message-ai-1",
+        model_used="llama-3.3-70b",
+        input_tokens=120,
+        output_tokens=45,
+        cache_tokens=10,
+        total_tokens=165,
+        usage_source="estimated",
+        created_at=NOW,
+    )
+    db = SequenceDB(
+        [
+            (2, 2, 240, 90, 20, 330),
+            [("user-1", "User One", "user@example.com", 2, 240, 90, 20, 330, NOW)],
+            [(usage_row, "User One", "user@example.com")],
+        ]
+    )
+
+    response = await get_admin_token_usage(
+        range_days=30,
+        query=None,
+        limit=25,
+        offset=0,
+        _=admin,
+        db=db,
+    )
+
+    assert response.totals.user_messages == 2
+    assert response.totals.total_tokens == 330
+    assert response.users[0].message_count == 2
+    assert response.users[0].input_tokens == 240
+    assert response.recent_messages[0].assistant_message_id == "message-ai-1"
+    assert response.recent_messages[0].usage_source == "estimated"

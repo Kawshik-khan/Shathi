@@ -109,6 +109,12 @@ class User(Base):
         lazy="selectin",
         cascade="all, delete-orphan",
     )
+    chat_token_usage = relationship(
+        "ChatTokenUsage",
+        back_populates="user",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+    )
     subscription_requests = relationship(
         "SubscriptionRequest",
         back_populates="user",
