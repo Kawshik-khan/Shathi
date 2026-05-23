@@ -77,6 +77,24 @@ class User(Base):
     # Relationships
     conversations = relationship("Conversation", back_populates="user", lazy="selectin")
     mood_logs = relationship("MoodLog", back_populates="user", lazy="selectin")
+    mood_reflections = relationship(
+        "MoodReflection",
+        back_populates="user",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+    )
+    app_activity_events = relationship(
+        "AppActivityEvent",
+        back_populates="user",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+    )
+    sleep_timing_entries = relationship(
+        "SleepTimingEntry",
+        back_populates="user",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+    )
     journals = relationship("Journal", back_populates="user", lazy="selectin")
     habits = relationship("Habit", back_populates="user", lazy="selectin")
     memories = relationship("Memory", back_populates="user", lazy="selectin")

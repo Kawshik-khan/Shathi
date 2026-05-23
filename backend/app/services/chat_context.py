@@ -16,6 +16,7 @@ from app.models.mood import MoodLog
 from app.models.profile import UserProfile
 from app.services.cache_service import get_user_context_cached
 from app.services.memory import retrieve_relevant_memories
+from app.services.mood_inference import infer_mood_from_signals
 
 logger = logging.getLogger(__name__)
 
@@ -148,6 +149,21 @@ async def _empty_memory_context() -> tuple[list[str], int]:
     return [], 0
 
 
+async def _get_inferred_mood_context(db: AsyncSession, user_id: str) -> tuple[list[str], str | None, str | None]:
+    inference = await infer_mood_from_signals(db, user_id, days=14)
+    if inference.state == "neutral" and not inference.evidence:
+        return [], None, None
+
+    evidence_labels = "; ".join(item.reason_en for item in inference.evidence[:3])
+    parts = [
+        f"Inferred mood state: {inference.state}.",
+        f"Suggested support tone: {inference.support_tone}.",
+    ]
+    if evidence_labels:
+        parts.append(f"High-level signal themes: {_truncate(evidence_labels, 260)}.")
+    return parts, inference.state, inference.support_tone
+
+
 def _format_cached_user_context(context: dict[str, Any]) -> tuple[list[str], str | None, str | None]:
     parts: list[str] = []
 
@@ -246,15 +262,18 @@ async def build_chat_context(
                 if include_memory
                 else _empty_memory_context()
             )
-            user_context_result, memory_result = await asyncio.gather(
+            inference_task = _get_inferred_mood_context(db, user_id)
+            user_context_result, memory_result, inference_result = await asyncio.gather(
                 get_user_context_cached(user_id, redis, db),
                 memory_task,
+                inference_task,
                 return_exceptions=True,
             )
     except Exception as exc:
         logger.warning("Chat context fetch timed out or failed: %s", exc)
         user_context_result = {}
         memory_result = ([], 0)
+        inference_result = ([], None, None)
 
     if isinstance(user_context_result, Exception):
         logger.warning("User context fetch failed: %s", user_context_result)
@@ -267,9 +286,17 @@ async def build_chat_context(
         memory_parts, memory_count = memory_result
 
     user_parts, mood_signal, prediction = _format_cached_user_context(user_context)
+    inference_parts: list[str] = []
+    if isinstance(inference_result, Exception):
+        logger.warning("Mood inference context failed: %s", inference_result)
+    else:
+        inference_parts, inferred_state, support_tone = inference_result
+        mood_signal = inferred_state or mood_signal
+        prediction = support_tone or prediction
 
     parts = [
         *user_parts,
+        *inference_parts,
         *memory_parts,
     ]
     if language:

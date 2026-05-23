@@ -346,6 +346,73 @@ export interface MoodLogCreate {
   logged_at?: string;
 }
 
+export interface MoodReflectionCreate {
+  prompt?: string | null;
+  answer: string;
+}
+
+export interface MoodReflection {
+  id: string;
+  user_id: string;
+  prompt?: string | null;
+  answer: string;
+  emotion_detected?: string | null;
+  emotion_confidence?: number | null;
+  created_at: string;
+}
+
+export interface AppActivityEventCreate {
+  event_type: string;
+  event_metadata?: Record<string, unknown> | null;
+  occurred_at?: string;
+}
+
+export interface AppActivityEvent {
+  id: string;
+  user_id: string;
+  event_type: string;
+  event_metadata?: Record<string, unknown> | null;
+  occurred_at: string;
+  created_at: string;
+}
+
+export interface SleepTimingCreate {
+  slept_at: string;
+  woke_at?: string | null;
+  duration_minutes?: number | null;
+  quality_note?: string | null;
+}
+
+export interface SleepTiming {
+  id: string;
+  user_id: string;
+  slept_at: string;
+  woke_at?: string | null;
+  duration_minutes?: number | null;
+  quality_note?: string | null;
+  created_at: string;
+}
+
+export interface MoodInferenceEvidence {
+  category: 'text' | 'writing_style' | 'behavior' | 'sleep' | 'routine' | string;
+  state: string;
+  reason_bn: string;
+  reason_en: string;
+  weight: number;
+}
+
+export interface MoodInference {
+  state: string;
+  confidence: 'low' | 'medium' | 'high';
+  support_tone: string;
+  reason_bn: string;
+  reason_en: string;
+  evidence: MoodInferenceEvidence[];
+  source_counts: Record<string, number>;
+  days: number;
+  generated_at: string;
+}
+
 export interface Habit {
   id: string;
   user_id: string;
@@ -857,6 +924,31 @@ export function getMoodAnalytics(days = 30) {
 
 export function createMoodLog(data: MoodLogCreate) {
   return apiFetch<MoodLog>('/api/v1/mood/log', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export function getMoodInference(days = 14) {
+  return apiFetch<MoodInference>(`/api/v1/mood/inference?days=${days}`);
+}
+
+export function createMoodReflection(data: MoodReflectionCreate) {
+  return apiFetch<MoodReflection>('/api/v1/mood/reflections', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export function createActivityEvent(data: AppActivityEventCreate) {
+  return apiFetch<AppActivityEvent>('/api/v1/mood/activity', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export function createSleepTiming(data: SleepTimingCreate) {
+  return apiFetch<SleepTiming>('/api/v1/mood/sleep', {
     method: 'POST',
     body: JSON.stringify(data),
   });

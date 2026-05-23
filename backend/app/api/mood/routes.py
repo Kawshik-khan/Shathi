@@ -5,12 +5,29 @@ from typing import List
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_active_user, get_redis
-from app.schemas.mood import MoodLog as MoodLogSchema, MoodLogCreate, MoodAnalytics
+from app.schemas.mood import (
+    AppActivityEvent as AppActivityEventSchema,
+    AppActivityEventCreate,
+    MoodAnalytics,
+    MoodInference,
+    MoodLog as MoodLogSchema,
+    MoodLogCreate,
+    MoodReflection as MoodReflectionSchema,
+    MoodReflectionCreate,
+    SleepTiming as SleepTimingSchema,
+    SleepTimingCreate,
+)
 from app.services.cache_service import invalidate_user_context
 from app.services.mood import (
     create_mood_log as create_mood_log_service,
     get_mood_logs as get_mood_logs_service,
     get_mood_analytics as get_mood_analytics_service,
+)
+from app.services.mood_inference import (
+    create_activity_event as create_activity_event_service,
+    create_mood_reflection as create_mood_reflection_service,
+    create_sleep_timing as create_sleep_timing_service,
+    infer_mood_from_signals,
 )
 from app.models.user import User
 from app.models.mood import MoodLog as MoodLogModel
@@ -81,4 +98,75 @@ async def get_mood_analytics_endpoint(
 ) -> MoodAnalytics:
     """Get mood analytics and trends."""
     return await get_mood_analytics_service(db, current_user.id, days)
+
+
+@router.post("/reflections", response_model=MoodReflectionSchema, status_code=status.HTTP_201_CREATED)
+async def create_mood_reflection_endpoint(
+    payload: MoodReflectionCreate,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+    redis=Depends(get_redis),
+) -> MoodReflectionSchema:
+    """Create a natural-language mood reflection."""
+    try:
+        reflection = await create_mood_reflection_service(db, current_user.id, payload)
+        await invalidate_user_context(current_user.id, redis)
+        return MoodReflectionSchema.model_validate(reflection)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create mood reflection",
+        )
+
+
+@router.post("/activity", response_model=AppActivityEventSchema, status_code=status.HTTP_201_CREATED)
+async def create_activity_event_endpoint(
+    payload: AppActivityEventCreate,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+    redis=Depends(get_redis),
+) -> AppActivityEventSchema:
+    """Create a behavioral signal event for scoreless mood inference."""
+    try:
+        event = await create_activity_event_service(db, current_user.id, payload)
+        await invalidate_user_context(current_user.id, redis)
+        return AppActivityEventSchema.model_validate(event)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create activity event",
+        )
+
+
+@router.post("/sleep", response_model=SleepTimingSchema, status_code=status.HTTP_201_CREATED)
+async def create_sleep_timing_endpoint(
+    payload: SleepTimingCreate,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+    redis=Depends(get_redis),
+) -> SleepTimingSchema:
+    """Create a sleep timing signal for scoreless mood inference."""
+    try:
+        entry = await create_sleep_timing_service(db, current_user.id, payload)
+        await invalidate_user_context(current_user.id, redis)
+        return SleepTimingSchema.model_validate(entry)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create sleep timing",
+        )
+
+
+@router.get("/inference", response_model=MoodInference)
+async def get_mood_inference_endpoint(
+    days: int = Query(14, ge=1, le=90),
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+) -> MoodInference:
+    """Infer mood from text, writing style, and behavioral signals."""
+    return await infer_mood_from_signals(db, current_user.id, days)
 

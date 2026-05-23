@@ -2,6 +2,7 @@
 from app.models.user import User
 from app.models.conversation import Conversation, Message
 from app.models.mood import MoodLog
+from app.models.mood_signal import AppActivityEvent, MoodReflection, SleepTimingEntry
 from app.models.journal import Journal
 from app.models.habit import Habit, HabitCompletion
 from app.models.memory import Memory
@@ -25,6 +26,9 @@ __all__ = [
     "Conversation",
     "Message",
     "MoodLog",
+    "MoodReflection",
+    "AppActivityEvent",
+    "SleepTimingEntry",
     "Journal",
     "Habit",
     "HabitCompletion",
