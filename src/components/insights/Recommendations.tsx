@@ -1,7 +1,7 @@
 "use client"
 import React from "react"
 import { motion } from 'framer-motion'
-import { GlassCard } from "@/components/ui/GlassCard"
+import GlassCard from "@/components/ui/GlassCard"
 import BurnoutGauge from "@/components/charts/BurnoutGauge"
 import EmotionalGrowthTracker from "@/components/charts/EmotionalGrowthTracker"
 import { 
@@ -49,8 +49,8 @@ const recommendations: Recommendation[] = [
     title: 'Gratitude Journaling',
     description: 'Write 3 things you\'re grateful for',
     icon: <BookOpen className="w-5 h-5" />,
-    color: 'text-[#4A90A4]',
-    bgColor: 'bg-[#CDE6EB]',
+    color: 'text-[#22C55E]',
+    bgColor: 'bg-[#BBF7D0]',
     benefit: 'Boosts emotional resilience'
   },
   {
@@ -88,7 +88,7 @@ export default function Recommendations() {
       {/* Widget 9: Personalized Recommendations */}
       <section aria-labelledby="recommendations-heading">
         <div className="flex items-center gap-2 mb-4">
-          <Target className="w-5 h-5 text-[#5F9DB0]" />
+          <Target className="w-5 h-5 text-[#5DBB63]" />
           <h2 id="recommendations-heading" className="text-lg font-semibold text-[#0F172A]">
             Personalized Recommendations
           </h2>
@@ -114,7 +114,7 @@ export default function Recommendations() {
                     <h3 className="font-medium text-[#0F172A] text-sm">{rec.title}</h3>
                     <p className="text-xs text-[#64748B] mt-0.5">{rec.description}</p>
                     <div className="mt-2">
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-[#E3F0F3] text-[#356B7A]">
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-[#DCFCE7] text-[#15803D]">
                         {rec.benefit}
                       </span>
                     </div>
@@ -136,7 +136,7 @@ export default function Recommendations() {
         >
           <GlassCard ariaLabel="Burnout detection card">
             <div className="flex items-center gap-2 mb-4">
-              <Coffee className="w-5 h-5 text-[#5F9DB0]" />
+              <Coffee className="w-5 h-5 text-[#5DBB63]" />
               <h3 className="text-lg font-semibold text-[#0F172A]">Burnout Detection</h3>
             </div>
             
@@ -148,9 +148,9 @@ export default function Recommendations() {
                   <span className="text-[#64748B]">Workload Balance</span>
                   <span className="text-[#0F172A] font-medium">78%</span>
                 </div>
-                <div className="h-2 bg-[#EAF2F4] rounded-full overflow-hidden">
+                <div className="h-2 bg-[#EEF7EF] rounded-full overflow-hidden">
                   <motion.div 
-                    className="h-full bg-gradient-to-r from-[#6FA8C7] to-[#4A90A4] rounded-full"
+                    className="h-full bg-gradient-to-r from-[#7ED957] to-[#22C55E] rounded-full"
                     initial={{ width: 0 }}
                     animate={{ width: '78%' }}
                     transition={{ duration: 0.8, delay: 0.3 }}
@@ -182,4 +182,3 @@ export default function Recommendations() {
     </div>
   )
 }
-

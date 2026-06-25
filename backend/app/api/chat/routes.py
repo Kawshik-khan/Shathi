@@ -107,6 +107,12 @@ async def stream_message(
     """Send a message and stream the AI response as SSE chunks."""
 
     async def event_stream():
+        # ``done_seen`` makes sure we always close the stream with a
+        # terminal event even if the inner generator aborts before
+        # reaching its own ``done`` yield. Without this, the client
+        # would see a hard connection close which surfaces as
+        # "Failed to stream" in the UI.
+        done_seen = False
         try:
             crisis_result = await detect_crisis(request.message)
             if not crisis_result.is_crisis:
@@ -124,6 +130,8 @@ async def stream_message(
                 include_memory=has_feature(current_user, "ai_memory"),
                 precomputed_crisis=crisis_result,
             ):
+                if event.get("type") == "done":
+                    done_seen = True
                 yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
                 if event.get("type") == "done" and not crisis_result.is_crisis:
                     await record_usage_event(
@@ -137,6 +145,13 @@ async def stream_message(
             yield f"data: {json.dumps({'type': 'error', 'message': str(exc)})}\n\n"
         except Exception:
             yield f"data: {json.dumps({'type': 'error', 'message': 'Failed to stream message'})}\n\n"
+        finally:
+            if not done_seen:
+                # Always terminate with a ``done`` event so the
+                # frontend never hangs waiting for an EOF that never
+                # comes. No conversation_id because we don't know it
+                # here, but the schema treats it as optional.
+                yield "data: {\"type\": \"done\"}\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 

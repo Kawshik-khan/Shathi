@@ -90,4 +90,3 @@ def get_supabase_db_url() -> Optional[str]:
 
 # Initialize Supabase client when module is imported
 supabase_client = get_supabase_client()
-

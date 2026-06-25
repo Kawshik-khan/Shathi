@@ -204,20 +204,25 @@
     --bg-gradient: linear-gradient(135deg, #E7ECFB 0%, #EEF1FA 50%, #F2F4FB 100%);
   }
 
-  /* Dark mode daytime tints */
-  .dark {
+  /* Dark mode daytime tints.
+     Note: light-mode [data-daytime='...'] selectors have specificity (0,1,1) — higher
+     than a bare .dark class (0,1,0) — so without bumping the dark selectors to the
+     same or higher specificity, the light daytime gradient would still win in dark
+     mode. Using html.dark raises each dark rule to (0,1,1) so it ties the light
+     rules; since the dark block appears later in the cascade, it wins on tie. */
+  html.dark {
     --bg-gradient: linear-gradient(135deg, #0F1419 0%, #141B22 50%, #1A2027 100%);
   }
-  .dark[data-daytime='morning'] {
+  html.dark[data-daytime='morning'] {
     --bg-gradient: linear-gradient(135deg, #2A2012 0%, #1C1B14 55%, #0F1419 100%);
   }
-  .dark[data-daytime='noon'] {
+  html.dark[data-daytime='noon'] {
     --bg-gradient: linear-gradient(135deg, #0E1E26 0%, #112028 55%, #0F1419 100%);
   }
-  .dark[data-daytime='afternoon'] {
+  html.dark[data-daytime='afternoon'] {
     --bg-gradient: linear-gradient(135deg, #271E12 0%, #1A1C18 55%, #0F1419 100%);
   }
-  .dark[data-daytime='night'] {
+  html.dark[data-daytime='night'] {
     --bg-gradient: linear-gradient(135deg, #0E1430 0%, #131C32 55%, #10162E 100%);
   }
 

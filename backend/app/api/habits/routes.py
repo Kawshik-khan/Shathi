@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
 from app.core.database import get_db
-from app.core.dependencies import get_current_active_user
+from app.core.dependencies import get_current_active_user, get_redis
 from app.schemas.habit import (
     Habit as HabitSchema, 
     HabitCreate, 
@@ -23,6 +23,7 @@ from app.services.habit import (
     get_habit_completions
 )
 from app.services.subscription import FeatureLimitExceeded, assert_habit_create_allowed
+from app.services.chat.cache import invalidate_user_context_sections
 from app.models.user import User
 from app.models.habit import Habit as HabitModel, HabitCompletion as HabitCompletionModel
 
@@ -34,11 +35,13 @@ async def create_habit_endpoint(
     habit: HabitCreate,
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
+    redis=Depends(get_redis),
 ) -> HabitSchema:
     """Create a new habit."""
     try:
         await assert_habit_create_allowed(db, current_user)
         new_habit = await create_habit_service(db, current_user.id, habit)
+        await invalidate_user_context_sections(current_user.id, redis, ["habit"])
         
         return HabitSchema(
             id=new_habit.id,
@@ -192,6 +195,7 @@ async def complete_habit(
     completion: HabitCompletionCreate,
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
+    redis=Depends(get_redis),
 ) -> HabitCompletionSchema:
     """Mark a habit as complete."""
     try:
@@ -202,8 +206,9 @@ async def complete_habit(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Habit not found"
             )
-        
+
         completion_record = await complete_habit_service(db, current_user.id, habit_id, completion)
+        await invalidate_user_context_sections(current_user.id, redis, ["habit"])
         
         return HabitCompletionSchema(
             id=completion_record.id,

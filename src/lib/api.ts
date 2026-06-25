@@ -1013,7 +1013,14 @@ export function deleteJournalEntry(id: string) {
 }
 
 export interface ChatStreamEvent {
-  type: 'meta' | 'chunk' | 'replace' | 'done' | 'error';
+  type:
+    | 'meta'
+    | 'chunk'
+    | 'replace'
+    | 'done'
+    | 'error'
+    | 'heartbeat'
+    | 'context';
   chunk?: string;
   content?: string;
   message?: string;
@@ -1023,6 +1030,26 @@ export interface ChatStreamEvent {
   crisis_flag?: boolean;
   model_used?: string;
   language?: 'en' | 'bn';
+  /** Backend context build summary (post-context meta). */
+  context?: ChatContextBuildSummary | null;
+}
+
+export interface ChatContextBuildSummary {
+  duration_ms: number;
+  providers: number;
+  cached: number;
+  timed_out: number;
+  failed: number;
+  sections?: Record<
+    string,
+    {
+      status: string;
+      cached: boolean;
+      duration_ms: number;
+      tokens: number;
+      parts?: string[];
+    }
+  >;
 }
 
 export interface ChatMessage {

@@ -32,8 +32,8 @@ export default function BurnoutGauge({
         };
       default:
         return {
-          color: '#4A90A4',
-          gradient: 'from-[#6FA8C7] to-[#4A90A4]',
+          color: '#22C55E',
+          gradient: 'from-[#7ED957] to-[#22C55E]',
           icon: Shield,
           label: 'Low Risk',
           description: 'You\'re managing stress well. Keep it up!'
@@ -66,7 +66,7 @@ export default function BurnoutGauge({
           <path
             d="M 10 60 A 50 50 0 0 1 110 60"
             fill="none"
-            stroke="#EAF2F4"
+            stroke="#EEF7EF"
             strokeWidth="8"
             strokeLinecap="round"
           />
@@ -74,7 +74,7 @@ export default function BurnoutGauge({
           {/* Gradient definition */}
           <defs>
             <linearGradient id="burnoutGradient" x1="0%" y1="0%" x2="100%">
-              <stop offset="0%" stopColor="#6FA8C7" />
+              <stop offset="0%" stopColor="#7ED957" />
               <stop offset="50%" stopColor="#FBBF24" />
               <stop offset="100%" stopColor="#F97316" />
             </linearGradient>

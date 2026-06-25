@@ -72,8 +72,25 @@ class Settings(BaseSettings):
 
     # Chat optimization
     CHAT_HISTORY_LIMIT: int = 12
+    CHAT_HISTORY_FOR_LLM: int = 6  # Trim conversation history sent to the LLM
     EMBEDDING_TIMEOUT_SECONDS: float = 3.0
     USER_CONTEXT_CACHE_TTL: int = 300
+
+    # Per-provider timeouts (milliseconds). Each provider has its own
+    # bound so a slow source can never block the others or the LLM.
+    CHAT_PROVIDER_TIMEOUT_MS: int = 1200
+    CHAT_CONTEXT_HARD_BUDGET_MS: int = 1500
+    CHAT_HEARTBEAT_INTERVAL_MS: int = 250
+
+    # Per-section Redis cache TTLs (seconds).
+    CHAT_CACHE_TTL_PROFILE: int = 1800   # 30 min
+    CHAT_CACHE_TTL_MOOD: int = 600       # 10 min
+    CHAT_CACHE_TTL_JOURNAL: int = 600    # 10 min
+    CHAT_CACHE_TTL_SLEEP: int = 300      # 5 min
+    CHAT_CACHE_TTL_HABIT: int = 900      # 15 min
+    CHAT_CACHE_TTL_ACTIVITY: int = 600   # 10 min
+    CHAT_CACHE_TTL_INFERRED: int = 600   # 10 min
+    CHAT_CACHE_TTL_MEMORY: int = 300     # 5 min
 
     # Semantic response cache
     RESPONSE_CACHE_ENABLED: bool = True

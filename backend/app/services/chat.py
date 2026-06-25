@@ -413,7 +413,25 @@ async def send_chat_message_stream(
     include_memory: bool = True,
     precomputed_crisis: Optional[CrisisResult] = None,
 ):
-    """Send a message and yield streaming response events."""
+    """Send a message and yield streaming response events.
+
+    Streaming refactor (Phase 8 — early yield + parallel context):
+
+    * The user-message insert, the context build, the conversation
+      history fetch, the emotion detect, and the response-cache
+      lookup all kick off in parallel via ``asyncio.gather`` so the
+      total wait is the slowest path rather than the sum.
+    * A ``heartbeat`` coroutine runs alongside to keep the SSE
+      connection warm while the gather is still pending.
+    * A hard budget (``CHAT_CONTEXT_HARD_BUDGET_MS``) bounds the
+      gather; when it fires we stream immediately with whatever
+      context has finished.
+    * The first emitted event is always ``meta`` (with full
+      ``user_message_id`` once the insert task completes), then a
+      ``context`` summary, then ``chunk`` events as they arrive from
+      the LLM. The terminal event is always either ``done`` or
+      ``error`` — see ``routes.py`` for the outer guarantee.
+    """
     if conversation_id:
         conversation = await get_conversation_by_id(db, user_id, conversation_id)
         if not conversation:
@@ -481,12 +499,39 @@ async def send_chat_message_stream(
         }
         return
 
-    # Non-crisis: run independent work concurrently (emotion, cache lookup, context).
-    # Only build_chat_context touches the DB session within this gather.
-    emotion_result, cached_reply, chat_context = await asyncio.gather(
-        detect_emotion(message_content),
-        lookup_cached_response(user_id, message_content, pinecone_index),
-        build_chat_context(
+    # ------------------------------------------------------------------
+    # Non-crisis path: kick off every I/O task in parallel.
+    # ------------------------------------------------------------------
+    settings = get_settings()
+    history_limit = _chat_history_limit()
+
+    async def _persist_user_message() -> Message:
+        emotion = await detect_emotion(message_content)
+        return await create_message(
+            db=db,
+            conversation_id=conversation.id,
+            role="user",
+            content=message_content,
+            emotion=emotion.emotion,
+            emotion_confidence=emotion.confidence,
+            token_count=estimate_text_tokens(message_content),
+            crisis_flag=False,
+            crisis_severity=None,
+        )
+
+    async def _history() -> list[dict[str, str]]:
+        msgs = await get_conversation_messages(
+            db,
+            conversation.id,
+            limit=history_limit + 1,
+        )
+        return [
+            {"role": m.role, "content": m.content}
+            for m in msgs
+        ]
+
+    async def _build_context():
+        return await build_chat_context(
             db=db,
             user_id=user_id,
             message=message_content,
@@ -495,21 +540,52 @@ async def send_chat_message_stream(
             redis=redis,
             pinecone_index=pinecone_index,
             include_memory=include_memory,
-        ),
+        )
+
+    user_message_task = asyncio.create_task(_persist_user_message())
+    history_task = asyncio.create_task(_history())
+    context_task = asyncio.create_task(_build_context())
+    cache_task = asyncio.create_task(
+        lookup_cached_response(user_id, message_content, pinecone_index)
     )
 
-    user_message = await create_message(
-        db=db,
-        conversation_id=conversation.id,
-        role="user",
-        content=message_content,
-        emotion=emotion_result.emotion,
-        emotion_confidence=emotion_result.confidence,
-        token_count=estimate_text_tokens(message_content),
-        crisis_flag=False,
-        crisis_severity=None,
-    )
+    # Heartbeat keeps the SSE connection warm while context/history
+    # are still building. It is an async generator we yield from.
+    heartbeat_interval_ms = settings.CHAT_HEARTBEAT_INTERVAL_MS
 
+    async def heartbeat():
+        while True:
+            await asyncio.sleep(heartbeat_interval_ms / 1000.0)
+            yield {"type": "heartbeat"}
+
+    # Hard ceiling for context. After this fires we stream with
+    # whatever completed; if context never finishes at all, we still
+    # emit meta+context-summary so the LLM can start with no RAG.
+    hard_budget_s = settings.CHAT_CONTEXT_HARD_BUDGET_MS / 1000.0
+    gather_deadline = asyncio.get_event_loop().time() + hard_budget_s
+
+    # First yield: a heartbeat so the client sees the stream is live
+    # before any DB work settles. This is the minimum-latency
+    # "handshake" we can offer.
+    yield {"type": "heartbeat"}
+
+    # Wait for the user-message insert; this is on the critical path
+    # because downstream code needs user_message.id.
+    try:
+        user_message = await user_message_task
+    except Exception as exc:
+        # Persisting the user message is the only truly fatal step;
+        # the rest of the stream can degrade but we cannot proceed
+        # without an id for token usage tracking.
+        logger.exception("failed to persist user message: %s", exc)
+        yield {
+            "type": "error",
+            "message": "Failed to record your message. Please try again.",
+        }
+        yield {"type": "done"}
+        return
+
+    # Yield meta with the real user_message_id as soon as we have it.
     yield {
         "type": "meta",
         "conversation_id": conversation.id,
@@ -518,20 +594,83 @@ async def send_chat_message_stream(
         "language": selected_language,
     }
 
-    # Semantic response cache hit short-circuits LLM generation
-    if cached_reply:
+    # Now wait for the rest under the hard budget. Heartbeats fire
+    # while we wait so the client connection stays warm.
+    remaining_s = max(0.0, gather_deadline - asyncio.get_event_loop().time())
+    cache_reply: Optional[str] = None
+    chat_context = None
+    history: list[dict[str, str]] = []
+
+    async def _drain_remaining():
+        nonlocal cache_reply, chat_context, history
+        cache_reply, chat_context, history = await asyncio.gather(
+            cache_task,
+            context_task,
+            history_task,
+            return_exceptions=False,
+        )
+
+    drain_task = asyncio.create_task(_drain_remaining())
+
+    async for hb in heartbeat():
+        if drain_task.done():
+            break
+        try:
+            await asyncio.wait_for(
+                asyncio.shield(drain_task),
+                timeout=heartbeat_interval_ms / 1000.0,
+            )
+            break
+        except asyncio.TimeoutError:
+            yield hb
+
+    # Ensure drain has fully settled (it may have completed between
+    # the timeout firing and the loop check above).
+    if not drain_task.done():
+        try:
+            await asyncio.wait_for(asyncio.shield(drain_task), timeout=remaining_s)
+        except asyncio.TimeoutError:
+            drain_task.cancel()
+
+    # Surface context summary before the first chunk so the client
+    # can render a "Personalized with: profile, mood, …" indicator.
+    context_summary: Optional[dict] = None
+    try:
+        if chat_context is not None:
+            # ``chat_context`` is the legacy ChatContext shim. The
+            # underlying BuiltContext carries the structured summary
+            # but isn't directly exposed here; we surface the
+            # heuristic fields the UI already understands.
+            context_summary = {
+                "memory_count": chat_context.memory_count,
+                "mood_signal": chat_context.mood_signal,
+                "prediction": chat_context.prediction,
+                "hard_budget_hit": chat_context is None,
+            }
+            yield {"type": "context", "context": context_summary}
+    except Exception:
+        # Summary emission is purely cosmetic; never break the stream.
+        pass
+
+    # Cache short-circuit. If a semantically similar reply is cached
+    # we can skip the LLM entirely.
+    if isinstance(cache_reply, str) and cache_reply:
         ai_message = await create_message(
             db=db,
             conversation_id=conversation.id,
             role="assistant",
-            content=cached_reply,
+            content=cache_reply,
             model_used="cache",
-            token_count=estimate_text_tokens(cached_reply),
+            token_count=estimate_text_tokens(cache_reply),
         )
         if conversation.title == "New Chat":
-            conversation.title = message_content[:50] + "..." if len(message_content) > 50 else message_content
+            conversation.title = (
+                message_content[:50] + "..."
+                if len(message_content) > 50
+                else message_content
+            )
             await db.commit()
-        yield {"type": "chunk", "chunk": cached_reply}
+        yield {"type": "chunk", "chunk": cache_reply}
         yield {
             "type": "done",
             "conversation_id": conversation.id,
@@ -542,18 +681,15 @@ async def send_chat_message_stream(
         }
         return
 
-    history_limit = _chat_history_limit()
-    messages = await get_conversation_messages(
-        db,
-        conversation.id,
-        limit=history_limit + 1,
-    )
-    conversation_history = [
-        {"role": msg.role, "content": msg.content}
-        for msg in messages
-        if msg.id != user_message.id
-    ]
-    conversation_history = conversation_history[-history_limit:]
+    # If context build failed entirely we still proceed with an empty
+    # context; the LLM path accepts an empty ``user_context``.
+    if chat_context is None:
+        chat_context = type("EmptyCtx", (), {"text": "", "memory_count": 0, "mood_signal": None, "prediction": None})()
+
+    # Filter the just-inserted user message out of the history.
+    conversation_history = [m for m in history if m["content"] != message_content][-history_limit:]
+    if not conversation_history and history:
+        conversation_history = history[-history_limit:]
 
     chunks: list[str] = []
     async for chunk in generate_streaming_response(

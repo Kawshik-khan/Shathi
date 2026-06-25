@@ -25,9 +25,12 @@ export function DashboardShell({ children }: DashboardShellProps) {
         <MobileSidebar />
       </Suspense>
 
-      {/* Main Content - responsive margins */}
+      {/* Main Content - fills the available width after the sidebar so the
+          dashboard cards sit close to the sidebar instead of being centered
+          inside a max-w container (which produces an empty middle gap on
+          wide viewports). */}
       <main className="lg:ml-72 lg:mr-4 px-4 lg:px-0 py-6 min-h-screen">
-        <div className="max-w-7xl mx-auto">
+        <div className="w-full max-w-[1600px]">
           <Header />
           
           <motion.div

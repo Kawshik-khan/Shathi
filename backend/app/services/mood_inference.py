@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+import logging
 import re
 from collections import Counter, defaultdict
 from dataclasses import dataclass
@@ -11,6 +13,7 @@ from typing import Iterable
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.models.conversation import Conversation, Message
 from app.models.habit import Habit, HabitCompletion
 from app.models.journal import Journal
@@ -23,6 +26,9 @@ from app.schemas.mood import (
     SleepTimingCreate,
 )
 from app.services.emotion import detect_emotion
+
+
+logger = logging.getLogger(__name__)
 
 
 NEGATIVE_TERMS = {
@@ -542,6 +548,206 @@ async def infer_mood_from_signals(
         reason_bn = "এখনও যথেষ্ট টেক্সট বা আচরণগত সিগন্যাল নেই, তাই Sathi স্বাভাবিক সহায়ক টোন ব্যবহার করবে।"
         reason_en = "There are not enough recent text or behavioral signals yet, so Sathi will use a normal supportive tone."
 
+    return MoodInference(
+        state=state,
+        confidence=confidence,
+        support_tone=SUPPORT_TONES[state],
+        reason_bn=reason_bn,
+        reason_en=reason_en,
+        evidence=[
+            MoodInferenceEvidence(
+                category=item.category,  # type: ignore[arg-type]
+                state=item.state,
+                reason_bn=item.reason_bn,
+                reason_en=item.reason_en,
+                weight=item.weight,
+            )
+            for item in evidence[:8]
+        ],
+        source_counts={
+            "chat_messages": len(messages),
+            "journals": len(journals),
+            "reflections": len(reflections),
+            "activity_events": len(activities),
+            "sleep_entries": len(sleeps),
+            "habit_completions": len(completions),
+        },
+        days=days,
+        generated_at=now,
+    )
+
+async def _fetch_messages(db: AsyncSession, user_id: str, since: datetime):
+    result = await db.execute(
+        select(Message)
+        .join(Conversation)
+        .where(
+            Conversation.user_id == user_id,
+            Message.role == "user",
+            Message.created_at >= since,
+        )
+        .order_by(desc(Message.created_at))
+        .limit(50)
+    )
+    return list(result.scalars().all())
+
+
+async def _fetch_journals(db: AsyncSession, user_id: str, since: datetime):
+    result = await db.execute(
+        select(Journal)
+        .where(Journal.user_id == user_id, Journal.written_at >= since)
+        .order_by(desc(Journal.written_at))
+        .limit(20)
+    )
+    return list(result.scalars().all())
+
+
+async def _fetch_reflections(db: AsyncSession, user_id: str, since: datetime):
+    result = await db.execute(
+        select(MoodReflection)
+        .where(MoodReflection.user_id == user_id, MoodReflection.created_at >= since)
+        .order_by(desc(MoodReflection.created_at))
+        .limit(20)
+    )
+    return list(result.scalars().all())
+
+
+async def _fetch_activities(db: AsyncSession, user_id: str, since: datetime):
+    result = await db.execute(
+        select(AppActivityEvent)
+        .where(AppActivityEvent.user_id == user_id, AppActivityEvent.occurred_at >= since)
+        .order_by(desc(AppActivityEvent.occurred_at))
+        .limit(100)
+    )
+    return list(result.scalars().all())
+
+
+async def _fetch_sleeps(db: AsyncSession, user_id: str, since: datetime):
+    result = await db.execute(
+        select(SleepTimingEntry)
+        .where(SleepTimingEntry.user_id == user_id, SleepTimingEntry.slept_at >= since)
+        .order_by(desc(SleepTimingEntry.slept_at))
+        .limit(30)
+    )
+    return list(result.scalars().all())
+
+
+async def _fetch_habits_and_completions(db: AsyncSession, user_id: str, since: datetime):
+    habits_result = await db.execute(select(Habit).where(Habit.user_id == user_id))
+    habits = list(habits_result.scalars().all())
+    completions: list[HabitCompletion] = []
+    if habits:
+        completions_result = await db.execute(
+            select(HabitCompletion)
+            .where(
+                HabitCompletion.habit_id.in_([habit.id for habit in habits]),
+                HabitCompletion.completed_at >= since.date(),
+            )
+            .order_by(desc(HabitCompletion.completed_at))
+        )
+        completions = list(completions_result.scalars().all())
+    return habits, completions
+
+
+async def _gather_signal_queries(
+    db: AsyncSession, user_id: str, since: datetime, timeout_ms: int | None = None
+) -> dict[str, list]:
+    """Run all signal-loading queries concurrently with an optional timeout.
+
+    A slow query is allowed to time out without blocking the others; failures are
+    isolated to an empty list so downstream heuristics fall back to defaults.
+    """
+    settings = get_settings()
+    budget = (timeout_ms or settings.CHAT_PROVIDER_TIMEOUT_MS) / 1000.0
+
+    async def _guarded(name: str, coro):
+        try:
+            return await asyncio.wait_for(coro, timeout=budget)
+        except asyncio.TimeoutError:
+            logger.warning(
+                "mood inference query %s timed out after %ss", name, budget,
+                extra={"ContextProvider": "InferredMood", "SubQuery": name},
+            )
+            return []
+        except Exception as exc:  # noqa: BLE001
+            logger.warning(
+                "mood inference query %s failed: %s", name, exc,
+                extra={"ContextProvider": "InferredMood", "SubQuery": name},
+            )
+            return []
+
+    messages, journals, reflections, activities, sleeps, habits_completions = await asyncio.gather(
+        _guarded("messages", _fetch_messages(db, user_id, since)),
+        _guarded("journals", _fetch_journals(db, user_id, since)),
+        _guarded("reflections", _fetch_reflections(db, user_id, since)),
+        _guarded("activities", _fetch_activities(db, user_id, since)),
+        _guarded("sleeps", _fetch_sleeps(db, user_id, since)),
+        _guarded("habits", _fetch_habits_and_completions(db, user_id, since)),
+    )
+    habits, completions = habits_completions if isinstance(habits_completions, tuple) else ([], [])
+    return {
+        "messages": messages,
+        "journals": journals,
+        "reflections": reflections,
+        "activities": activities,
+        "sleeps": sleeps,
+        "habits": habits,
+        "completions": completions,
+    }
+
+
+async def infer_mood_from_signals_parallel(
+    db: AsyncSession,
+    user_id: str,
+    days: int = 14,
+    timeout_ms: int | None = None,
+) -> MoodInference:
+    """Parallelized version of :func:`infer_mood_from_signals`.
+
+    All evidence-loading queries run concurrently so the worst-case latency is
+    bounded by the slowest query instead of their sum. The downstream analyzer
+    is unchanged; on any failure an empty list is used, which keeps the
+    heuristic well-defined.
+    """
+    now = datetime.now(timezone.utc)
+    since = now - timedelta(days=days)
+    signals = await _gather_signal_queries(db, user_id, since, timeout_ms=timeout_ms)
+
+    messages = signals["messages"]
+    journals = signals["journals"]
+    reflections = signals["reflections"]
+    activities = signals["activities"]
+    sleeps = signals["sleeps"]
+    habits = signals["habits"]
+    completions = signals["completions"]
+
+    texts = [
+        *(message.content for message in messages),
+        *(journal.content for journal in journals),
+        *(reflection.answer for reflection in reflections),
+    ]
+    evidence = [
+        *analyze_text_signals(texts),
+        *analyze_behavior_signals(
+            activities=activities,
+            sleeps=sleeps,
+            habits=habits,
+            completions=completions,
+            journals=journals,
+            reflections=reflections,
+            now=now,
+        ),
+    ]
+    state, confidence = _dominant_state(evidence)
+
+    if evidence:
+        reason_bn = f"?????????? ???????????? ???????? {STATE_BN[state]}-?? ?????? ?????"
+        reason_en = f"Recent signals most strongly suggest {state.replace('_', ' ')}."
+    else:
+        reason_bn = "???? ?????? ?????? ?? ?????? ???????? ???, ??? Sathi ??????? ?????? ??? ??????? ?????"
+        reason_en = (
+            "There are not enough recent text or behavioral signals yet, "
+            "so Sathi will use a normal supportive tone."
+        )
     return MoodInference(
         state=state,
         confidence=confidence,

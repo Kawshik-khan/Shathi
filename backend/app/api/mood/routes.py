@@ -18,6 +18,7 @@ from app.schemas.mood import (
     SleepTimingCreate,
 )
 from app.services.cache_service import invalidate_user_context
+from app.services.chat.cache import invalidate_user_context_sections
 from app.services.mood import (
     create_mood_log as create_mood_log_service,
     get_mood_logs as get_mood_logs_service,
@@ -65,6 +66,7 @@ async def create_mood_log_endpoint(
     try:
         mood_log = await create_mood_log_service(db, current_user.id, log)
         await invalidate_user_context(current_user.id, redis)
+        await invalidate_user_context_sections(current_user.id, redis, ["mood", "inferred_mood"])
         return mood_log_response(mood_log)
     except ValueError as e:
         raise HTTPException(
@@ -111,6 +113,7 @@ async def create_mood_reflection_endpoint(
     try:
         reflection = await create_mood_reflection_service(db, current_user.id, payload)
         await invalidate_user_context(current_user.id, redis)
+        await invalidate_user_context_sections(current_user.id, redis, ["mood", "inferred_mood"])
         return MoodReflectionSchema.model_validate(reflection)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
@@ -132,6 +135,7 @@ async def create_activity_event_endpoint(
     try:
         event = await create_activity_event_service(db, current_user.id, payload)
         await invalidate_user_context(current_user.id, redis)
+        await invalidate_user_context_sections(current_user.id, redis, ["activity", "inferred_mood"])
         return AppActivityEventSchema.model_validate(event)
     except Exception:
         raise HTTPException(
@@ -151,6 +155,7 @@ async def create_sleep_timing_endpoint(
     try:
         entry = await create_sleep_timing_service(db, current_user.id, payload)
         await invalidate_user_context(current_user.id, redis)
+        await invalidate_user_context_sections(current_user.id, redis, ["sleep", "inferred_mood"])
         return SleepTimingSchema.model_validate(entry)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))

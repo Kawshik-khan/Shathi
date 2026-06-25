@@ -7,6 +7,7 @@ from app.core.database import get_db
 from app.core.dependencies import get_current_active_user, get_redis
 from app.schemas.journal import Journal as JournalSchema, JournalCreate, JournalUpdate
 from app.services.cache_service import invalidate_user_context
+from app.services.chat.cache import invalidate_user_context_sections
 from app.services.journal import (
     create_journal_entry as create_journal_entry_service,
     get_journal_entries as get_journal_entries_service,
@@ -31,6 +32,7 @@ async def create_journal_entry_endpoint(
     try:
         journal_entry = await create_journal_entry_service(db, current_user.id, entry)
         await invalidate_user_context(current_user.id, redis)
+        await invalidate_user_context_sections(current_user.id, redis, ["journal", "inferred_mood"])
         
         return JournalSchema(
             id=journal_entry.id,
@@ -123,10 +125,11 @@ async def update_journal_entry(
 ) -> JournalSchema:
     """Update a journal entry."""
     updated_entry = await update_journal_entry_service(db, current_user.id, entry_id, update)
-    
+
     if not updated_entry:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Entry not found")
     await invalidate_user_context(current_user.id, redis)
+    await invalidate_user_context_sections(current_user.id, redis, ["journal", "inferred_mood"])
     
     return JournalSchema(
         id=updated_entry.id,
@@ -153,7 +156,10 @@ async def delete_journal_entry(
 ) -> None:
     """Delete a journal entry."""
     success = await delete_journal_entry_service(db, current_user.id, entry_id)
-    
+
     if not success:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Entry not found")
+    if redis is not None:
+        await invalidate_user_context(current_user.id, redis)
+        await invalidate_user_context_sections(current_user.id, redis, ["journal", "inferred_mood"])
 

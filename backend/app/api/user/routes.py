@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.dependencies import get_current_active_user
+from app.core.dependencies import get_current_active_user, get_redis
 from app.schemas.localization import LanguagePreferenceUpdate
 from app.schemas.user import (
     AccountDeleteRequest,
@@ -28,6 +28,7 @@ from app.services.user import (
     update_user_settings,
 )
 from app.services.subscription import build_subscription_summary
+from app.services.chat.cache import invalidate_user_context_sections
 from app.models.user import User as UserModel
 
 router = APIRouter()
@@ -156,6 +157,7 @@ async def update_current_user_profile(
     payload: UserProfileUpdate,
     current_user: UserModel = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
+    redis=Depends(get_redis),
 ) -> UserProfile:
     """Update current user's extended profile."""
     if payload.language is not None and payload.language not in {"en", "bn"}:
@@ -165,6 +167,9 @@ async def update_current_user_profile(
         )
 
     updated_user, profile = await update_user_profile(db, current_user, payload)
+    # Profile change touches support style, wellness goals, timezone, language —
+    # drop every section because the LLM's tone calibration can shift.
+    await invalidate_user_context_sections(current_user.id, redis, None)
     return profile_response(updated_user, profile)
 
 
