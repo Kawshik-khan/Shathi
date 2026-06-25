@@ -15,8 +15,12 @@ from app.services.ai import (
     rewrite_chat_response_with_usage,
 )
 from app.services.chat_context import build_chat_context
-from app.services.crisis import detect_crisis, filter_unsafe_assistant_response
+from app.services.crisis import CrisisResult, detect_crisis, filter_unsafe_assistant_response
 from app.services.emotion import detect_emotion
+from app.services.response_cache import (
+    lookup_cached_response,
+    store_cached_response,
+)
 from app.services.localization import (
     normalize_language,
     requests_english,
@@ -192,6 +196,7 @@ async def send_chat_message(
     redis=None,
     pinecone_index=None,
     include_memory: bool = True,
+    precomputed_crisis: Optional[CrisisResult] = None,
 ) -> tuple[Conversation, Message, Message]:
     """Send a message and get AI response."""
     # Get or create conversation
@@ -215,25 +220,26 @@ async def send_chat_message(
         language,
     )
 
-    crisis_result = await detect_crisis(message_content)
-    
-    # Detect emotion in user message
-    emotion_result = await detect_emotion(message_content)
-    
-    # Create user message
-    user_message = await create_message(
-        db=db,
-        conversation_id=conversation.id,
-        role="user",
-        content=message_content,
-        emotion=emotion_result.emotion,
-        emotion_confidence=emotion_result.confidence,
-        token_count=estimate_text_tokens(message_content),
-        crisis_flag=crisis_result.is_crisis,
-        crisis_severity=crisis_result.severity.value if crisis_result.is_crisis else None,
+    crisis_result = (
+        precomputed_crisis
+        if precomputed_crisis is not None
+        else await detect_crisis(message_content)
     )
 
     if crisis_result.is_crisis:
+        # Detect emotion in user message
+        emotion_result = await detect_emotion(message_content)
+        user_message = await create_message(
+            db=db,
+            conversation_id=conversation.id,
+            role="user",
+            content=message_content,
+            emotion=emotion_result.emotion,
+            emotion_confidence=emotion_result.confidence,
+            token_count=estimate_text_tokens(message_content),
+            crisis_flag=True,
+            crisis_severity=crisis_result.severity.value,
+        )
         ai_message = await create_message(
             db=db,
             conversation_id=conversation.id,
@@ -251,7 +257,52 @@ async def send_chat_message(
             await db.commit()
 
         return conversation, user_message, ai_message
-    
+
+    # Non-crisis: run independent work concurrently (emotion, cache lookup, context).
+    # Only build_chat_context touches the DB session within this gather.
+    emotion_result, cached_reply, chat_context = await asyncio.gather(
+        detect_emotion(message_content),
+        lookup_cached_response(user_id, message_content, pinecone_index),
+        build_chat_context(
+            db=db,
+            user_id=user_id,
+            message=message_content,
+            conversation_id=conversation.id,
+            language=selected_language,
+            redis=redis,
+            pinecone_index=pinecone_index,
+            include_memory=include_memory,
+        ),
+    )
+
+    # Create user message
+    user_message = await create_message(
+        db=db,
+        conversation_id=conversation.id,
+        role="user",
+        content=message_content,
+        emotion=emotion_result.emotion,
+        emotion_confidence=emotion_result.confidence,
+        token_count=estimate_text_tokens(message_content),
+        crisis_flag=False,
+        crisis_severity=None,
+    )
+
+    # Semantic response cache hit short-circuits LLM generation
+    if cached_reply:
+        ai_message = await create_message(
+            db=db,
+            conversation_id=conversation.id,
+            role="assistant",
+            content=cached_reply,
+            model_used="cache",
+            token_count=estimate_text_tokens(cached_reply),
+        )
+        if conversation.title == "New Chat":
+            conversation.title = message_content[:50] + "..." if len(message_content) > 50 else message_content
+            await db.commit()
+        return conversation, user_message, ai_message
+
     # Get conversation history for context
     history_limit = _chat_history_limit()
     messages = await get_conversation_messages(
@@ -271,17 +322,6 @@ async def send_chat_message(
         })
     conversation_history = conversation_history[-history_limit:]
 
-    chat_context = await build_chat_context(
-        db=db,
-        user_id=user_id,
-        message=message_content,
-        conversation_id=conversation.id,
-        language=selected_language,
-        redis=redis,
-        pinecone_index=pinecone_index,
-        include_memory=include_memory,
-    )
-    
     # Generate AI response
     generation_result = await generate_chat_response_with_usage(
         message=message_content,
@@ -346,7 +386,11 @@ async def send_chat_message(
         usage=token_usage,
     )
     await _maybe_schedule_summary(db, conversation.id)
-    
+
+    # Write the final reply back to the semantic response cache
+    if not unsafe_response:
+        await store_cached_response(user_id, message_content, ai_response_content, pinecone_index)
+
     # Update conversation title if this is the first exchange
     if conversation.title == "New Chat":
         # Generate a title from the first user message
@@ -367,6 +411,7 @@ async def send_chat_message_stream(
     redis=None,
     pinecone_index=None,
     include_memory: bool = True,
+    precomputed_crisis: Optional[CrisisResult] = None,
 ):
     """Send a message and yield streaming response events."""
     if conversation_id:
@@ -388,30 +433,32 @@ async def send_chat_message_stream(
         language,
     )
 
-    crisis_result = await detect_crisis(message_content)
-    emotion_result = await detect_emotion(message_content)
-
-    user_message = await create_message(
-        db=db,
-        conversation_id=conversation.id,
-        role="user",
-        content=message_content,
-        emotion=emotion_result.emotion,
-        emotion_confidence=emotion_result.confidence,
-        token_count=estimate_text_tokens(message_content),
-        crisis_flag=crisis_result.is_crisis,
-        crisis_severity=crisis_result.severity.value if crisis_result.is_crisis else None,
+    crisis_result = (
+        precomputed_crisis
+        if precomputed_crisis is not None
+        else await detect_crisis(message_content)
     )
 
-    yield {
-        "type": "meta",
-        "conversation_id": conversation.id,
-        "user_message_id": user_message.id,
-        "crisis_flag": crisis_result.is_crisis,
-        "language": selected_language,
-    }
-
     if crisis_result.is_crisis:
+        emotion_result = await detect_emotion(message_content)
+        user_message = await create_message(
+            db=db,
+            conversation_id=conversation.id,
+            role="user",
+            content=message_content,
+            emotion=emotion_result.emotion,
+            emotion_confidence=emotion_result.confidence,
+            token_count=estimate_text_tokens(message_content),
+            crisis_flag=True,
+            crisis_severity=crisis_result.severity.value,
+        )
+        yield {
+            "type": "meta",
+            "conversation_id": conversation.id,
+            "user_message_id": user_message.id,
+            "crisis_flag": True,
+            "language": selected_language,
+        }
         ai_message = await create_message(
             db=db,
             conversation_id=conversation.id,
@@ -434,6 +481,67 @@ async def send_chat_message_stream(
         }
         return
 
+    # Non-crisis: run independent work concurrently (emotion, cache lookup, context).
+    # Only build_chat_context touches the DB session within this gather.
+    emotion_result, cached_reply, chat_context = await asyncio.gather(
+        detect_emotion(message_content),
+        lookup_cached_response(user_id, message_content, pinecone_index),
+        build_chat_context(
+            db=db,
+            user_id=user_id,
+            message=message_content,
+            conversation_id=conversation.id,
+            language=selected_language,
+            redis=redis,
+            pinecone_index=pinecone_index,
+            include_memory=include_memory,
+        ),
+    )
+
+    user_message = await create_message(
+        db=db,
+        conversation_id=conversation.id,
+        role="user",
+        content=message_content,
+        emotion=emotion_result.emotion,
+        emotion_confidence=emotion_result.confidence,
+        token_count=estimate_text_tokens(message_content),
+        crisis_flag=False,
+        crisis_severity=None,
+    )
+
+    yield {
+        "type": "meta",
+        "conversation_id": conversation.id,
+        "user_message_id": user_message.id,
+        "crisis_flag": False,
+        "language": selected_language,
+    }
+
+    # Semantic response cache hit short-circuits LLM generation
+    if cached_reply:
+        ai_message = await create_message(
+            db=db,
+            conversation_id=conversation.id,
+            role="assistant",
+            content=cached_reply,
+            model_used="cache",
+            token_count=estimate_text_tokens(cached_reply),
+        )
+        if conversation.title == "New Chat":
+            conversation.title = message_content[:50] + "..." if len(message_content) > 50 else message_content
+            await db.commit()
+        yield {"type": "chunk", "chunk": cached_reply}
+        yield {
+            "type": "done",
+            "conversation_id": conversation.id,
+            "message_id": ai_message.id,
+            "crisis_flag": False,
+            "model_used": "cache",
+            "language": selected_language,
+        }
+        return
+
     history_limit = _chat_history_limit()
     messages = await get_conversation_messages(
         db,
@@ -446,16 +554,6 @@ async def send_chat_message_stream(
         if msg.id != user_message.id
     ]
     conversation_history = conversation_history[-history_limit:]
-    chat_context = await build_chat_context(
-        db=db,
-        user_id=user_id,
-        message=message_content,
-        conversation_id=conversation.id,
-        language=selected_language,
-        redis=redis,
-        pinecone_index=pinecone_index,
-        include_memory=include_memory,
-    )
 
     chunks: list[str] = []
     async for chunk in generate_streaming_response(
@@ -521,6 +619,10 @@ async def send_chat_message_stream(
         usage=token_usage,
     )
     await _maybe_schedule_summary(db, conversation.id)
+
+    # Write the final reply back to the semantic response cache
+    if not unsafe_response:
+        await store_cached_response(user_id, message_content, ai_response_content, pinecone_index)
 
     if conversation.title == "New Chat":
         conversation.title = message_content[:50] + "..." if len(message_content) > 50 else message_content

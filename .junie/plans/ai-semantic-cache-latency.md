@@ -133,7 +133,7 @@ Backend-only validation via the existing test commands (`npm run test:backend` �
 
 # Delivery Steps
 
-###   Step 1: Add semantic response cache service and settings
+### ✓ Step 1: Add semantic response cache service and settings
 A new per-user Pinecone-backed response cache module exists and is configurable.
 
 - Create `backend/app/services/response_cache.py` with `lookup_cached_response(user_id, message, pinecone_index)` and `store_cached_response(user_id, message, reply, pinecone_index)`.
@@ -141,7 +141,7 @@ A new per-user Pinecone-backed response cache module exists and is configurable.
 - Return a hit only when the top similarity score ≥ `RESPONSE_CACHE_SIMILARITY_THRESHOLD`; bound calls by `EMBEDDING_TIMEOUT_SECONDS` and swallow/log all errors (fail open).
 - Add `RESPONSE_CACHE_ENABLED`, `RESPONSE_CACHE_NAMESPACE`, `RESPONSE_CACHE_SIMILARITY_THRESHOLD` to `app/core/config.py`.
 
-###   Step 2: Integrate cache lookup and write-back into the chat pipeline
+### ✓ Step 2: Integrate cache lookup and write-back into the chat pipeline
 Non-crisis chat turns serve cached replies on a hit and populate the cache on a miss.
 
 - In `app/services/chat.py` (`send_chat_message` and `send_chat_message_stream`), after persisting the user message, call `lookup_cached_response`.
@@ -149,14 +149,14 @@ Non-crisis chat turns serve cached replies on a hit and populate the cache on a 
 - On a miss, after the final post-filter/post-rewrite reply is computed, call `store_cached_response`.
 - Never cache or serve crisis turns.
 
-###   Step 3: Parallelize the pipeline and dedupe crisis detection
+### ✓ Step 3: Parallelize the pipeline and dedupe crisis detection
 The per-turn pipeline runs independent work concurrently and detects crisis only once.
 
 - Add an optional `precomputed_crisis` parameter to the chat service functions and pass `crisis_result` from `app/api/chat/routes.py` (`/send` and `/stream`) so `detect_crisis` is not called twice.
 - Run `detect_emotion(user message)`, `build_chat_context(...)`, and the cache lookup concurrently via `asyncio.gather`, keeping crisis as the fast short-circuit guard.
 - Preserve existing persistence of emotion, token usage, summaries, and the streaming event sequence.
 
-###   Step 4: Make the system prompt prompt-cache friendly
+### ✓ Step 4: Make the system prompt prompt-cache friendly
 The static system prompt forms a stable, cacheable prefix to cut input-token cost per turn.
 
 - In `app/services/ai.py` `_build_messages`, emit the static `SYSTEM_PROMPT` as its own leading system message kept byte-identical across turns.

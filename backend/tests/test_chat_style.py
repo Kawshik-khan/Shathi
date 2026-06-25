@@ -42,7 +42,9 @@ def test_prompt_includes_private_user_context_quietly():
         "bn",
         user_context="Mood signal: recent mood is low.",
     )
-    system_message = messages[0]["content"]
+    system_message = "\n\n".join(
+        m["content"] for m in messages if m["role"] == "system"
+    )
 
     assert "Private personalization context" in system_message
     assert "Mood signal: recent mood is low." in system_message

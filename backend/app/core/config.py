@@ -74,6 +74,11 @@ class Settings(BaseSettings):
     CHAT_HISTORY_LIMIT: int = 12
     EMBEDDING_TIMEOUT_SECONDS: float = 3.0
     USER_CONTEXT_CACHE_TTL: int = 300
+
+    # Semantic response cache
+    RESPONSE_CACHE_ENABLED: bool = True
+    RESPONSE_CACHE_NAMESPACE: str = "response-cache"
+    RESPONSE_CACHE_SIMILARITY_THRESHOLD: float = 0.95
     
     # Cloudflare KV
     CLOUDFLARE_ACCOUNT_ID: Optional[str] = None

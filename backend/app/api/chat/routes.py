@@ -62,6 +62,7 @@ async def send_message(
             redis=redis,
             pinecone_index=pinecone_index,
             include_memory=has_feature(current_user, "ai_memory"),
+            precomputed_crisis=crisis_result,
         )
         if not crisis_result.is_crisis:
             await record_usage_event(
@@ -121,6 +122,7 @@ async def stream_message(
                 redis=redis,
                 pinecone_index=pinecone_index,
                 include_memory=has_feature(current_user, "ai_memory"),
+                precomputed_crisis=crisis_result,
             ):
                 yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
                 if event.get("type") == "done" and not crisis_result.is_crisis:

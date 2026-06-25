@@ -280,26 +280,34 @@ def _build_messages(
         if language == "bn"
         else "Reply in natural English."
     )
-    system_prompt_parts = [
-        SYSTEM_PROMPT,
+    # Keep the large static SYSTEM_PROMPT as its own leading system message so it
+    # stays byte-identical across turns and can be reused by provider prompt caching.
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+
+    # Dynamic per-turn instructions go into a separate system message after the
+    # stable prefix, so they do not invalidate the cached prefix.
+    dynamic_parts = [
         MODE_INSTRUCTIONS[mode],
         language_context,
     ]
     if localized_context:
-        system_prompt_parts.append(localized_context)
+        dynamic_parts.append(localized_context)
     if style_retry:
-        system_prompt_parts.append(
+        dynamic_parts.append(
             "Previous style was too clinical or repetitive. Rewrite casually in 1-2 short sentences."
         )
-    if user_context:
-        system_prompt_parts.append(
-            "Private personalization context for this turn:\n"
-            f"{user_context}\n"
-            "Use this context quietly only when it improves the response. "
-            "Do not quote it, do not say you retrieved it, and do not sound creepy."
-        )
+    messages.append({"role": "system", "content": "\n\n".join(dynamic_parts)})
 
-    messages = [{"role": "system", "content": "\n\n".join(system_prompt_parts)}]
+    if user_context:
+        messages.append({
+            "role": "system",
+            "content": (
+                "Private personalization context for this turn:\n"
+                f"{user_context}\n"
+                "Use this context quietly only when it improves the response. "
+                "Do not quote it, do not say you retrieved it, and do not sound creepy."
+            ),
+        })
     if conversation_summary:
         messages.append({
             "role": "system",

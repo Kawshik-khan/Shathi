@@ -86,6 +86,9 @@
   --glass-border: rgba(255, 255, 255, 0.4);
   --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
   --glass-shadow-hover: 0 20px 40px rgba(0, 0, 0, 0.08);
+
+  /* Background Gradients */
+  --bg-gradient: radial-gradient(circle at top left, #E3F0F3, #FAFBFC), radial-gradient(circle at bottom right, #EEF7EF, #FAFBFC);
   
   --border: #E4E8EC;
   --input: #E4E8EC;
