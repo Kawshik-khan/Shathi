@@ -54,7 +54,7 @@ export function HabitsTracker() {
     <GlassCard className="h-full" delay={0.25}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Leaf className="w-4 h-4 text-[#22C55E]" />
+          <Leaf className="w-4 h-4 text-[#4A90A4]" />
           <span className="text-sm font-medium text-foreground">Habits</span>
         </div>
         <button
@@ -77,7 +77,7 @@ export function HabitsTracker() {
         ) : error ? (
           <div className="rounded-2xl bg-red-50 p-3 text-xs text-red-500">{error}</div>
         ) : habits.length === 0 ? (
-          <div className="rounded-2xl bg-[#F3FAF4]/80 p-4 text-sm text-muted-foreground">
+          <div className="rounded-2xl bg-[#F1F5F7]/80 p-4 text-sm text-muted-foreground">
             No habits yet. Add one to start tracking streaks.
           </div>
         ) : (
@@ -94,8 +94,8 @@ export function HabitsTracker() {
                 transition={{ delay: 0.3 + index * 0.05 }}
                 className="flex items-center gap-3"
               >
-                <div className="w-8 h-8 rounded-lg bg-[#F3FAF4] flex items-center justify-center flex-shrink-0">
-                  <Icon className="w-4 h-4 text-[#22C55E]" />
+                <div className="w-8 h-8 rounded-lg bg-[#F1F5F7] flex items-center justify-center flex-shrink-0">
+                  <Icon className="w-4 h-4 text-[#4A90A4]" />
                 </div>
                 
                 <div className="flex-1 min-w-0">
@@ -119,8 +119,8 @@ export function HabitsTracker() {
                         className={cn(
                           "w-3 h-3 rounded-full",
                           completed 
-                            ? "bg-[#22C55E]" 
-                            : "bg-[#EEF7EF]"
+                            ? "bg-[#4A90A4]" 
+                            : "bg-[#EAF2F4]"
                         )}
                       />
                     ))}
@@ -133,7 +133,7 @@ export function HabitsTracker() {
       </div>
 
       <button
-        className="flex items-center gap-1 mt-5 text-xs text-muted-foreground hover:text-[#22C55E] transition-colors"
+        className="flex items-center gap-1 mt-5 text-xs text-muted-foreground hover:text-[#4A90A4] transition-colors"
         onClick={() => router.push('/habits')}
       >
         View all habits

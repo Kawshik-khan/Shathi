@@ -55,7 +55,7 @@ export default function SecurityWidget() {
         <h3 className="font-medium text-lg mb-3">Security</h3>
         <div className="space-y-3">
           {(status || error) && (
-            <p className={`text-sm ${error ? 'text-red-500' : 'text-[#22C55E]'}`}>
+            <p className={`text-sm ${error ? 'text-red-500' : 'text-[#4A90A4]'}`}>
               {error || status}
             </p>
           )}
@@ -101,20 +101,20 @@ export default function SecurityWidget() {
                 value={currentPassword}
                 onChange={(event) => setCurrentPassword(event.target.value)}
                 placeholder="Current password"
-                className="w-full rounded-full border border-white/20 bg-white/60 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#22C55E]"
+                className="w-full rounded-full border border-white/20 bg-white/60 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#4A90A4]"
               />
               <input
                 type="password"
                 value={newPassword}
                 onChange={(event) => setNewPassword(event.target.value)}
                 placeholder="New password"
-                className="w-full rounded-full border border-white/20 bg-white/60 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#22C55E]"
+                className="w-full rounded-full border border-white/20 bg-white/60 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#4A90A4]"
               />
               <button
                 type="button"
                 onClick={handlePasswordUpdate}
                 disabled={!currentPassword || newPassword.length < 8}
-                className="rounded-full bg-[#5DBB63] px-3 py-1 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-full bg-[#5F9DB0] px-3 py-1 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Update
               </button>
@@ -122,7 +122,7 @@ export default function SecurityWidget() {
           </div>
 
           {sessions.length > 0 && (
-            <div className="rounded-2xl bg-[#F3FAF4]/80 p-3">
+            <div className="rounded-2xl bg-[#F1F5F7]/80 p-3">
               {sessions.map((session) => (
                 <div key={session.id}>
                   <p className="text-sm font-medium">{session.current ? 'Current session' : session.id}</p>
@@ -132,7 +132,7 @@ export default function SecurityWidget() {
             </div>
           )}
         </div>
-        <button type="submit" className="mt-4 rounded-full bg-[#5DBB63] px-4 py-2 text-sm font-medium text-white hover:bg-[#4da857]">
+        <button type="submit" className="mt-4 rounded-full bg-[#5F9DB0] px-4 py-2 text-sm font-medium text-white hover:bg-[#4da857]">
           Save
         </button>
       </form>

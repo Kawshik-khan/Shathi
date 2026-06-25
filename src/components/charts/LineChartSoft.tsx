@@ -12,7 +12,7 @@ export default function LineChartSoft({ data }: { data: Array<{ name: string; va
           <XAxis dataKey="name" tick={{ fill: '#94A3B8' }} />
           <YAxis hide />
            <Tooltip wrapperStyle={{ pointerEvents: 'none' }} />
-          <Line type="monotone" dataKey="value" stroke="#22C55E" strokeWidth={3} dot={{ r: 2 }} />
+          <Line type="monotone" dataKey="value" stroke="#4A90A4" strokeWidth={3} dot={{ r: 2 }} />
         </LineChart>
       </ResponsiveContainer>
     </motion.div>

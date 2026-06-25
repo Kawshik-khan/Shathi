@@ -187,7 +187,7 @@ function ProfileContent() {
   return (
     <form onSubmit={handleSave} className="max-w-5xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#7ED957] to-[#22C55E] flex items-center justify-center">
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#6FA8C7] to-[#4A90A4] flex items-center justify-center">
           <User className="w-6 h-6 text-white" />
         </div>
         <div>
@@ -210,12 +210,12 @@ function ProfileContent() {
       <GlassCard delay={0.05}>
         <section className="space-y-5">
           <div className="flex items-center gap-3">
-            <Camera className="w-5 h-5 text-[#22C55E]" />
+            <Camera className="w-5 h-5 text-[#4A90A4]" />
             <h2 className="text-lg font-semibold">Basic Info</h2>
           </div>
 
           <div className="flex flex-col md:flex-row gap-6">
-            <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-[#A7F3A0] to-[#22C55E] flex items-center justify-center overflow-hidden text-white text-3xl font-semibold">
+            <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-[#A8D0D9] to-[#4A90A4] flex items-center justify-center overflow-hidden text-white text-3xl font-semibold">
               {form.avatar_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={form.avatar_url} alt="" className="w-full h-full object-cover" />
@@ -231,7 +231,7 @@ function ProfileContent() {
                   value={form.name}
                   onChange={(event) => updateField('name', event.target.value)}
                   required
-                  className="w-full px-3 py-2 rounded-lg bg-white/70 border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#22C55E]/20"
+                  className="w-full px-3 py-2 rounded-lg bg-white/70 border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#4A90A4]/20"
                 />
               </label>
               <label className="space-y-1">
@@ -248,7 +248,7 @@ function ProfileContent() {
                   value={form.avatar_url}
                   onChange={(event) => updateField('avatar_url', event.target.value)}
                   placeholder="https://..."
-                  className="w-full px-3 py-2 rounded-lg bg-white/70 border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#22C55E]/20"
+                  className="w-full px-3 py-2 rounded-lg bg-white/70 border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#4A90A4]/20"
                 />
               </label>
               <label className="space-y-1">
@@ -256,7 +256,7 @@ function ProfileContent() {
                 <select
                   value={form.language}
                   onChange={(event) => updateField('language', event.target.value as 'en' | 'bn')}
-                  className="w-full px-3 py-2 rounded-lg bg-white/70 border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#22C55E]/20"
+                  className="w-full px-3 py-2 rounded-lg bg-white/70 border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#4A90A4]/20"
                 >
                   <option value="en">English</option>
                   <option value="bn">Bangla</option>
@@ -268,7 +268,7 @@ function ProfileContent() {
                   value={form.bio}
                   onChange={(event) => updateField('bio', event.target.value)}
                   rows={3}
-                  className="w-full px-3 py-2 rounded-lg bg-white/70 border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#22C55E]/20 resize-none"
+                  className="w-full px-3 py-2 rounded-lg bg-white/70 border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#4A90A4]/20 resize-none"
                 />
               </label>
             </div>
@@ -279,7 +279,7 @@ function ProfileContent() {
       <GlassCard delay={0.1}>
         <section className="space-y-5">
           <div className="flex items-center gap-3">
-            <HeartHandshake className="w-5 h-5 text-[#22C55E]" />
+            <HeartHandshake className="w-5 h-5 text-[#4A90A4]" />
             <h2 className="text-lg font-semibold">Wellness Preferences</h2>
           </div>
 
@@ -289,7 +289,7 @@ function ProfileContent() {
               <input
                 value={form.timezone}
                 onChange={(event) => updateField('timezone', event.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-white/70 border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#22C55E]/20"
+                className="w-full px-3 py-2 rounded-lg bg-white/70 border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#4A90A4]/20"
               />
             </label>
             <label className="space-y-1">
@@ -298,7 +298,7 @@ function ProfileContent() {
                 type="date"
                 value={form.date_of_birth}
                 onChange={(event) => updateField('date_of_birth', event.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-white/70 border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#22C55E]/20"
+                className="w-full px-3 py-2 rounded-lg bg-white/70 border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#4A90A4]/20"
               />
             </label>
             <label className="space-y-1">
@@ -306,7 +306,7 @@ function ProfileContent() {
               <select
                 value={form.gender}
                 onChange={(event) => updateField('gender', event.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-white/70 border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#22C55E]/20"
+                className="w-full px-3 py-2 rounded-lg bg-white/70 border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#4A90A4]/20"
               >
                 <option value="">Prefer not to say</option>
                 <option value="female">Female</option>
@@ -320,7 +320,7 @@ function ProfileContent() {
               <select
                 value={form.preferred_support_style}
                 onChange={(event) => updateField('preferred_support_style', event.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-white/70 border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#22C55E]/20"
+                className="w-full px-3 py-2 rounded-lg bg-white/70 border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#4A90A4]/20"
               >
                 <option value="gentle">Gentle and reassuring</option>
                 <option value="practical">Practical and action-focused</option>
@@ -355,7 +355,7 @@ function ProfileContent() {
       <GlassCard delay={0.15}>
         <section className="space-y-5">
           <div className="flex items-center gap-3">
-            <Shield className="w-5 h-5 text-[#22C55E]" />
+            <Shield className="w-5 h-5 text-[#4A90A4]" />
             <h2 className="text-lg font-semibold">Emergency Contact</h2>
           </div>
 
@@ -365,7 +365,7 @@ function ProfileContent() {
               <input
                 value={form.phone}
                 onChange={(event) => updateField('phone', event.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-white/70 border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#22C55E]/20"
+                className="w-full px-3 py-2 rounded-lg bg-white/70 border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#4A90A4]/20"
               />
             </label>
             <label className="space-y-1">
@@ -373,7 +373,7 @@ function ProfileContent() {
               <input
                 value={form.emergency_contact_name}
                 onChange={(event) => updateField('emergency_contact_name', event.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-white/70 border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#22C55E]/20"
+                className="w-full px-3 py-2 rounded-lg bg-white/70 border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#4A90A4]/20"
               />
             </label>
             <label className="space-y-1">
@@ -381,7 +381,7 @@ function ProfileContent() {
               <input
                 value={form.emergency_contact_phone}
                 onChange={(event) => updateField('emergency_contact_phone', event.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-white/70 border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#22C55E]/20"
+                className="w-full px-3 py-2 rounded-lg bg-white/70 border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#4A90A4]/20"
               />
             </label>
           </div>
@@ -392,7 +392,7 @@ function ProfileContent() {
         <button
           type="submit"
           disabled={isSaving || !form.name.trim()}
-          className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#22C55E] text-white text-sm font-medium hover:bg-[#16A34A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#4A90A4] text-white text-sm font-medium hover:bg-[#3F7E90] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           Save Profile

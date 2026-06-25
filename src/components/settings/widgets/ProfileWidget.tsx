@@ -31,7 +31,7 @@ export default function ProfileWidget() {
     <GlassCard delay={0.05} className="">
       <form onSubmit={handleSubmit(onSubmit)} aria-label="Profile settings">
         <div className="flex items-center gap-6">
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#DCFCE7] to-[#E9FBEE] flex items-center justify-center">
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#E3F0F3] to-[#E9FBEE] flex items-center justify-center">
             <span className="text-xl font-semibold text-[#0F172A]" aria-hidden="true">{displayName.charAt(0).toUpperCase()}</span>
           </div>
 
@@ -41,7 +41,7 @@ export default function ProfileWidget() {
                 <input
                   {...register('displayName')}
                   placeholder="Display name"
-                  className="w-full px-3 py-2 rounded-lg bg-white/60 border border-white/20 focus:outline-none focus:ring-2 focus:ring-[#22C55E]"
+                  className="w-full px-3 py-2 rounded-lg bg-white/60 border border-white/20 focus:outline-none focus:ring-2 focus:ring-[#4A90A4]"
                   aria-label="Display name"
                 />
                 {errors.displayName && <p className="text-sm text-red-500">{errors.displayName.message}</p>}
@@ -52,7 +52,7 @@ export default function ProfileWidget() {
                   {...register('email')}
                   type="email"
                   placeholder="Email"
-                  className="w-full px-3 py-2 rounded-lg bg-white/60 border border-white/20 focus:outline-none focus:ring-2 focus:ring-[#22C55E]"
+                  className="w-full px-3 py-2 rounded-lg bg-white/60 border border-white/20 focus:outline-none focus:ring-2 focus:ring-[#4A90A4]"
                   aria-label="Email address"
                 />
                 {errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}
@@ -62,7 +62,7 @@ export default function ProfileWidget() {
                 <input
                   {...register('timezone')}
                   placeholder="Timezone"
-                  className="w-full px-3 py-2 rounded-lg bg-white/60 border border-white/20 focus:outline-none focus:ring-2 focus:ring-[#22C55E]"
+                  className="w-full px-3 py-2 rounded-lg bg-white/60 border border-white/20 focus:outline-none focus:ring-2 focus:ring-[#4A90A4]"
                   aria-label="Timezone"
                 />
                 {errors.timezone && <p className="text-sm text-red-500">{errors.timezone.message}</p>}
@@ -72,7 +72,7 @@ export default function ProfileWidget() {
                 <textarea
                   {...register('bio')}
                   placeholder="Bio (optional)"
-                  className="w-full px-3 py-2 rounded-lg bg-white/60 border border-white/20 focus:outline-none focus:ring-2 focus:ring-[#22C55E] resize-none"
+                  className="w-full px-3 py-2 rounded-lg bg-white/60 border border-white/20 focus:outline-none focus:ring-2 focus:ring-[#4A90A4] resize-none"
                   aria-label="Bio"
                   rows={2}
                 />
@@ -82,7 +82,7 @@ export default function ProfileWidget() {
               <div className="flex gap-2">
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-full bg-[#5DBB63] text-white hover:bg-[#4da857] transition-colors"
+                  className="px-4 py-2 rounded-full bg-[#5F9DB0] text-white hover:bg-[#4da857] transition-colors"
                   aria-label="Save profile changes"
                 >
                   Save
@@ -107,7 +107,7 @@ export default function ProfileWidget() {
                 <button
                   type="button"
                   onClick={() => setIsEditing(true)}
-                  className="px-4 py-2 rounded-full bg-[#5DBB63] text-white hover:bg-[#4da857] transition-colors"
+                  className="px-4 py-2 rounded-full bg-[#5F9DB0] text-white hover:bg-[#4da857] transition-colors"
                   aria-label="Edit profile"
                 >
                   Edit

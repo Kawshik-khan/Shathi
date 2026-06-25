@@ -110,7 +110,7 @@ export default function SignupForm() {
   return (
     <div className="bg-white rounded-xl sm:rounded-2xl p-5 sm:p-6 md:p-8 shadow-sm">
       <div className="text-center mb-5 sm:mb-6">
-        <div className="w-8 sm:w-9 h-8 sm:h-9 mx-auto rounded-full bg-[#EAF6EA] flex items-center justify-center text-base sm:text-lg">✦</div>
+        <div className="w-8 sm:w-9 h-8 sm:h-9 mx-auto rounded-full bg-[#EAF2F4] flex items-center justify-center text-base sm:text-lg">✦</div>
         <h2 className="mt-3 sm:mt-4 text-xl sm:text-2xl font-bold text-[#0F172A]">{t('auth.createAccountTitle')}</h2>
         <p className="mt-2 text-xs sm:text-sm text-[#64748B] leading-relaxed">{t('auth.joinSathi')}</p>
       </div>
@@ -191,7 +191,7 @@ export default function SignupForm() {
             type="checkbox"
             checked={acceptedTerms}
             onChange={(event) => setAcceptedTerms(event.target.checked)}
-            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#22C55E] focus:ring-[#22C55E]"
+            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#4A90A4] focus:ring-[#4A90A4]"
           />
           <span>I agree to the terms, privacy policy, and wellness data handling notice.</span>
         </label>
@@ -199,7 +199,7 @@ export default function SignupForm() {
         <motion.button
           whileHover={{ y: -2 }}
           disabled={loading || !acceptedTerms}
-          className="w-full py-2.5 sm:py-3 rounded-full text-white font-medium text-sm sm:text-base bg-gradient-to-r from-[#5DBB63] to-[#22C55E] shadow-sm hover:shadow-glow transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full py-2.5 sm:py-3 rounded-full text-white font-medium text-sm sm:text-base bg-gradient-to-r from-[#5F9DB0] to-[#4A90A4] shadow-sm hover:shadow-glow transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? t('actions.creatingAccount') : t('actions.createAccount')}
         </motion.button>
@@ -212,7 +212,7 @@ export default function SignupForm() {
 
         <GoogleSignInButton />
 
-        <p className="text-center text-xs sm:text-sm text-[#64748B] mt-4 sm:mt-5">{t('auth.alreadyHaveAccount')} <a href="/auth/login" className="text-[#22C55E] font-medium hover:underline">{t('actions.logIn')}</a></p>
+        <p className="text-center text-xs sm:text-sm text-[#64748B] mt-4 sm:mt-5">{t('auth.alreadyHaveAccount')} <a href="/auth/login" className="text-[#4A90A4] font-medium hover:underline">{t('actions.logIn')}</a></p>
       </form>
     </div>
   );

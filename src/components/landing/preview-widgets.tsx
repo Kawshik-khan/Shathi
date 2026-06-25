@@ -19,17 +19,17 @@ export function MoodPreviewCard() {
     <GlassCard className="h-full" delay={0.1}>
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <TrendingUp className="h-4 w-4 text-[#22C55E]" />
+          <TrendingUp className="h-4 w-4 text-[#4A90A4]" />
           <span className="text-sm font-medium text-muted-foreground">Mood Overview</span>
         </div>
-        <span className="rounded-full bg-[#DCFCE7] px-2 py-0.5 text-xs font-medium text-[#22C55E]">
+        <span className="rounded-full bg-[#E3F0F3] px-2 py-0.5 text-xs font-medium text-[#4A90A4]">
           Demo
         </span>
       </div>
 
       <div className="mb-5 flex items-baseline gap-3">
         <span className="text-4xl font-bold text-foreground">8.4</span>
-        <span className="rounded-full bg-[#DCFCE7] px-2 py-0.5 text-xs font-medium text-[#22C55E]">
+        <span className="rounded-full bg-[#E3F0F3] px-2 py-0.5 text-xs font-medium text-[#4A90A4]">
           Rising
         </span>
       </div>
@@ -44,7 +44,7 @@ export function MoodPreviewCard() {
             transition={{ delay: index * 0.04, duration: 0.35 }}
             className={cn(
               'flex-1 rounded-full',
-              index === moodPoints.length - 1 ? 'bg-[#22C55E]' : 'bg-[#DCFCE7]'
+              index === moodPoints.length - 1 ? 'bg-[#4A90A4]' : 'bg-[#E3F0F3]'
             )}
           />
         ))}
@@ -58,7 +58,7 @@ export function HabitsPreviewCard() {
     <GlassCard className="h-full" delay={0.25}>
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Leaf className="h-4 w-4 text-[#22C55E]" />
+          <Leaf className="h-4 w-4 text-[#4A90A4]" />
           <span className="text-sm font-medium text-foreground">Habits</span>
         </div>
         <span className="text-xs text-muted-foreground">This Week</span>
@@ -74,8 +74,8 @@ export function HabitsPreviewCard() {
             transition={{ delay: 0.1 + index * 0.05 }}
             className="flex items-center gap-3"
           >
-            <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#F3FAF4]">
-              <Leaf className="h-4 w-4 text-[#22C55E]" />
+            <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#F1F5F7]">
+              <Leaf className="h-4 w-4 text-[#4A90A4]" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="mb-1.5 flex items-center justify-between gap-3">
@@ -86,7 +86,7 @@ export function HabitsPreviewCard() {
                 {Array.from({ length: 7 }, (_, dot) => (
                   <span
                     key={dot}
-                    className={cn('h-3 w-3 rounded-full', dot < habit.streak ? 'bg-[#22C55E]' : 'bg-[#EEF7EF]')}
+                    className={cn('h-3 w-3 rounded-full', dot < habit.streak ? 'bg-[#4A90A4]' : 'bg-[#EAF2F4]')}
                   />
                 ))}
               </div>
@@ -103,10 +103,10 @@ export function JournalPreviewCard() {
     <GlassCard className="h-full" delay={0.35}>
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <BookHeart className="h-4 w-4 text-[#22C55E]" />
+          <BookHeart className="h-4 w-4 text-[#4A90A4]" />
           <span className="text-sm font-medium text-foreground">Journal</span>
         </div>
-        <span className="rounded-full bg-[#DCFCE7] px-2 py-0.5 text-[10px] font-medium text-[#22C55E]">
+        <span className="rounded-full bg-[#E3F0F3] px-2 py-0.5 text-[10px] font-medium text-[#4A90A4]">
           Preview
         </span>
       </div>
@@ -123,9 +123,9 @@ export function JournalPreviewCard() {
         <motion.div
           animate={{ rotate: [0, 5, -5, 0] }}
           transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-          className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-[#DCFCE7] to-[#A7F3A0] shadow-lg shadow-green-500/10"
+          className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-[#E3F0F3] to-[#A8D0D9] shadow-lg shadow-[#4A90A4]/10"
         >
-          <BookHeart className="h-7 w-7 text-[#22C55E]" />
+          <BookHeart className="h-7 w-7 text-[#4A90A4]" />
         </motion.div>
       </div>
     </GlassCard>

@@ -2,7 +2,7 @@ import { DashboardShell } from '@/components/layout/dashboard-shell';
 import { InsightsContent } from './InsightsContent';
 
 export const metadata = {
-  title: 'Insights — Sathi',
+  title: 'Insights — Shathi',
 };
 
 export default function InsightsPage() {

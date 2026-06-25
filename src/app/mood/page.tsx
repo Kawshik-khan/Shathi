@@ -194,7 +194,7 @@ export default function MoodPage() {
       <DashboardShell>
         <div className="max-w-6xl">
           <div className="mb-6 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#7ED957] to-[#22C55E]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#6FA8C7] to-[#4A90A4]">
               <Brain className="h-5 w-5 text-white" />
             </div>
             <div>
@@ -210,7 +210,7 @@ export default function MoodPage() {
           )}
 
           {success && (
-            <div className="mb-5 rounded-2xl border border-[#A7F3A0]/60 bg-[#F3FAF4] px-4 py-3 text-sm text-[#166534]">
+            <div className="mb-5 rounded-2xl border border-[#A8D0D9]/60 bg-[#F1F5F7] px-4 py-3 text-sm text-[#2C6373]">
               {success}
             </div>
           )}
@@ -231,8 +231,8 @@ export default function MoodPage() {
                       onClick={() => setSelectedPrompt(prompt)}
                       className={`rounded-2xl border px-4 py-3 text-left text-sm transition-colors ${
                         selectedPrompt === prompt
-                          ? 'border-[#22C55E] bg-[#F3FAF4] text-[#166534]'
-                          : 'border-border bg-white/70 text-muted-foreground hover:bg-[#F8FCF8] dark:bg-secondary'
+                          ? 'border-[#4A90A4] bg-[#F1F5F7] text-[#2C6373]'
+                          : 'border-border bg-white/70 text-muted-foreground hover:bg-[#FAFBFC] dark:bg-secondary'
                       }`}
                     >
                       {prompt}
@@ -247,7 +247,7 @@ export default function MoodPage() {
                     onChange={(event) => setAnswer(event.target.value)}
                     rows={7}
                     placeholder="যেমন: আজ ফোকাস করতে পারছি না, সবকিছু ক্লান্তিকর লাগছে..."
-                    className="mt-2 w-full resize-none rounded-2xl border border-border bg-white/70 px-4 py-3 text-sm outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-[#22C55E]/30 dark:bg-secondary"
+                    className="mt-2 w-full resize-none rounded-2xl border border-border bg-white/70 px-4 py-3 text-sm outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-[#4A90A4]/30 dark:bg-secondary"
                   />
                 </label>
 
@@ -290,21 +290,21 @@ export default function MoodPage() {
                 ) : inference ? (
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                      <div className="rounded-2xl bg-[#F3FAF4]/80 p-4 dark:bg-secondary">
+                      <div className="rounded-2xl bg-[#F1F5F7]/80 p-4 dark:bg-secondary">
                         <p className="text-xs text-muted-foreground">ইনফার্ড স্টেট</p>
                         <p className="mt-1 text-xl font-semibold text-foreground">{stateLabel(inference.state)}</p>
                       </div>
-                      <div className="rounded-2xl bg-[#F3FAF4]/80 p-4 dark:bg-secondary">
+                      <div className="rounded-2xl bg-[#F1F5F7]/80 p-4 dark:bg-secondary">
                         <p className="text-xs text-muted-foreground">কনফিডেন্স</p>
                         <p className="mt-1 text-xl font-semibold text-foreground">{confidenceLabel(inference.confidence)}</p>
                       </div>
-                      <div className="rounded-2xl bg-[#F3FAF4]/80 p-4 dark:bg-secondary">
+                      <div className="rounded-2xl bg-[#F1F5F7]/80 p-4 dark:bg-secondary">
                         <p className="text-xs text-muted-foreground">সাপোর্ট টোন</p>
                         <p className="mt-1 text-xl font-semibold text-foreground">{inference.support_tone.replace(/_/g, ' ')}</p>
                       </div>
                     </div>
 
-                    <div className="rounded-2xl border border-[#A7F3A0]/60 bg-[#F8FCF8] p-4 dark:bg-secondary">
+                    <div className="rounded-2xl border border-[#A8D0D9]/60 bg-[#FAFBFC] p-4 dark:bg-secondary">
                       <p className="text-sm leading-6 text-foreground">{inference.reason_bn}</p>
                       <p className="mt-2 text-xs text-muted-foreground">
                         এটি মেডিক্যাল ডায়াগনসিস নয়; Sathi শুধু উত্তর দেওয়ার টোন মানিয়ে নেয়।
@@ -319,7 +319,7 @@ export default function MoodPage() {
                         <div className="space-y-2">
                           {inference.evidence.map((item, index) => (
                             <div key={`${item.category}-${index}`} className="flex gap-3 rounded-2xl bg-white/70 p-3 dark:bg-background/40">
-                              <Activity className="mt-0.5 h-4 w-4 shrink-0 text-[#22C55E]" />
+                              <Activity className="mt-0.5 h-4 w-4 shrink-0 text-[#4A90A4]" />
                               <div>
                                 <p className="text-sm text-foreground">{item.reason_bn}</p>
                                 <p className="mt-1 text-xs text-muted-foreground">{item.category.replace(/_/g, ' ')}</p>
@@ -331,7 +331,11 @@ export default function MoodPage() {
                     </div>
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground">ইনসাইট পাওয়া যায়নি।</p>
+                  <div className="flex min-h-44 flex-col items-center justify-center text-center">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/illustrations/empty-mood.svg" alt="" aria-hidden="true" className="w-32 h-auto mb-3 select-none pointer-events-none" />
+                    <p className="text-sm text-muted-foreground">ইনসাইট পাওয়া যায়নি।</p>
+                  </div>
                 )}
               </GlassCard>
             </div>
@@ -351,9 +355,9 @@ export default function MoodPage() {
                       type="button"
                       onClick={() => void handleBehavior(action.eventType)}
                       disabled={Boolean(activitySubmitting)}
-                      className="flex min-h-16 items-center gap-3 rounded-2xl border border-border bg-white/70 px-4 py-3 text-left text-sm font-medium text-foreground transition-colors hover:bg-[#F8FCF8] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-secondary"
+                      className="flex min-h-16 items-center gap-3 rounded-2xl border border-border bg-white/70 px-4 py-3 text-left text-sm font-medium text-foreground transition-colors hover:bg-[#FAFBFC] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-secondary"
                     >
-                      {pending ? <Loader2 className="h-4 w-4 animate-spin text-[#22C55E]" /> : <Icon className="h-4 w-4 text-[#22C55E]" />}
+                      {pending ? <Loader2 className="h-4 w-4 animate-spin text-[#4A90A4]" /> : <Icon className="h-4 w-4 text-[#4A90A4]" />}
                       {action.label}
                     </button>
                   );
@@ -364,7 +368,7 @@ export default function MoodPage() {
             <GlassCard delay={0.2} glowOnHover={false}>
               <form onSubmit={handleSleepSubmit} className="space-y-4">
                 <div className="flex items-center gap-2">
-                  <Moon className="h-5 w-5 text-[#22C55E]" />
+                  <Moon className="h-5 w-5 text-[#4A90A4]" />
                   <div>
                     <h2 className="text-lg font-semibold text-foreground">ঘুমের সময়</h2>
                     <p className="text-sm text-muted-foreground">দেরি করে ঘুম বা কম ঘুম ইনসাইটে ধরা হবে।</p>
@@ -378,7 +382,7 @@ export default function MoodPage() {
                       type="datetime-local"
                       value={sleptAt}
                       onChange={(event) => setSleptAt(event.target.value)}
-                      className="mt-2 w-full rounded-xl border border-border bg-white/70 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#22C55E]/30 dark:bg-secondary"
+                      className="mt-2 w-full rounded-xl border border-border bg-white/70 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#4A90A4]/30 dark:bg-secondary"
                     />
                   </label>
                   <label className="block">
@@ -387,7 +391,7 @@ export default function MoodPage() {
                       type="datetime-local"
                       value={wokeAt}
                       onChange={(event) => setWokeAt(event.target.value)}
-                      className="mt-2 w-full rounded-xl border border-border bg-white/70 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#22C55E]/30 dark:bg-secondary"
+                      className="mt-2 w-full rounded-xl border border-border bg-white/70 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#4A90A4]/30 dark:bg-secondary"
                     />
                   </label>
                 </div>
@@ -395,7 +399,7 @@ export default function MoodPage() {
                 <button
                   type="submit"
                   disabled={sleepSubmitting}
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-[#A7F3A0]/70 bg-[#F3FAF4] px-5 py-2.5 text-sm font-medium text-[#166534] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-[#A8D0D9]/70 bg-[#F1F5F7] px-5 py-2.5 text-sm font-medium text-[#2C6373] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {sleepSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bed className="h-4 w-4" />}
                   ঘুমের সিগন্যাল সেভ করুন

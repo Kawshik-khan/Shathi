@@ -14,7 +14,7 @@ export function AIInsight() {
     <GlassCard className="h-full" delay={0.4}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-[#22C55E]" />
+          <Sparkles className="w-4 h-4 text-[#4A90A4]" />
           <span className="text-sm font-medium text-foreground">AI Insight</span>
         </div>
       </div>
@@ -40,12 +40,12 @@ export function AIInsight() {
             rotate: [0, 10, -10, 0]
           }}
           transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-          className="w-14 h-14 rounded-full bg-gradient-to-br from-[#A7F3A0] to-[#7ED957] opacity-80 flex-shrink-0 blur-sm"
+          className="w-14 h-14 rounded-full bg-gradient-to-br from-[#A8D0D9] to-[#6FA8C7] opacity-80 flex-shrink-0 blur-sm"
         />
       </div>
 
       <button
-        className="flex items-center gap-1 mt-4 text-xs text-muted-foreground hover:text-[#22C55E] transition-colors"
+        className="flex items-center gap-1 mt-4 text-xs text-muted-foreground hover:text-[#4A90A4] transition-colors"
         onClick={() => router.push('/insights')}
       >
         View insights

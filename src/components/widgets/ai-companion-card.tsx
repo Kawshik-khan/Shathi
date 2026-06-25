@@ -17,11 +17,19 @@ export function AICompanionCard() {
 
   return (
     <GlassCard className="h-full relative overflow-hidden" delay={0}>
-      <div className="flex items-start justify-between h-full">
+      {/* Decorative brand accent */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/illustrations/dashboard-hero.svg"
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none select-none absolute -bottom-6 -right-4 w-56 opacity-20 hidden sm:block"
+      />
+      <div className="flex items-start justify-between h-full relative z-10">
         {/* Left Content */}
         <div className="flex-1 z-10">
           <div className="flex items-center gap-2 mb-4">
-            <Sparkles className="w-4 h-4 text-[#22C55E]" />
+            <Sparkles className="w-4 h-4 text-[#4A90A4]" />
             <span className="text-sm font-medium text-muted-foreground">AI Companion</span>
           </div>
 
@@ -47,7 +55,7 @@ export function AICompanionCard() {
                 key={action.label}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="px-3 py-1.5 rounded-full bg-[#F3FAF4] text-xs font-medium text-muted-foreground hover:bg-[#EEF7EF] hover:text-[#22C55E] transition-colors border border-[#A7F3A0]/30"
+                className="px-3 py-1.5 rounded-full bg-[#F1F5F7] text-xs font-medium text-muted-foreground hover:bg-[#EAF2F4] hover:text-[#4A90A4] transition-colors border border-[#A8D0D9]/30"
                 onClick={() => alert(`${action.label} conversation coming soon!`)}
               >
                 <span className="flex items-center gap-1.5">
@@ -62,7 +70,7 @@ export function AICompanionCard() {
         {/* Right - AI Avatar */}
         <div className="relative w-40 h-40 flex-shrink-0">
           {/* Glow Effect */}
-          <div className="absolute inset-0 bg-gradient-to-br from-[#7ED957]/20 to-[#22C55E]/10 rounded-full blur-2xl" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#6FA8C7]/20 to-[#4A90A4]/10 rounded-full blur-2xl" />
           
           {/* Avatar Circle */}
           <motion.div
@@ -74,7 +82,7 @@ export function AICompanionCard() {
               repeat: Infinity,
               ease: "easeInOut"
             }}
-            className="relative w-full h-full rounded-full bg-gradient-to-br from-[#A7F3A0] to-[#7ED957] flex items-center justify-center shadow-xl"
+            className="relative w-full h-full rounded-full bg-gradient-to-br from-[#A8D0D9] to-[#6FA8C7] flex items-center justify-center shadow-xl"
           >
             {/* Smile Face */}
             <div className="text-white">

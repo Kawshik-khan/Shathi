@@ -23,29 +23,29 @@ export default function Header() {
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#F5FAF5] border border-[#DCFCE7] text-[#0F172A] text-sm font-medium hover:bg-[#EEF7EF] transition-colors"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#F1F5F7] border border-[#E3F0F3] text-[#0F172A] text-sm font-medium hover:bg-[#EAF2F4] transition-colors"
           aria-label="Select date range"
           onClick={() => alert('Date range selection coming soon!')}
         >
-          <Calendar className="w-4 h-4 text-[#5DBB63]" />
+          <Calendar className="w-4 h-4 text-[#5F9DB0]" />
           <span>This Week</span>
         </motion.button>
 
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#F5FAF5] border border-[#DCFCE7] text-[#0F172A] text-sm font-medium hover:bg-[#EEF7EF] transition-colors"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#F1F5F7] border border-[#E3F0F3] text-[#0F172A] text-sm font-medium hover:bg-[#EAF2F4] transition-colors"
           aria-label="Filter insights"
           onClick={() => alert('Filter functionality coming soon!')}
         >
-          <Filter className="w-4 h-4 text-[#5DBB63]" />
+          <Filter className="w-4 h-4 text-[#5F9DB0]" />
           <span>Filter</span>
         </motion.button>
 
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#7ED957] to-[#22C55E] text-white text-sm font-medium shadow-[0_4px_14px_rgba(34,197,94,0.25)] hover:shadow-[0_6px_20px_rgba(34,197,94,0.35)] transition-shadow"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#6FA8C7] to-[#4A90A4] text-white text-sm font-medium shadow-[0_4px_14px_rgba(34,197,94,0.25)] hover:shadow-[0_6px_20px_rgba(34,197,94,0.35)] transition-shadow"
           aria-label="Export insights report"
           onClick={() => alert('Export functionality coming soon!')}
         >

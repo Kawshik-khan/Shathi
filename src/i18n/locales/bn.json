@@ -19,7 +19,7 @@
     "enterFullName": "আপনার পুরো নাম লিখুন",
     "enterPassword": "আপনার পাসওয়ার্ড লিখুন",
     "fullName": "পুরো নাম",
-    "joinSathi": "Sathi-তে যোগ দিন এবং আপনার সুস্থতার যাত্রা শুরু করুন।",
+    "joinSathi": "Shathi-তে যোগ দিন এবং আপনার সুস্থতার যাত্রা শুরু করুন।",
     "password": "পাসওয়ার্ড",
     "passwordConfirm": "পাসওয়ার্ড নিশ্চিত করুন",
     "passwordConfirmPlaceholder": "আপনার পাসওয়ার্ড নিশ্চিত করুন",
@@ -28,7 +28,7 @@
     "togglePassword": "পাসওয়ার্ড দেখানো/লুকানো",
     "togglePasswordConfirm": "নিশ্চিতকরণ পাসওয়ার্ড দেখানো/লুকানো",
     "welcomeBack": "আবার স্বাগতম",
-    "welcomeSubtitle": "Sathi-র সাথে আপনার সুস্থতার যাত্রা চালিয়ে যেতে লগ ইন করুন।"
+    "welcomeSubtitle": "Shathi-র সাথে আপনার সুস্থতার যাত্রা চালিয়ে যেতে লগ ইন করুন।"
   },
   "errors": {
     "accountCreationFailed": "অ্যাকাউন্ট তৈরি করা যায়নি",

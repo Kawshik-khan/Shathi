@@ -88,17 +88,17 @@ export function MobileSidebar() {
           className="flex items-center gap-3"
           aria-label="Go to landing page"
         >
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#7ED957] to-[#22C55E] flex items-center justify-center shadow-lg shadow-green-500/20">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#6FA8C7] to-[#4A90A4] flex items-center justify-center shadow-lg shadow-[#4A90A4]/20">
             <span className="text-white font-bold">S</span>
           </div>
-          <span className="font-semibold text-foreground">Sathi</span>
+          <span className="font-semibold text-foreground">Shathi</span>
         </Link>
 
         <div className="flex items-center gap-2">
           <LanguageToggle />
           <Link
             href="/profile"
-            className="w-8 h-8 rounded-full bg-gradient-to-br from-[#A7F3A0] to-[#7ED957] flex items-center justify-center text-white text-sm font-medium overflow-hidden"
+            className="w-8 h-8 rounded-full bg-gradient-to-br from-[#A8D0D9] to-[#6FA8C7] flex items-center justify-center text-white text-sm font-medium overflow-hidden"
             aria-label="Open profile"
           >
             {user.avatar ? (
@@ -112,7 +112,7 @@ export function MobileSidebar() {
           {/* Menu Button */}
           <button
             onClick={() => setIsOpen(true)}
-            className="p-2 rounded-lg hover:bg-[#F3FAF4] transition-colors"
+            className="p-2 rounded-lg hover:bg-[#F1F5F7] transition-colors"
             aria-label="Open menu"
           >
             <Menu className="w-5 h-5 text-foreground" />
@@ -152,14 +152,14 @@ export function MobileSidebar() {
                 className="flex items-center gap-3"
                 aria-label="Go to landing page"
               >
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7ED957] to-[#22C55E] flex items-center justify-center shadow-lg shadow-green-500/20">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6FA8C7] to-[#4A90A4] flex items-center justify-center shadow-lg shadow-[#4A90A4]/20">
                   <span className="text-white font-bold text-lg">S</span>
                 </div>
-                <span className="font-semibold text-lg text-foreground">Sathi</span>
+                <span className="font-semibold text-lg text-foreground">Shathi</span>
               </Link>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-2 rounded-lg hover:bg-[#F3FAF4] transition-colors"
+                className="p-2 rounded-lg hover:bg-[#F1F5F7] transition-colors"
                 aria-label="Close menu"
               >
                 <X className="w-5 h-5 text-muted-foreground" />
@@ -187,14 +187,14 @@ export function MobileSidebar() {
                       className={cn(
                         'flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200',
                         isActive
-                          ? 'bg-[#DCFCE7] text-[#22C55E] shadow-sm shadow-green-500/10'
-                          : 'text-muted-foreground hover:bg-[#F3FAF4] hover:text-foreground'
+                          ? 'bg-[#E3F0F3] text-[#4A90A4] shadow-sm shadow-[#4A90A4]/10'
+                          : 'text-muted-foreground hover:bg-[#F1F5F7] hover:text-foreground'
                       )}
                       >
-                      <Icon className={cn('w-5 h-5', isActive && 'text-[#22C55E]')} />
+                      <Icon className={cn('w-5 h-5', isActive && 'text-[#4A90A4]')} />
                       <span>{item.label ?? t(`navigation.${item.key}`)}</span>
                       {!isAdmin && item.key === 'aiCompanion' && (
-                        <span className="ml-auto w-2 h-2 rounded-full bg-[#22C55E] animate-pulse" />
+                        <span className="ml-auto w-2 h-2 rounded-full bg-[#4A90A4] animate-pulse" />
                       )}
                     </Link>
                   </motion.div>
@@ -208,9 +208,9 @@ export function MobileSidebar() {
             <Link
               href="/profile"
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-3 px-2 py-3 rounded-xl hover:bg-[#F3FAF4] transition-colors"
+              className="flex items-center gap-3 px-2 py-3 rounded-xl hover:bg-[#F1F5F7] transition-colors"
             >
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#A7F3A0] to-[#7ED957] flex items-center justify-center text-white font-medium">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#A8D0D9] to-[#6FA8C7] flex items-center justify-center text-white font-medium">
                 {user.name.charAt(0)}
               </div>
               <div className="flex-1 min-w-0">

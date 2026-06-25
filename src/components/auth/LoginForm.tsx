@@ -113,7 +113,7 @@ export default function LoginForm() {
   return (
     <div className="bg-white rounded-xl sm:rounded-2xl p-5 sm:p-6 md:p-8 shadow-sm">
       <div className="text-center mb-5 sm:mb-6">
-        <div className="w-8 sm:w-9 h-8 sm:h-9 mx-auto rounded-full bg-[#EAF6EA] flex items-center justify-center text-base sm:text-lg">✦</div>
+        <div className="w-8 sm:w-9 h-8 sm:h-9 mx-auto rounded-full bg-[#EAF2F4] flex items-center justify-center text-base sm:text-lg">✦</div>
         <h2 className="mt-3 sm:mt-4 text-xl sm:text-2xl font-bold text-[#0F172A]">{t('auth.welcomeBack')}</h2>
         <p className="mt-2 text-xs sm:text-sm text-[#64748B] leading-relaxed">{t('auth.welcomeSubtitle')}</p>
       </div>
@@ -165,7 +165,7 @@ export default function LoginForm() {
             type="button"
             disabled
             title="Password reset is not configured yet"
-            className="text-[#22C55E]/60 whitespace-nowrap bg-transparent border-none p-0 cursor-not-allowed"
+            className="text-[#4A90A4]/60 whitespace-nowrap bg-transparent border-none p-0 cursor-not-allowed"
           >
             {t('actions.forgotPassword')}
           </button>
@@ -174,7 +174,7 @@ export default function LoginForm() {
         <motion.button
           whileHover={{ y: -2 }}
           disabled={loading}
-          className="w-full py-2.5 sm:py-3 rounded-full text-white font-medium text-sm sm:text-base bg-gradient-to-r from-[#5DBB63] to-[#22C55E] shadow-sm hover:shadow-glow transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full py-2.5 sm:py-3 rounded-full text-white font-medium text-sm sm:text-base bg-gradient-to-r from-[#5F9DB0] to-[#4A90A4] shadow-sm hover:shadow-glow transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? t('actions.loggingIn') : t('actions.logIn')}
         </motion.button>
@@ -190,12 +190,12 @@ export default function LoginForm() {
         <button
           type="button"
           onClick={handleResetSession}
-          className="w-full text-center text-xs text-[#64748B] hover:text-[#22C55E] transition-colors"
+          className="w-full text-center text-xs text-[#64748B] hover:text-[#4A90A4] transition-colors"
         >
           Having trouble after an update? Reset session
         </button>
 
-        <p className="text-center text-xs sm:text-sm text-[#64748B] mt-4 sm:mt-5">{t('auth.dontHaveAccount')} <a href="/auth/signup" className="text-[#22C55E] font-medium hover:underline">{t('actions.signUp')}</a></p>
+        <p className="text-center text-xs sm:text-sm text-[#64748B] mt-4 sm:mt-5">{t('auth.dontHaveAccount')} <a href="/auth/signup" className="text-[#4A90A4] font-medium hover:underline">{t('actions.signUp')}</a></p>
       </form>
     </div>
   );

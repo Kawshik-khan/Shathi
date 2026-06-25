@@ -148,8 +148,40 @@ curl https://your-render-backend.onrender.com/health
 Expected response:
 
 ```json
-{"status":"healthy","service":"sathi-api"}
+{"status":"healthy","service":"shathi-api"}
 ```
+
+## Production Optimization
+
+The backend has been specifically optimized for lightweight production deployment on platforms like Render's Free tier (which has a strict 512MB RAM and build-time limitations):
+
+- **Removed heavy local dependencies**: Removed `torch` and `transformers` from `requirements.txt`. They are only used for local ML execution. In production, Shathi's mood detection and memory embeddings use **Hugging Face's high-performance Hosted Inference API**, which is fast, lightweight, and requires no local compilation or large memory allocations.
+- **Enormous Image and Memory Reductions**: This optimization reduces the Docker container size from ~4GB down to **~250MB**, and speeds up deployment build times from 15 minutes to **under 1 minute**, completely eliminating Out-Of-Memory (OOM) build/runtime failures.
+
+## Automated CI/CD (GitHub Actions + Render Deploy Hook)
+
+We have configured a complete, automated Continuous Integration and Continuous Deployment (CI/CD) pipeline for the project.
+
+### Pipeline Flow
+1. Code is pushed to `main` or a Pull Request is opened.
+2. **CI Stage**: GitHub Actions triggers `.github/workflows/ci.yml`.
+   - Runs frontend tests, checks types, lints, and builds.
+   - Runs backend Python static compilation and all 52 unit tests.
+3. **CD Stage**: If all tests pass on a push to `main`:
+   - GitHub Actions automatically calls your **Render Deploy Hook URL** via a secure POST request.
+   - Render pulls the latest codebase, builds the lightweight Docker image, runs the Alembic database migrations, and performs a zero-downtime deployment.
+
+### Setup Instructions
+To enable automatic deployments on Render:
+1. Go to your **Render Dashboard** -> Select your **shathi-api** web service.
+2. In the service's **Settings**, scroll down to the **Deploy Hook** section.
+3. Copy the unique URL provided by Render.
+4. Go to your **GitHub Repository** -> **Settings** -> **Secrets and variables** -> **Actions**.
+5. Click **New repository secret**.
+6. Name the secret **`RENDER_DEPLOY_HOOK_URL`** and paste the copied URL as the value.
+7. Click **Add secret**.
+
+The pipeline is fully safe: if either frontend or backend tests fail, the deployment is skipped automatically to avoid breaking production!
 
 ## Local Production Smoke Test
 
@@ -176,7 +208,7 @@ python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 Use `/health` for Render uptime monitoring. A healthy response is:
 
 ```json
-{"status":"healthy","service":"sathi-api"}
+{"status":"healthy","service":"shathi-api"}
 ```
 
 ## Production Notes

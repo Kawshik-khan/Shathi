@@ -1,0 +1,40 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1024" y2="1024" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7FB8C9"/>
+      <stop offset="0.55" stop-color="#4A90A4"/>
+      <stop offset="1" stop-color="#2C6373"/>
+    </linearGradient>
+    <linearGradient id="petal" x1="512" y1="300" x2="512" y2="760" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#DCEFF2" stop-opacity="0.75"/>
+    </linearGradient>
+    <linearGradient id="petalSide" x1="512" y1="320" x2="512" y2="740" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#EAF6F8" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#ABD6DE" stop-opacity="0.55"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="512" cy="470" r="360" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- background -->
+  <rect width="1024" height="1024" rx="220" fill="url(#bg)"/>
+  <circle cx="512" cy="470" r="340" fill="url(#glow)"/>
+
+  <!-- soft glass disc behind lotus -->
+  <circle cx="512" cy="500" r="250" fill="#FFFFFF" fill-opacity="0.10" stroke="#FFFFFF" stroke-opacity="0.25" stroke-width="3"/>
+
+  <!-- lotus petals (centered, padded for adaptive safe zone) -->
+  <g>
+    <!-- outer side petals -->
+    <path d="M512 720 C 360 660 300 520 350 410 C 430 470 470 580 512 720 Z" fill="url(#petalSide)"/>
+    <path d="M512 720 C 664 660 724 520 674 410 C 594 470 554 580 512 720 Z" fill="url(#petalSide)"/>
+    <!-- mid petals -->
+    <path d="M512 720 C 420 650 392 510 452 388 C 500 470 506 590 512 720 Z" fill="url(#petal)"/>
+    <path d="M512 720 C 604 650 632 510 572 388 C 524 470 518 590 512 720 Z" fill="url(#petal)"/>
+    <!-- center petal -->
+    <path d="M512 730 C 470 640 470 470 512 360 C 554 470 554 640 512 730 Z" fill="url(#petal)"/>
+  </g>
+</svg>

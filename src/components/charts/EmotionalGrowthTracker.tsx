@@ -31,7 +31,7 @@ export function GrowthMilestone({
       case 'reflection':
         return 'bg-[#FECACA] text-[#DC2626]';
       default:
-        return 'bg-[#A7F3D0] text-[#15803D]';
+        return 'bg-[#A8D0D9] text-[#356B7A]';
     }
   };
 
@@ -39,7 +39,7 @@ export function GrowthMilestone({
 
   return (
     <motion.div 
-      className="flex items-start gap-3 p-3 rounded-xl bg-[#F8FBF8] hover:bg-[#EEF7EF] transition-colors"
+      className="flex items-start gap-3 p-3 rounded-xl bg-[#FAFBFC] hover:bg-[#EAF2F4] transition-colors"
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3 }}
@@ -54,7 +54,7 @@ export function GrowthMilestone({
         <div className="flex items-center gap-2">
           <h4 className="text-sm font-medium text-[#0F172A] truncate">{title}</h4>
           {trend === 'up' && (
-            <span className="text-[#22C55E]">↑</span>
+            <span className="text-[#4A90A4]">↑</span>
           )}
         </div>
         <p className="text-xs text-[#64748B] mt-0.5 line-clamp-2">{description}</p>
@@ -110,12 +110,12 @@ export default function EmotionalGrowthTracker({
     >
       <div className="flex items-center justify-between mb-4">
         <h4 className="text-sm font-semibold text-[#0F172A]">Growth Timeline</h4>
-        <span className="text-xs text-[#5DBB63]">+18% this month</span>
+        <span className="text-xs text-[#5F9DB0]">+18% this month</span>
       </div>
 
       {/* Timeline line */}
       <div className="relative pl-4">
-        <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-[#22C55E] via-[#7ED957] to-[#BBF7D0]" />
+        <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-[#4A90A4] via-[#6FA8C7] to-[#CDE6EB]" />
         
         <div className="space-y-4">
           {milestones.map((milestone, index) => (

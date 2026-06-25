@@ -35,7 +35,7 @@ import {
 } from '@/components/ui/dialog';
 
 const iconOptions = ['sparkles', 'dumbbell', 'moon', 'flame'];
-const colorOptions = ['#22C55E', '#7ED957', '#A7F3A0', '#16A34A'];
+const colorOptions = ['#4A90A4', '#6FA8C7', '#A8D0D9', '#3F7E90'];
 
 const iconMap = {
   sparkles: Sparkles,
@@ -51,7 +51,7 @@ const emptyForm: HabitCreate = {
   name: '',
   description: '',
   icon: 'sparkles',
-  color: '#22C55E',
+  color: '#4A90A4',
   frequency: 'daily',
   target_count: 1,
 };
@@ -116,7 +116,7 @@ export default function HabitsPage() {
       name: habit.name,
       description: habit.description ?? '',
       icon: habit.icon ?? 'sparkles',
-      color: habit.color ?? '#22C55E',
+      color: habit.color ?? '#4A90A4',
       frequency: habit.frequency,
       target_count: habit.target_count,
     });
@@ -188,7 +188,7 @@ export default function HabitsPage() {
         <div className="max-w-5xl">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7ED957] to-[#22C55E] flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6FA8C7] to-[#4A90A4] flex items-center justify-center">
                 <CheckCircle2 className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -212,7 +212,7 @@ export default function HabitsPage() {
           )}
 
           {success && (
-            <div className="mb-5 rounded-2xl border border-[#A7F3A0]/60 bg-[#F3FAF4] px-4 py-3 text-sm text-[#22C55E]">
+            <div className="mb-5 rounded-2xl border border-[#A8D0D9]/60 bg-[#F1F5F7] px-4 py-3 text-sm text-[#4A90A4]">
               {success}
             </div>
           )}
@@ -243,12 +243,11 @@ export default function HabitsPage() {
             </GlassCard>
           ) : habits.length === 0 ? (
             <GlassCard className="min-h-[320px] flex flex-col items-center justify-center text-center" delay={0.2} glowOnHover={false}>
-              <div className="w-20 h-20 rounded-2xl bg-[#F3FAF4] flex items-center justify-center mb-4">
-                <CheckCircle2 className="w-8 h-8 text-[#22C55E]" />
-              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/illustrations/empty-habits.svg" alt="" aria-hidden="true" className="w-40 h-auto mb-4 select-none pointer-events-none" />
               <h2 className="text-xl font-medium text-foreground mb-2">No habits yet</h2>
               <p className="text-muted-foreground max-w-md mb-5">
-                Add your first routine and Sathi will track your streaks here.
+                Add your first routine and Shathi will track your streaks here.
               </p>
               <button className="rounded-full btn-primary-gradient px-5 py-2.5 text-sm font-medium" onClick={openCreateDialog}>
                 Create your first habit
@@ -264,8 +263,8 @@ export default function HabitsPage() {
                   <GlassCard key={habit.id} delay={0.1 + index * 0.05} glowOnHover={false}>
                     <div className="flex items-start justify-between gap-3 mb-4">
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-12 h-12 rounded-xl bg-[#F3FAF4] flex items-center justify-center flex-shrink-0">
-                          <Icon className="w-6 h-6 text-[#22C55E]" />
+                        <div className="w-12 h-12 rounded-xl bg-[#F1F5F7] flex items-center justify-center flex-shrink-0">
+                          <Icon className="w-6 h-6 text-[#4A90A4]" />
                         </div>
                         <div className="min-w-0">
                           <h3 className="font-medium text-foreground truncate">{habit.name}</h3>
@@ -279,7 +278,7 @@ export default function HabitsPage() {
                           type="button"
                           aria-label={`Edit ${habit.name}`}
                           onClick={() => openEditDialog(habit)}
-                          className="rounded-full p-2 text-muted-foreground hover:bg-[#F3FAF4] hover:text-[#22C55E]"
+                          className="rounded-full p-2 text-muted-foreground hover:bg-[#F1F5F7] hover:text-[#4A90A4]"
                         >
                           <Edit3 className="w-4 h-4" />
                         </button>
@@ -303,9 +302,9 @@ export default function HabitsPage() {
                         <span>{habit.total_completions} total completions</span>
                         <span>Target {habit.target_count}</span>
                       </div>
-                      <div className="h-2 w-full bg-[#EEF7EF] rounded-full overflow-hidden">
+                      <div className="h-2 w-full bg-[#EAF2F4] rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-[#22C55E] rounded-full transition-all duration-300"
+                          className="h-full bg-[#4A90A4] rounded-full transition-all duration-300"
                           style={{ width: `${progress}%` }}
                         />
                       </div>
@@ -314,7 +313,7 @@ export default function HabitsPage() {
                     <button
                       type="button"
                       onClick={() => void handleComplete(habit.id)}
-                      className="inline-flex items-center gap-2 rounded-full bg-[#F3FAF4] px-4 py-2 text-sm font-medium text-[#22C55E] hover:bg-[#EEF7EF]"
+                      className="inline-flex items-center gap-2 rounded-full bg-[#F1F5F7] px-4 py-2 text-sm font-medium text-[#4A90A4] hover:bg-[#EAF2F4]"
                     >
                       <Check className="w-4 h-4" />
                       Complete today
@@ -341,7 +340,7 @@ export default function HabitsPage() {
                     value={form.name}
                     onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
                     required
-                    className="mt-2 w-full rounded-xl border border-border bg-white/70 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#22C55E]/30 dark:bg-secondary"
+                    className="mt-2 w-full rounded-xl border border-border bg-white/70 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#4A90A4]/30 dark:bg-secondary"
                   />
                 </label>
 
@@ -351,7 +350,7 @@ export default function HabitsPage() {
                     value={form.description ?? ''}
                     onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
                     rows={3}
-                    className="mt-2 w-full resize-none rounded-xl border border-border bg-white/70 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#22C55E]/30 dark:bg-secondary"
+                    className="mt-2 w-full resize-none rounded-xl border border-border bg-white/70 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#4A90A4]/30 dark:bg-secondary"
                   />
                 </label>
 
@@ -361,7 +360,7 @@ export default function HabitsPage() {
                     <select
                       value={form.frequency}
                       onChange={(event) => setForm((current) => ({ ...current, frequency: event.target.value }))}
-                      className="mt-2 w-full rounded-xl border border-border bg-white/70 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#22C55E]/30 dark:bg-secondary"
+                      className="mt-2 w-full rounded-xl border border-border bg-white/70 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#4A90A4]/30 dark:bg-secondary"
                     >
                       <option value="daily">Daily</option>
                       <option value="weekly">Weekly</option>
@@ -377,7 +376,7 @@ export default function HabitsPage() {
                       max={99}
                       value={form.target_count}
                       onChange={(event) => setForm((current) => ({ ...current, target_count: Number(event.target.value) }))}
-                      className="mt-2 w-full rounded-xl border border-border bg-white/70 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#22C55E]/30 dark:bg-secondary"
+                      className="mt-2 w-full rounded-xl border border-border bg-white/70 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#4A90A4]/30 dark:bg-secondary"
                     />
                   </label>
 
@@ -386,7 +385,7 @@ export default function HabitsPage() {
                     <select
                       value={form.icon ?? 'sparkles'}
                       onChange={(event) => setForm((current) => ({ ...current, icon: event.target.value }))}
-                      className="mt-2 w-full rounded-xl border border-border bg-white/70 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#22C55E]/30 dark:bg-secondary"
+                      className="mt-2 w-full rounded-xl border border-border bg-white/70 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#4A90A4]/30 dark:bg-secondary"
                     >
                       {iconOptions.map((option) => (
                         <option key={option} value={option}>{option}</option>
@@ -403,7 +402,7 @@ export default function HabitsPage() {
                         key={color}
                         type="button"
                         onClick={() => setForm((current) => ({ ...current, color }))}
-                        className={`h-8 w-8 rounded-full ring-offset-2 ${form.color === color ? 'ring-2 ring-[#22C55E]' : ''}`}
+                        className={`h-8 w-8 rounded-full ring-offset-2 ${form.color === color ? 'ring-2 ring-[#4A90A4]' : ''}`}
                         style={{ backgroundColor: color }}
                         aria-label={`Use ${color}`}
                       />
@@ -415,7 +414,7 @@ export default function HabitsPage() {
                   <button
                     type="button"
                     onClick={() => setDialogOpen(false)}
-                    className="rounded-full border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-[#F3FAF4]"
+                    className="rounded-full border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-[#F1F5F7]"
                   >
                     Cancel
                   </button>

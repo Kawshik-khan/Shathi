@@ -26,8 +26,8 @@ export function VoiceMicButton({ state, level, isSupported, onClick }: VoiceMicB
       aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
       className={cn(
         'relative grid h-11 w-11 shrink-0 place-items-center overflow-visible rounded-full text-white shadow-sm transition-colors',
-        'bg-gradient-to-br from-[#7ED957] to-[#22C55E] hover:shadow-[0_10px_26px_rgba(34,197,94,0.26)]',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#22C55E]/35 focus-visible:ring-offset-2',
+        'bg-gradient-to-br from-[#6FA8C7] to-[#4A90A4] hover:shadow-[0_10px_26px_rgba(34,197,94,0.26)]',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4A90A4]/35 focus-visible:ring-offset-2',
         'disabled:cursor-not-allowed disabled:opacity-45',
         isActive && 'shadow-[0_0_0_5px_rgba(34,197,94,0.12),0_12px_32px_rgba(34,197,94,0.3)]'
       )}
@@ -40,13 +40,13 @@ export function VoiceMicButton({ state, level, isSupported, onClick }: VoiceMicB
         <>
           <motion.span
             aria-hidden
-            className="absolute inset-[-5px] rounded-full border border-[#22C55E]/35"
+            className="absolute inset-[-5px] rounded-full border border-[#4A90A4]/35"
             animate={{ scale: [1, ringScale, 1], opacity: [0.7, 0.18, 0.7] }}
             transition={{ duration: 1.25, repeat: Infinity, ease: 'easeInOut' }}
           />
           <motion.span
             aria-hidden
-            className="absolute inset-[-10px] rounded-full border border-[#86EFAC]/25"
+            className="absolute inset-[-10px] rounded-full border border-[#A8D0D9]/25"
             animate={{ scale: [1, 1.22, 1], opacity: [0.42, 0.06, 0.42] }}
             transition={{ duration: 1.7, repeat: Infinity, ease: 'easeInOut' }}
           />

@@ -44,20 +44,20 @@ export function TrainingCalendar() {
     <GlassCard className="h-full" delay={0.3}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <CalendarDays className="w-4 h-4 text-[#22C55E]" />
+          <CalendarDays className="w-4 h-4 text-[#4A90A4]" />
           <span className="text-sm font-medium text-foreground">Training Days</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">June 2024</span>
           <div className="flex gap-0.5">
             <button
-              className="p-1 rounded hover:bg-[#F3FAF4] transition-colors"
+              className="p-1 rounded hover:bg-[#F1F5F7] transition-colors"
               onClick={() => alert('Previous month coming soon!')}
             >
               <ChevronLeft className="w-3.5 h-3.5 text-muted-foreground" />
             </button>
             <button
-              className="p-1 rounded hover:bg-[#F3FAF4] transition-colors"
+              className="p-1 rounded hover:bg-[#F1F5F7] transition-colors"
               onClick={() => alert('Next month coming soon!')}
             >
               <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
@@ -89,10 +89,10 @@ export function TrainingCalendar() {
               <div
                 className={cn(
                   "w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-all",
-                  dayObj.status === 'completed' && "bg-[#22C55E] text-white",
-                  dayObj.status === 'scheduled' && "bg-[#DCFCE7] text-[#22C55E]",
-                  dayObj.status === 'today' && "border-2 border-[#22C55E] text-[#22C55E]",
-                  dayObj.status === 'none' && "text-muted-foreground hover:bg-[#F3FAF4]"
+                  dayObj.status === 'completed' && "bg-[#4A90A4] text-white",
+                  dayObj.status === 'scheduled' && "bg-[#E3F0F3] text-[#4A90A4]",
+                  dayObj.status === 'today' && "border-2 border-[#4A90A4] text-[#4A90A4]",
+                  dayObj.status === 'none' && "text-muted-foreground hover:bg-[#F1F5F7]"
                 )}
               >
                 {dayObj.day}
@@ -105,15 +105,15 @@ export function TrainingCalendar() {
       {/* Legend */}
       <div className="flex items-center gap-4 mt-4 pt-3 border-t border-black/5">
         <div className="flex items-center gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-[#22C55E]" />
+          <div className="w-2.5 h-2.5 rounded-full bg-[#4A90A4]" />
           <span className="text-[10px] text-muted-foreground">Completed</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-[#DCFCE7]" />
+          <div className="w-2.5 h-2.5 rounded-full bg-[#E3F0F3]" />
           <span className="text-[10px] text-muted-foreground">Scheduled</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full border border-[#22C55E]" />
+          <div className="w-2.5 h-2.5 rounded-full border border-[#4A90A4]" />
           <span className="text-[10px] text-muted-foreground">Today</span>
         </div>
       </div>

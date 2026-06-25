@@ -8,7 +8,7 @@ def test_root_status_route():
 
     assert asyncio.run(route.endpoint()) == {
         "status": "ok",
-        "service": "sathi-api",
+        "service": "shathi-api",
         "health": "/health",
     }
 
@@ -18,6 +18,6 @@ def test_health_route():
 
     response = asyncio.run(route.endpoint())
     assert response["status"] == "healthy"
-    assert response["service"] == "sathi-api"
+    assert response["service"] == "shathi-api"
     assert response["pinecone"] in {"connected", "unavailable"}
     assert response["redis"] in {"connected", "unavailable"}

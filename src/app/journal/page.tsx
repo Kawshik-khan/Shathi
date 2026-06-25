@@ -197,7 +197,7 @@ export default function JournalPage() {
         <div className="max-w-6xl">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7ED957] to-[#22C55E] flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6FA8C7] to-[#4A90A4] flex items-center justify-center">
                 <BookHeart className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -221,7 +221,7 @@ export default function JournalPage() {
           )}
 
           {success && (
-            <div className="mb-5 rounded-2xl border border-[#A7F3A0]/60 bg-[#F3FAF4] px-4 py-3 text-sm text-[#22C55E]">
+            <div className="mb-5 rounded-2xl border border-[#A8D0D9]/60 bg-[#F1F5F7] px-4 py-3 text-sm text-[#4A90A4]">
               {success}
             </div>
           )}
@@ -230,7 +230,7 @@ export default function JournalPage() {
             <GlassCard className="min-h-[420px]" delay={0.1} glowOnHover={false}>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-medium text-foreground">Entries</h2>
-                <span className="rounded-full bg-[#DCFCE7] px-2 py-0.5 text-xs font-medium text-[#22C55E]">
+                <span className="rounded-full bg-[#E3F0F3] px-2 py-0.5 text-xs font-medium text-[#4A90A4]">
                   {entries.length}
                 </span>
               </div>
@@ -242,9 +242,8 @@ export default function JournalPage() {
                 </div>
               ) : entries.length === 0 ? (
                 <div className="flex h-72 flex-col items-center justify-center text-center">
-                  <div className="w-16 h-16 rounded-2xl bg-[#F3FAF4] flex items-center justify-center mb-4">
-                    <BookHeart className="w-7 h-7 text-[#22C55E]" />
-                  </div>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/illustrations/empty-journal.svg" alt="" aria-hidden="true" className="w-36 h-auto mb-4 select-none pointer-events-none" />
                   <p className="font-medium text-foreground">No entries yet</p>
                   <p className="mt-1 text-sm text-muted-foreground">Your saved reflections will appear here.</p>
                 </div>
@@ -260,8 +259,8 @@ export default function JournalPage() {
                       }}
                       className={`w-full rounded-2xl p-4 text-left transition-colors ${
                         selectedEntry?.id === entry.id
-                          ? 'bg-[#DCFCE7]/80'
-                          : 'bg-[#F3FAF4]/70 hover:bg-[#EEF7EF]'
+                          ? 'bg-[#E3F0F3]/80'
+                          : 'bg-[#F1F5F7]/70 hover:bg-[#EAF2F4]'
                       }`}
                     >
                       <p className="font-medium text-foreground line-clamp-1">{entry.title || 'Untitled entry'}</p>
@@ -285,7 +284,7 @@ export default function JournalPage() {
                         Drafts are kept locally until you save.
                       </p>
                     </div>
-                    <span className="rounded-full bg-[#F3FAF4] px-3 py-1 text-xs text-muted-foreground">
+                    <span className="rounded-full bg-[#F1F5F7] px-3 py-1 text-xs text-muted-foreground">
                       {wordCount} words
                     </span>
                   </div>
@@ -296,7 +295,7 @@ export default function JournalPage() {
                       value={title}
                       onChange={(event) => setTitle(event.target.value)}
                       placeholder="Entry title"
-                      className="w-full rounded-2xl border border-border bg-white/70 px-4 py-3 text-sm outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-[#22C55E]/30 dark:bg-secondary"
+                      className="w-full rounded-2xl border border-border bg-white/70 px-4 py-3 text-sm outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-[#4A90A4]/30 dark:bg-secondary"
                     />
                   </label>
 
@@ -307,7 +306,7 @@ export default function JournalPage() {
                       onChange={(event) => setContent(event.target.value)}
                       rows={12}
                       placeholder="Write what is on your mind..."
-                      className="w-full resize-none rounded-2xl border border-border bg-white/70 px-4 py-3 text-sm leading-relaxed outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-[#22C55E]/30 dark:bg-secondary"
+                      className="w-full resize-none rounded-2xl border border-border bg-white/70 px-4 py-3 text-sm leading-relaxed outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-[#4A90A4]/30 dark:bg-secondary"
                     />
                   </label>
 
@@ -324,7 +323,7 @@ export default function JournalPage() {
                       <button
                         type="button"
                         onClick={startNewEntry}
-                        className="rounded-full border border-border px-5 py-2.5 text-sm font-medium text-muted-foreground hover:bg-[#F3FAF4]"
+                        className="rounded-full border border-border px-5 py-2.5 text-sm font-medium text-muted-foreground hover:bg-[#F1F5F7]"
                       >
                         Cancel edit
                       </button>
@@ -347,7 +346,7 @@ export default function JournalPage() {
                       <button
                         type="button"
                         onClick={() => startEdit(selectedEntry)}
-                        className="rounded-full p-2 text-muted-foreground hover:bg-[#F3FAF4] hover:text-[#22C55E]"
+                        className="rounded-full p-2 text-muted-foreground hover:bg-[#F1F5F7] hover:text-[#4A90A4]"
                         aria-label="Edit entry"
                       >
                         <Edit3 className="w-4 h-4" />
@@ -368,7 +367,7 @@ export default function JournalPage() {
                   </p>
 
                   {(selectedEntry.emotion_summary || selectedEntry.ai_insights || selectedEntry.emotion_tags.length > 0) && (
-                    <div className="mt-5 rounded-2xl bg-[#F3FAF4]/80 p-4">
+                    <div className="mt-5 rounded-2xl bg-[#F1F5F7]/80 p-4">
                       <p className="text-sm font-medium text-foreground">AI reflection</p>
                       {selectedEntry.emotion_summary && (
                         <p className="mt-2 text-sm text-muted-foreground">{selectedEntry.emotion_summary}</p>
@@ -379,7 +378,7 @@ export default function JournalPage() {
                       {selectedEntry.emotion_tags.length > 0 && (
                         <div className="mt-3 flex flex-wrap gap-2">
                           {selectedEntry.emotion_tags.map((tag) => (
-                            <span key={tag} className="rounded-full bg-[#DCFCE7] px-2.5 py-1 text-xs font-medium text-[#22C55E]">
+                            <span key={tag} className="rounded-full bg-[#E3F0F3] px-2.5 py-1 text-xs font-medium text-[#4A90A4]">
                               {tag}
                             </span>
                           ))}

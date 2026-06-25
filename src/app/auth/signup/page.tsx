@@ -5,7 +5,7 @@ import SignupForm from "../../../components/auth/SignupForm";
 
 export const metadata: Metadata = {
   title: "Create Account",
-  description: "Create a Sathi account to start tracking your mood, sleep, habits, and wellness progress.",
+  description: "Create a Shathi account to start tracking your mood, sleep, habits, and wellness progress.",
   alternates: {
     canonical: "/auth/signup",
   },

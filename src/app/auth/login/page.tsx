@@ -5,7 +5,7 @@ import LoginForm from "../../../components/auth/LoginForm";
 
 export const metadata: Metadata = {
   title: "Login",
-  description: "Log in to your Sathi mental wellness companion account.",
+  description: "Log in to your Shathi mental wellness companion account.",
   alternates: {
     canonical: "/auth/login",
   },

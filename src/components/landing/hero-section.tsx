@@ -139,7 +139,7 @@ export function HeroSection() {
               className="absolute -top-4 -right-4 bg-background border border-border rounded-2xl p-4 shadow-soft max-w-xs"
             >
               <p className="text-sm text-foreground">
-                &ldquo;Sathi helped me understand my sleep patterns and improve my mood tracking!&rdquo;
+                &ldquo;Shathi helped me understand my sleep patterns and improve my mood tracking!&rdquo;
               </p>
               <div className="absolute -bottom-2 right-6 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-background"></div>
             </motion.div>

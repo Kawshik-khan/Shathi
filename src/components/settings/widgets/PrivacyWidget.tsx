@@ -64,7 +64,7 @@ export default function PrivacyWidget() {
         <h3 className="font-medium text-lg mb-3">Privacy &amp; Data</h3>
         <div className="space-y-3">
           {(status || error) && (
-            <p className={`text-sm ${error ? 'text-red-500' : 'text-[#22C55E]'}`}>
+            <p className={`text-sm ${error ? 'text-red-500' : 'text-[#4A90A4]'}`}>
               {error || status}
             </p>
           )}
@@ -74,7 +74,7 @@ export default function PrivacyWidget() {
               <label htmlFor="aiMemory" className="font-medium">
                 AI Memory
               </label>
-              <p className="text-sm text-slate-500">Control what Sathi remembers</p>
+              <p className="text-sm text-slate-500">Control what Shathi remembers</p>
             </div>
             <input
               id="aiMemory"
@@ -126,7 +126,7 @@ export default function PrivacyWidget() {
             </div>
           </div>
         </div>
-        <button type="submit" className="mt-4 rounded-full bg-[#5DBB63] px-4 py-2 text-sm font-medium text-white hover:bg-[#4da857]">
+        <button type="submit" className="mt-4 rounded-full bg-[#5F9DB0] px-4 py-2 text-sm font-medium text-white hover:bg-[#4da857]">
           Save
         </button>
       </form>

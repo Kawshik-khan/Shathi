@@ -32,7 +32,7 @@ export function ThemeToggle() {
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           "flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all",
-          "hover:bg-[#F3FAF4] dark:hover:bg-white/10"
+          "hover:bg-[#F1F5F7] dark:hover:bg-white/10"
         )}
         aria-label="Toggle theme"
       >
@@ -69,8 +69,8 @@ export function ThemeToggle() {
                   className={cn(
                     "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all",
                     theme === option.value
-                      ? "bg-[#DCFCE7] text-[#22C55E] dark:bg-[#22C55E]/20"
-                      : "hover:bg-[#F3FAF4] dark:hover:bg-white/10 text-foreground"
+                      ? "bg-[#E3F0F3] text-[#4A90A4] dark:bg-[#4A90A4]/20"
+                      : "hover:bg-[#F1F5F7] dark:hover:bg-white/10 text-foreground"
                   )}
                 >
                   <option.icon className="w-4 h-4" />

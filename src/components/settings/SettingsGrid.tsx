@@ -10,6 +10,7 @@ import ConnectedAppsWidget from './widgets/ConnectedAppsWidget'
 import MemoryWidget from './widgets/MemoryWidget'
 import SecurityWidget from './widgets/SecurityWidget'
 import { useSettingsStore } from '@/lib/stores/settingsStore'
+import { BentoGrid, BentoCard } from '@/components/shared/bento-grid'
 
 export default function SettingsGrid() {
   const { isSaving, lastError, loadSettings } = useSettingsStore()
@@ -24,34 +25,46 @@ export default function SettingsGrid() {
         <div className={`mb-4 rounded-2xl px-4 py-3 text-sm ${
           lastError
             ? 'border border-red-200 bg-red-50 text-red-600'
-            : 'border border-[#A7F3A0]/60 bg-[#F3FAF4] text-[#22C55E]'
+            : 'border border-[#A8D0D9]/60 bg-[#F1F5F7] text-[#4A90A4]'
         }`}>
           {lastError || 'Saving settings...'}
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <div className="md:col-span-2">
+      <BentoGrid className="gap-6 mb-6">
+        <BentoCard colSpan={8} smColSpan={2} glowOnHover={false} delay={0.05}>
           <ProfileWidget />
-        </div>
+        </BentoCard>
 
-        <div className="space-y-6">
+        <BentoCard colSpan={4} smColSpan={2} glowOnHover={false} delay={0.1} className="space-y-6">
           <AIPersonalityWidget />
           <ThemeWidget />
-        </div>
-      </div>
+        </BentoCard>
+      </BentoGrid>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <WellnessWidget />
-        <NotificationsWidget />
-        <PrivacyWidget />
-      </div>
+      <BentoGrid className="gap-6">
+        <BentoCard colSpan={4} smColSpan={1} glowOnHover={false} delay={0.15}>
+          <WellnessWidget />
+        </BentoCard>
+        <BentoCard colSpan={4} smColSpan={1} glowOnHover={false} delay={0.2}>
+          <NotificationsWidget />
+        </BentoCard>
+        <BentoCard colSpan={4} smColSpan={2} glowOnHover={false} delay={0.25}>
+          <PrivacyWidget />
+        </BentoCard>
+      </BentoGrid>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-        <ConnectedAppsWidget />
-        <MemoryWidget />
-        <SecurityWidget />
-      </div>
+      <BentoGrid className="gap-6 mt-6">
+        <BentoCard colSpan={4} smColSpan={1} glowOnHover={false} delay={0.3}>
+          <ConnectedAppsWidget />
+        </BentoCard>
+        <BentoCard colSpan={4} smColSpan={1} glowOnHover={false} delay={0.35}>
+          <MemoryWidget />
+        </BentoCard>
+        <BentoCard colSpan={4} smColSpan={2} glowOnHover={false} delay={0.4}>
+          <SecurityWidget />
+        </BentoCard>
+      </BentoGrid>
     </div>
   )
 }

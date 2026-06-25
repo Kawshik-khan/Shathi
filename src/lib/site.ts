@@ -28,13 +28,13 @@ export function getSiteUrl() {
 }
 
 export const siteConfig = {
-  name: "Sathi",
-  title: "Sathi | AI Mental Wellness Companion",
+  name: "Shathi",
+  title: "Shathi | AI Mental Wellness Companion",
   description:
-    "Track mood, sleep, habits, and journaling with personalized AI insights from Sathi, an intelligent mental wellness companion.",
+    "Track mood, sleep, habits, and journaling with personalized AI insights from Shathi, an intelligent mental wellness companion.",
   url: getSiteUrl(),
   keywords: [
-    "Sathi",
+    "Shathi",
     "AI mental wellness companion",
     "mental health app",
     "mood tracker",

@@ -32,7 +32,7 @@ export function CTASection() {
                 <span className="text-gradient-green">Today</span>
               </h2>
               <p className="text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-                Join thousands of users who have transformed their lives with Sathi&apos;s AI-powered wellness companion.
+                Join thousands of users who have transformed their lives with Shathi&apos;s AI-powered wellness companion.
               </p>
             </motion.div>
 

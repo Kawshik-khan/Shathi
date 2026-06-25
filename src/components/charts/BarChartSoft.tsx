@@ -16,12 +16,12 @@ export function InsightBar({
   value, 
   maxValue = 100,
   trend = 'stable',
-  color = '#22C55E'
+  color = '#4A90A4'
 }: InsightBarProps) {
   const percentage = Math.min((value / maxValue) * 100, 100);
   
   const trendColors = {
-    up: '#22C55E',
+    up: '#4A90A4',
     down: '#F97316',
     stable: '#64748B'
   };
@@ -44,7 +44,7 @@ export function InsightBar({
         </div>
       </div>
       
-      <div className="h-2 bg-[#EEF7EF] rounded-full overflow-hidden">
+      <div className="h-2 bg-[#EAF2F4] rounded-full overflow-hidden">
         <motion.div 
           className="h-full rounded-full"
           style={{ backgroundColor: color }}
@@ -64,11 +64,11 @@ interface BarChartSoftProps {
 
 export default function BarChartSoft({ 
   data = [
-    { label: 'Meditation', value: 85, color: '#22C55E' },
-    { label: 'Exercise', value: 72, color: '#7ED957' },
-    { label: 'Sleep', value: 90, color: '#86EFAC' },
-    { label: 'Hydration', value: 65, color: '#A7F3A0' },
-    { label: 'Journaling', value: 78, color: '#BBF7D0' },
+    { label: 'Meditation', value: 85, color: '#4A90A4' },
+    { label: 'Exercise', value: 72, color: '#6FA8C7' },
+    { label: 'Sleep', value: 90, color: '#A8D0D9' },
+    { label: 'Hydration', value: 65, color: '#A8D0D9' },
+    { label: 'Journaling', value: 78, color: '#CDE6EB' },
   ],
   title = "Habit Impact"
 }: BarChartSoftProps) {
@@ -82,7 +82,7 @@ export default function BarChartSoft({
       transition={{ duration: 0.4 }}
     >
       <div className="flex items-center gap-2 mb-4">
-        <BarChart3 className="w-4 h-4 text-[#5DBB63]" />
+        <BarChart3 className="w-4 h-4 text-[#5F9DB0]" />
         <span className="text-sm font-semibold text-[#0F172A]">{title}</span>
       </div>
 

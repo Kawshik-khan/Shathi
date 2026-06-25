@@ -1,0 +1,20 @@
+<svg viewBox="0 0 240 200" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="No mood entries yet illustration">
+  <defs>
+    <linearGradient id="em-accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7FB8C9"/>
+      <stop offset="1" stop-color="#4A90A4"/>
+    </linearGradient>
+    <radialGradient id="em-glow" cx="0.5" cy="0.4" r="0.6">
+      <stop offset="0" stop-color="#7FB8C9" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#7FB8C9" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="120" cy="178" rx="80" ry="12" fill="#4A90A4" opacity="0.10"/>
+  <circle cx="120" cy="96" r="74" fill="url(#em-glow)"/>
+  <circle cx="120" cy="96" r="56" fill="#FFFFFF" fill-opacity="0.12" stroke="url(#em-accent)" stroke-width="3"/>
+  <circle cx="100" cy="86" r="7" fill="#4A90A4"/>
+  <circle cx="140" cy="86" r="7" fill="#4A90A4"/>
+  <path d="M98 116 q22 22 44 0" stroke="url(#em-accent)" stroke-width="5" stroke-linecap="round" fill="none"/>
+  <circle cx="176" cy="56" r="9" fill="url(#em-accent)" opacity="0.7"/>
+  <circle cx="60" cy="64" r="6" fill="#7FB8C9" opacity="0.6"/>
+</svg>

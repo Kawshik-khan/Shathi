@@ -15,7 +15,7 @@ export function DailyCheckIn() {
     <GlassCard className="h-full" delay={0.45}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Heart className="w-4 h-4 text-[#22C55E]" />
+          <Heart className="w-4 h-4 text-[#4A90A4]" />
           <span className="text-sm font-medium text-foreground">Daily Check-in</span>
         </div>
       </div>
@@ -39,8 +39,8 @@ export function DailyCheckIn() {
             className={cn(
               "w-10 h-10 rounded-full flex items-center justify-center text-xl transition-all",
               selectedMood === mood.value
-                ? "bg-[#DCFCE7] ring-2 ring-[#22C55E] ring-offset-2 shadow-md"
-                : "hover:bg-[#F3FAF4]"
+                ? "bg-[#E3F0F3] ring-2 ring-[#4A90A4] ring-offset-2 shadow-md"
+                : "hover:bg-[#F1F5F7]"
             )}
           >
             {mood.emoji}
@@ -55,7 +55,7 @@ export function DailyCheckIn() {
           placeholder="Add note (optional)"
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          className="flex-1 px-4 py-2.5 rounded-xl bg-[#F3FAF4] border border-transparent focus:border-[#A7F3A0] focus:outline-none focus:ring-2 focus:ring-[#22C55E]/10 text-sm placeholder:text-muted-foreground/60 transition-all"
+          className="flex-1 px-4 py-2.5 rounded-xl bg-[#F1F5F7] border border-transparent focus:border-[#A8D0D9] focus:outline-none focus:ring-2 focus:ring-[#4A90A4]/10 text-sm placeholder:text-muted-foreground/60 transition-all"
         />
         <motion.button
           whileHover={{ scale: 1.02 }}

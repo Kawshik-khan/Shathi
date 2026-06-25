@@ -19,7 +19,7 @@
     "enterFullName": "Enter your full name",
     "enterPassword": "Enter your password",
     "fullName": "Full Name",
-    "joinSathi": "Join Sathi and start your wellness journey.",
+    "joinSathi": "Join Shathi and start your wellness journey.",
     "password": "Password",
     "passwordConfirm": "Confirm Password",
     "passwordConfirmPlaceholder": "Confirm your password",
@@ -28,7 +28,7 @@
     "togglePassword": "Toggle password visibility",
     "togglePasswordConfirm": "Toggle confirm password visibility",
     "welcomeBack": "Welcome back",
-    "welcomeSubtitle": "Log in to continue your wellness journey with Sathi."
+    "welcomeSubtitle": "Log in to continue your wellness journey with Shathi."
   },
   "errors": {
     "accountCreationFailed": "Account creation failed",

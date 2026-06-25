@@ -72,7 +72,7 @@ def create_application() -> FastAPI:
     settings = get_settings()
     
     app = FastAPI(
-        title="Sathi API",
+        title="Shathi API",
         description="AI Mental Wellness Companion Backend",
         version="0.1.0",
         docs_url="/docs" if not settings.is_production else None,
@@ -112,7 +112,7 @@ def create_application() -> FastAPI:
     async def root_status():
         return {
             "status": "ok",
-            "service": "sathi-api",
+            "service": "shathi-api",
             "health": "/health",
         }
     
@@ -147,7 +147,7 @@ def create_application() -> FastAPI:
 
         return {
             "status": "healthy",
-            "service": "sathi-api",
+            "service": "shathi-api",
             "pinecone": pinecone_status,
             "redis": redis_status,
         }

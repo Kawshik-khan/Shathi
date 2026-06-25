@@ -1,0 +1,20 @@
+<svg viewBox="0 0 240 200" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="No journal entries yet illustration">
+  <defs>
+    <linearGradient id="ej-card" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7FB8C9" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#4A90A4" stop-opacity="0.18"/>
+    </linearGradient>
+    <linearGradient id="ej-accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7FB8C9"/>
+      <stop offset="1" stop-color="#4A90A4"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="120" cy="178" rx="84" ry="12" fill="#4A90A4" opacity="0.10"/>
+  <rect x="62" y="44" width="116" height="106" rx="14" fill="url(#ej-card)" stroke="#7FB8C9" stroke-opacity="0.45" stroke-width="1.5"/>
+  <line x1="92" y1="44" x2="92" y2="150" stroke="#7FB8C9" stroke-opacity="0.4" stroke-width="1.5"/>
+  <rect x="104" y="64" width="58" height="8" rx="4" fill="#4A90A4" opacity="0.30"/>
+  <rect x="104" y="84" width="50" height="8" rx="4" fill="#4A90A4" opacity="0.22"/>
+  <rect x="104" y="104" width="58" height="8" rx="4" fill="#4A90A4" opacity="0.18"/>
+  <path d="M150 132 l30 -30 a6 6 0 0 1 8 8 l-30 30 l-10 2 z" fill="url(#ej-accent)"/>
+  <path d="M150 132 l-2 10 l10 -2 z" fill="#2C6373"/>
+</svg>

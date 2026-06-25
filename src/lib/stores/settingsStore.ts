@@ -89,7 +89,7 @@ const defaultState: SettingsState = {
   motivationalTone: 50,
   
   theme: 'adaptive',
-  accentColor: '#22C55E',
+  accentColor: '#4A90A4',
   fontSize: 16,
   motionEnabled: true,
   

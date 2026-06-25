@@ -109,15 +109,15 @@ function formatDate(value?: string | null) {
 }
 
 function planChipClass(plan: string) {
-  if (plan === 'family') return 'bg-[#DCFCE7] text-[#166534] border-[#A7F3A0]/70';
-  if (plan === 'premium') return 'bg-[#22C55E] text-white border-[#22C55E]';
+  if (plan === 'family') return 'bg-[#E3F0F3] text-[#2C6373] border-[#A8D0D9]/70';
+  if (plan === 'premium') return 'bg-[#4A90A4] text-white border-[#4A90A4]';
   return 'bg-white/70 text-muted-foreground border-white/40';
 }
 
 function statusChipClass(status: string) {
   if (['pending', 'open', 'escalated'].includes(status)) return 'bg-amber-50 text-amber-700 border-amber-200';
   if (['approved', 'active', 'trialing', 'visible', 'reviewed', 'healthy', 'connected'].includes(status)) {
-    return 'bg-[#DCFCE7] text-[#166534] border-[#A7F3A0]/70';
+    return 'bg-[#E3F0F3] text-[#2C6373] border-[#A8D0D9]/70';
   }
   if (['rejected', 'canceled', 'hidden', 'dismissed', 'degraded', 'unavailable'].includes(status)) {
     return 'bg-red-50 text-red-700 border-red-200';
@@ -135,7 +135,7 @@ function Chip({ children, className }: { children: React.ReactNode; className?: 
 
 function fieldClass(extra?: string) {
   return cn(
-    'rounded-xl border border-white/40 bg-white/70 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#22C55E]/30',
+    'rounded-xl border border-white/40 bg-white/70 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#4A90A4]/30',
     extra,
   );
 }
@@ -457,7 +457,7 @@ function AdminWorkspace() {
     <div className="mx-auto max-w-7xl space-y-6">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#7ED957] to-[#22C55E] shadow-lg shadow-green-500/20">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#6FA8C7] to-[#4A90A4] shadow-lg shadow-[#4A90A4]/20">
             <Shield className="h-6 w-6 text-white" />
           </div>
           <div>
@@ -478,8 +478,8 @@ function AdminWorkspace() {
                 className={cn(
                   'flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition-colors',
                   tab === item.key
-                    ? 'bg-[#22C55E] text-white shadow-lg shadow-green-500/20'
-                    : 'bg-white/60 text-muted-foreground hover:bg-[#DCFCE7] hover:text-[#166534]',
+                    ? 'bg-[#4A90A4] text-white shadow-lg shadow-[#4A90A4]/20'
+                    : 'bg-white/60 text-muted-foreground hover:bg-[#E3F0F3] hover:text-[#2C6373]',
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -601,7 +601,7 @@ function OverviewPanel({
       <GlassCard className="lg:col-span-2" glowOnHover={false}>
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-medium text-[#22C55E]">Review queue</p>
+            <p className="text-sm font-medium text-[#4A90A4]">Review queue</p>
             <h2 className="mt-1 text-xl font-semibold">Pending subscriptions</h2>
           </div>
           <Chip className={statusChipClass('pending')}>{pendingRequests.length} pending</Chip>
@@ -621,7 +621,7 @@ function OverviewPanel({
       </GlassCard>
 
       <GlassCard className="lg:col-span-2" glowOnHover={false}>
-        <p className="text-sm font-medium text-[#22C55E]">Recent activity</p>
+        <p className="text-sm font-medium text-[#4A90A4]">Recent activity</p>
         <h2 className="mt-1 text-xl font-semibold">Audit trail</h2>
         <div className="mt-5 space-y-3">
           {auditEvents.slice(0, 5).map((event) => <AuditRow key={event.id} event={event} />)}
@@ -643,7 +643,7 @@ function KpiCard({
   value: number;
   tone?: 'default' | 'warning' | 'danger';
 }) {
-  const iconClass = tone === 'danger' ? 'bg-red-50 text-red-600' : tone === 'warning' ? 'bg-amber-50 text-amber-600' : 'bg-[#DCFCE7] text-[#22C55E]';
+  const iconClass = tone === 'danger' ? 'bg-red-50 text-red-600' : tone === 'warning' ? 'bg-amber-50 text-amber-600' : 'bg-[#E3F0F3] text-[#4A90A4]';
 
   return (
     <GlassCard glowOnHover={false}>
@@ -682,7 +682,7 @@ function UsersPanel({
             <Search className="h-4 w-4 text-muted-foreground" />
             <input value={userQuery} onChange={(event) => setUserQuery(event.target.value)} placeholder="Search users" className="w-40 bg-transparent text-sm outline-none sm:w-64" />
           </div>
-          <button type="button" onClick={reload} className="rounded-full bg-[#22C55E] px-4 py-2 text-sm font-medium text-white shadow-lg shadow-green-500/20">Search</button>
+          <button type="button" onClick={reload} className="rounded-full bg-[#4A90A4] px-4 py-2 text-sm font-medium text-white shadow-lg shadow-[#4A90A4]/20">Search</button>
         </div>
       </PanelHeader>
       <div className="mt-5 overflow-x-auto">
@@ -728,7 +728,7 @@ function UserTable({
                 {user.is_active ? titleCase(user.subscription_status) : 'Inactive'}
               </Chip>
             </td>
-            <td className="py-4 pr-4"><Chip className={user.system_role === 'admin' ? 'border-[#22C55E] bg-[#DCFCE7] text-[#166534]' : 'border-white/40 bg-white/70 text-muted-foreground'}>{titleCase(user.system_role)}</Chip></td>
+            <td className="py-4 pr-4"><Chip className={user.system_role === 'admin' ? 'border-[#4A90A4] bg-[#E3F0F3] text-[#2C6373]' : 'border-white/40 bg-white/70 text-muted-foreground'}>{titleCase(user.system_role)}</Chip></td>
             <td className="py-4 pr-4 text-muted-foreground">{formatDate(user.created_at)}</td>
             {onUpdate && (
               <td className="py-4 pr-4">
@@ -760,7 +760,7 @@ function UserActions({ user, busy, onUpdate }: { user: AdminUserSummary; busy: b
         <option value="user">User</option>
         <option value="admin">Admin</option>
       </select>
-      <button type="button" disabled={busy} onClick={() => onUpdate(user.id, { is_active: !user.is_active })} className={cn('rounded-full px-3 py-2 text-xs font-medium transition-colors disabled:opacity-60', user.is_active ? 'bg-red-50 text-red-700 hover:bg-red-100' : 'bg-[#DCFCE7] text-[#166534] hover:bg-[#BBF7D0]')}>
+      <button type="button" disabled={busy} onClick={() => onUpdate(user.id, { is_active: !user.is_active })} className={cn('rounded-full px-3 py-2 text-xs font-medium transition-colors disabled:opacity-60', user.is_active ? 'bg-red-50 text-red-700 hover:bg-red-100' : 'bg-[#E3F0F3] text-[#2C6373] hover:bg-[#CDE6EB]')}>
         {busy ? 'Saving' : user.is_active ? 'Deactivate' : 'Activate'}
       </button>
     </div>
@@ -788,7 +788,7 @@ function SubscriptionsPanel({
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
       <GlassCard className="xl:col-span-2" glowOnHover={false}>
         <PanelHeader eyebrow="Manual plan reviews" title="Subscription requests">
-          <select value={requestStatus} onChange={(event) => setRequestStatus(event.target.value as SubscriptionRequestStatus | '')} className="rounded-full border border-white/40 bg-white/70 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-[#22C55E]/30">
+          <select value={requestStatus} onChange={(event) => setRequestStatus(event.target.value as SubscriptionRequestStatus | '')} className="rounded-full border border-white/40 bg-white/70 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-[#4A90A4]/30">
             <option value="">All statuses</option>
             <option value="pending">Pending</option>
             <option value="approved">Approved</option>
@@ -873,13 +873,13 @@ function ContentPanel({
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-medium">{item.title}</p>
                     <Chip className={statusChipClass(item.published ? 'reviewed' : 'pending')}>{item.published ? 'Published' : 'Draft'}</Chip>
-                    <Chip className="border-[#A7F3A0]/70 bg-[#DCFCE7] text-[#166534]">{item.language}</Chip>
+                    <Chip className="border-[#A8D0D9]/70 bg-[#E3F0F3] text-[#2C6373]">{item.language}</Chip>
                   </div>
                   <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{item.body}</p>
                   <p className="mt-2 text-xs text-muted-foreground">{item.content_type} - {item.region || 'All regions'} - Updated {formatDate(item.updated_at)}</p>
                 </div>
                 <div className="flex gap-2">
-                  <button type="button" onClick={() => { setEditingContentId(item.id); setContentDraft({ content_type: item.content_type, language: item.language, title: item.title, body: item.body, region: item.region || '', published: item.published }); }} className="rounded-full bg-white/70 px-3 py-2 text-xs font-medium text-[#166534]">Edit</button>
+                  <button type="button" onClick={() => { setEditingContentId(item.id); setContentDraft({ content_type: item.content_type, language: item.language, title: item.title, body: item.body, region: item.region || '', published: item.published }); }} className="rounded-full bg-white/70 px-3 py-2 text-xs font-medium text-[#2C6373]">Edit</button>
                   <button type="button" disabled={busyId === item.id} onClick={() => onDeleteContent(item.id)} className="rounded-full bg-red-50 px-3 py-2 text-xs font-medium text-red-700 disabled:opacity-60">
                     Delete
                   </button>
@@ -892,7 +892,7 @@ function ContentPanel({
       </GlassCard>
 
       <GlassCard glowOnHover={false}>
-        <p className="text-sm font-medium text-[#22C55E]">{editingContentId ? 'Edit content' : 'Create content'}</p>
+        <p className="text-sm font-medium text-[#4A90A4]">{editingContentId ? 'Edit content' : 'Create content'}</p>
         <div className="mt-5 space-y-3">
           <input value={contentDraft.title} onChange={(event) => setContentDraft({ ...contentDraft, title: event.target.value })} placeholder="Title" className={fieldClass('w-full')} />
           <div className="grid grid-cols-2 gap-2">
@@ -928,7 +928,7 @@ function ContentPanel({
                 </div>
                 <Chip className={statusChipClass(resource.active ? 'active' : 'canceled')}>{resource.active ? 'Active' : 'Inactive'}</Chip>
               </div>
-              <button type="button" onClick={() => { setEditingResourceId(resource.id); setResourceDraft({ name: resource.name, phone: resource.phone || '', region: resource.region || '', type: resource.type, language: resource.language, is_24_7: resource.is_24_7, description: resource.description || '', url: resource.url || '', active: resource.active }); }} className="mt-3 rounded-full bg-white/70 px-3 py-2 text-xs font-medium text-[#166534]">Edit resource</button>
+              <button type="button" onClick={() => { setEditingResourceId(resource.id); setResourceDraft({ name: resource.name, phone: resource.phone || '', region: resource.region || '', type: resource.type, language: resource.language, is_24_7: resource.is_24_7, description: resource.description || '', url: resource.url || '', active: resource.active }); }} className="mt-3 rounded-full bg-white/70 px-3 py-2 text-xs font-medium text-[#2C6373]">Edit resource</button>
             </div>
           ))}
           {resources.length === 0 && <EmptyText>No crisis resources found.</EmptyText>}
@@ -936,7 +936,7 @@ function ContentPanel({
       </GlassCard>
 
       <GlassCard glowOnHover={false}>
-        <p className="text-sm font-medium text-[#22C55E]">{editingResourceId ? 'Edit resource' : 'Create resource'}</p>
+        <p className="text-sm font-medium text-[#4A90A4]">{editingResourceId ? 'Edit resource' : 'Create resource'}</p>
         <div className="mt-5 space-y-3">
           <input value={resourceDraft.name} onChange={(event) => setResourceDraft({ ...resourceDraft, name: event.target.value })} placeholder="Name" className={fieldClass('w-full')} />
           <div className="grid grid-cols-2 gap-2">
@@ -984,13 +984,13 @@ function SafetyPanel({
       <GlassCard className="xl:col-span-2" glowOnHover={false}>
         <PanelHeader eyebrow="Minimum necessary context" title="Safety reviews">
           <div className="flex gap-2">
-            <select value={safetyStatus} onChange={(event) => setSafetyStatus(event.target.value)} className="rounded-full border border-white/40 bg-white/70 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-[#22C55E]/30">
+            <select value={safetyStatus} onChange={(event) => setSafetyStatus(event.target.value)} className="rounded-full border border-white/40 bg-white/70 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-[#4A90A4]/30">
               <option value="open">Open</option>
               <option value="reviewed">Reviewed</option>
               <option value="escalated">Escalated</option>
               <option value="dismissed">Dismissed</option>
             </select>
-            <button type="button" onClick={reload} className="rounded-full bg-[#22C55E] px-4 py-2 text-sm font-medium text-white">Load</button>
+            <button type="button" onClick={reload} className="rounded-full bg-[#4A90A4] px-4 py-2 text-sm font-medium text-white">Load</button>
           </div>
         </PanelHeader>
         <div className="mt-5 space-y-3">
@@ -1046,12 +1046,12 @@ function ModerationPanel({
       <GlassCard className="xl:col-span-2" glowOnHover={false}>
         <PanelHeader eyebrow="Community review" title="Community moderation">
           <div className="flex gap-2">
-            <select value={moderationStatus} onChange={(event) => setModerationStatus(event.target.value)} className="rounded-full border border-white/40 bg-white/70 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-[#22C55E]/30">
+            <select value={moderationStatus} onChange={(event) => setModerationStatus(event.target.value)} className="rounded-full border border-white/40 bg-white/70 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-[#4A90A4]/30">
               <option value="">All posts</option>
               <option value="visible">Visible</option>
               <option value="hidden">Hidden</option>
             </select>
-            <button type="button" onClick={reload} className="rounded-full bg-[#22C55E] px-4 py-2 text-sm font-medium text-white">Load</button>
+            <button type="button" onClick={reload} className="rounded-full bg-[#4A90A4] px-4 py-2 text-sm font-medium text-white">Load</button>
           </div>
         </PanelHeader>
         <div className="mt-5 grid grid-cols-1 gap-3 lg:grid-cols-2">
@@ -1068,7 +1068,7 @@ function ModerationPanel({
               {post.moderation_reason && <p className="mt-2 text-xs text-red-700">Reason: {post.moderation_reason}</p>}
               <div className="mt-4 flex gap-2">
                 {post.moderation_status === 'hidden' ? (
-                  <button type="button" disabled={busyId === post.id} onClick={() => onModerate(post.id, 'restore')} className="flex items-center gap-2 rounded-full bg-[#DCFCE7] px-3 py-2 text-xs font-medium text-[#166534] disabled:opacity-60">
+                  <button type="button" disabled={busyId === post.id} onClick={() => onModerate(post.id, 'restore')} className="flex items-center gap-2 rounded-full bg-[#E3F0F3] px-3 py-2 text-xs font-medium text-[#2C6373] disabled:opacity-60">
                     <RotateCcw className="h-4 w-4" />
                     Restore
                   </button>
@@ -1123,7 +1123,7 @@ function UsagePanel({
               <Search className="h-4 w-4 text-muted-foreground" />
               <input value={tokenQuery} onChange={(event) => setTokenQuery(event.target.value)} placeholder="Search users" className="w-44 bg-transparent text-sm outline-none sm:w-64" />
             </div>
-            <button type="button" onClick={reload} className="rounded-full bg-[#22C55E] px-4 py-2 text-sm font-medium text-white shadow-lg shadow-green-500/20">Load</button>
+            <button type="button" onClick={reload} className="rounded-full bg-[#4A90A4] px-4 py-2 text-sm font-medium text-white shadow-lg shadow-[#4A90A4]/20">Load</button>
           </div>
         </PanelHeader>
         <div className="mt-5 overflow-x-auto">
@@ -1226,8 +1226,8 @@ function AnalyticsPanel({ analytics }: { analytics: AdminAnalytics | null }) {
           {(analytics?.daily ?? []).slice(-14).map((point) => (
             <div key={point.date} className="grid grid-cols-[90px_1fr_60px] items-center gap-3 text-sm">
               <span className="text-muted-foreground">{point.date.slice(5)}</span>
-              <div className="h-2 rounded-full bg-[#DCFCE7]">
-                <div className="h-2 rounded-full bg-[#22C55E]" style={{ width: `${Math.min(100, point.messages * 8)}%` }} />
+              <div className="h-2 rounded-full bg-[#E3F0F3]">
+                <div className="h-2 rounded-full bg-[#4A90A4]" style={{ width: `${Math.min(100, point.messages * 8)}%` }} />
               </div>
               <span className="text-right font-medium">{point.messages}</span>
             </div>
@@ -1315,7 +1315,7 @@ function PanelHeader({
   return (
     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
       <div>
-        <p className="text-sm font-medium text-[#22C55E]">{eyebrow}</p>
+        <p className="text-sm font-medium text-[#4A90A4]">{eyebrow}</p>
         <h2 className="mt-1 text-xl font-semibold">{title}</h2>
       </div>
       {children}
@@ -1335,7 +1335,7 @@ function ActionButton({
   icon: typeof Check;
 }) {
   return (
-    <button type="button" disabled={disabled} onClick={onClick} className="flex items-center justify-center gap-2 rounded-full bg-[#22C55E] px-4 py-2 text-sm font-medium text-white shadow-lg shadow-green-500/20 disabled:opacity-60">
+    <button type="button" disabled={disabled} onClick={onClick} className="flex items-center justify-center gap-2 rounded-full bg-[#4A90A4] px-4 py-2 text-sm font-medium text-white shadow-lg shadow-[#4A90A4]/20 disabled:opacity-60">
       <Icon className={cn('h-4 w-4', Icon === Loader2 && 'animate-spin')} />
       {children}
     </button>
@@ -1355,9 +1355,9 @@ function NoteCard({
 }) {
   return (
     <GlassCard glowOnHover={false}>
-      <p className="text-sm font-medium text-[#22C55E]">Internal note</p>
+      <p className="text-sm font-medium text-[#4A90A4]">Internal note</p>
       <h2 className="mt-1 text-xl font-semibold">{title}</h2>
-      <textarea value={note} onChange={(event) => setNote(event.target.value)} rows={8} maxLength={2000} placeholder={placeholder} className="mt-5 w-full resize-none rounded-2xl border border-white/40 bg-white/60 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#22C55E]/30" />
+      <textarea value={note} onChange={(event) => setNote(event.target.value)} rows={8} maxLength={2000} placeholder={placeholder} className="mt-5 w-full resize-none rounded-2xl border border-white/40 bg-white/60 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#4A90A4]/30" />
       <p className="mt-3 text-xs text-muted-foreground">Saved only with the next admin action.</p>
     </GlassCard>
   );

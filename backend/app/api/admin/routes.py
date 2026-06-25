@@ -926,7 +926,7 @@ async def get_admin_system_health(
 
     return AdminSystemHealth(
         status="healthy" if database_status == "connected" else "degraded",
-        service="sathi-api",
+        service="shathi-api",
         environment=settings.APP_ENV,
         database=database_status,
         redis=redis_status,

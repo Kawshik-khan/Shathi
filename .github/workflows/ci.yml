@@ -37,3 +37,17 @@ jobs:
       - run: PYTHONPATH=. python -m pytest -p no:cacheprovider tests
         env:
           APP_ENV: test
+
+  deploy-backend:
+    needs: [backend, frontend]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render Deploy Hook
+        run: |
+          if [ -n "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" ]; then
+            echo "Triggering Render deployment..."
+            curl -f -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+          else
+            echo "RENDER_DEPLOY_HOOK_URL secret is not set. Skipping deployment step."
+          fi

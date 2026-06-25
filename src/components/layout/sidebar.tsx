@@ -62,10 +62,10 @@ export function Sidebar() {
     >
       {/* Logo */}
       <div className="flex items-center gap-3 px-2 mb-8">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7ED957] to-[#22C55E] flex items-center justify-center shadow-lg shadow-green-500/20">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6FA8C7] to-[#4A90A4] flex items-center justify-center shadow-lg shadow-[#4A90A4]/20">
           <span className="text-white font-bold text-lg">S</span>
         </div>
-        <span className="font-semibold text-lg text-foreground">Sathi</span>
+        <span className="font-semibold text-lg text-foreground">Shathi</span>
       </div>
 
       {/* Navigation */}
@@ -88,14 +88,14 @@ export function Sidebar() {
                 className={cn(
                   'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200',
                   isActive
-                    ? 'bg-[#DCFCE7] text-[#22C55E] shadow-sm shadow-green-500/10'
-                    : 'text-muted-foreground hover:bg-[#F3FAF4] hover:text-foreground'
+                    ? 'bg-[#E3F0F3] text-[#4A90A4] shadow-sm shadow-[#4A90A4]/10'
+                    : 'text-muted-foreground hover:bg-[#F1F5F7] hover:text-foreground'
                 )}
               >
-                <Icon className={cn('w-5 h-5', isActive && 'text-[#22C55E]')} />
+                <Icon className={cn('w-5 h-5', isActive && 'text-[#4A90A4]')} />
                 <span>{item.label ?? t(`navigation.${item.key}`)}</span>
                 {!isAdmin && item.key === 'aiCompanion' && (
-                  <span className="ml-auto w-2 h-2 rounded-full bg-[#22C55E] animate-pulse" />
+                  <span className="ml-auto w-2 h-2 rounded-full bg-[#4A90A4] animate-pulse" />
                 )}
               </Link>
             </motion.div>
@@ -108,9 +108,9 @@ export function Sidebar() {
       {/* User Profile */}
       <Link
         href="/profile"
-        className="flex items-center gap-3 px-2 py-3 rounded-xl hover:bg-[#F3FAF4] transition-colors"
+        className="flex items-center gap-3 px-2 py-3 rounded-xl hover:bg-[#F1F5F7] transition-colors"
       >
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#A7F3A0] to-[#7ED957] flex items-center justify-center text-white font-medium">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#A8D0D9] to-[#6FA8C7] flex items-center justify-center text-white font-medium">
           {user.name.charAt(0)}
         </div>
         <div className="flex-1 min-w-0">

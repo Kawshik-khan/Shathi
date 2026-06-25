@@ -20,7 +20,7 @@ export function SleepTracking() {
     <GlassCard className="h-full" delay={0.15}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Moon className="w-4 h-4 text-[#22C55E]" />
+          <Moon className="w-4 h-4 text-[#4A90A4]" />
           <span className="text-sm font-medium text-muted-foreground">Sleep</span>
         </div>
         <button
@@ -41,7 +41,7 @@ export function SleepTracking() {
               cx="60"
               cy="60"
               r={radius}
-              stroke="#EEF7EF"
+              stroke="#EAF2F4"
               strokeWidth="8"
               fill="none"
             />
@@ -50,7 +50,7 @@ export function SleepTracking() {
               cx="60"
               cy="60"
               r={radius}
-              stroke="#22C55E"
+              stroke="#4A90A4"
               strokeWidth="8"
               fill="none"
               strokeLinecap="round"
@@ -64,7 +64,7 @@ export function SleepTracking() {
           {/* Center Text */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-xl font-bold text-foreground">{sleepData.duration}</span>
-            <span className="text-xs text-[#22C55E] font-medium">{sleepData.qualityLabel}</span>
+            <span className="text-xs text-[#4A90A4] font-medium">{sleepData.qualityLabel}</span>
           </div>
         </div>
 
@@ -80,8 +80,8 @@ export function SleepTracking() {
                 key={i}
                 className={`w-1.5 h-4 rounded-full ${
                   i < sleepData.quality / 10 
-                    ? 'bg-[#22C55E]' 
-                    : 'bg-[#EEF7EF]'
+                    ? 'bg-[#4A90A4]' 
+                    : 'bg-[#EAF2F4]'
                 }`}
               />
             ))}
@@ -90,7 +90,7 @@ export function SleepTracking() {
       </div>
 
       <button
-        className="flex items-center gap-1 mt-4 text-xs text-muted-foreground hover:text-[#22C55E] transition-colors"
+        className="flex items-center gap-1 mt-4 text-xs text-muted-foreground hover:text-[#4A90A4] transition-colors"
         onClick={() => router.push('/sleep')}
       >
         View details

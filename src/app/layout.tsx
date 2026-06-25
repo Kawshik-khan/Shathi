@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { siteConfig } from "@/lib/site";
 import { ThemeProvider } from "@/components/theme-provider";
+import { DaytimeProvider } from "@/components/daytime-provider";
 import { I18nProvider } from "@/components/i18n-provider";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 
@@ -94,7 +95,9 @@ export default function RootLayout({
         <AuthProvider>
           <I18nProvider>
             <ThemeProvider>
-              {children}
+              <DaytimeProvider>
+                {children}
+              </DaytimeProvider>
             </ThemeProvider>
           </I18nProvider>
         </AuthProvider>

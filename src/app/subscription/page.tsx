@@ -182,7 +182,7 @@ function SubscriptionContent() {
     <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#7ED957] to-[#22C55E] flex items-center justify-center shadow-lg shadow-green-500/20">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#6FA8C7] to-[#4A90A4] flex items-center justify-center shadow-lg shadow-[#4A90A4]/20">
             <Crown className="w-6 h-6 text-white" />
           </div>
           <div>
@@ -190,7 +190,7 @@ function SubscriptionContent() {
             <p className="text-sm text-muted-foreground">Plan access, usage, and manual upgrade requests.</p>
           </div>
         </div>
-        <div className="rounded-full border border-[#A7F3A0]/50 bg-[#F3FAF4] px-4 py-2 text-sm font-medium text-[#166534]">
+        <div className="rounded-full border border-[#A8D0D9]/50 bg-[#F1F5F7] px-4 py-2 text-sm font-medium text-[#2C6373]">
           {planLabel(summary?.effective_plan)} access
         </div>
       </div>
@@ -210,14 +210,14 @@ function SubscriptionContent() {
         <GlassCard delay={0.05} className="lg:col-span-2">
           <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
             <div>
-              <p className="text-sm font-medium text-[#22C55E]">Current plan</p>
+              <p className="text-sm font-medium text-[#4A90A4]">Current plan</p>
               <h2 className="mt-2 text-3xl font-semibold">{planLabel(summary?.plan)}</h2>
               <p className="mt-2 max-w-xl text-sm text-muted-foreground">
                 Effective access is {planLabel(summary?.effective_plan)} with {summary?.subscription_status ?? 'active'} status.
               </p>
             </div>
-            <div className="rounded-2xl border border-[#A7F3A0]/40 bg-[#DCFCE7]/70 px-4 py-3 text-sm">
-              <p className="font-medium text-[#166534]">Plan window</p>
+            <div className="rounded-2xl border border-[#A8D0D9]/40 bg-[#E3F0F3]/70 px-4 py-3 text-sm">
+              <p className="font-medium text-[#2C6373]">Plan window</p>
               <p className="mt-1 text-muted-foreground">
                 Ends {formatDate(summary?.subscription_ends_at)}
               </p>
@@ -242,7 +242,7 @@ function SubscriptionContent() {
 
         <GlassCard delay={0.1}>
           <div className="flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-[#22C55E]" />
+            <BarChart3 className="w-5 h-5 text-[#4A90A4]" />
             <h2 className="text-lg font-semibold">Usage</h2>
           </div>
 
@@ -254,9 +254,9 @@ function SubscriptionContent() {
                   {aiUsed.toLocaleString()} / {formatLimit(aiLimit)}
                 </span>
               </div>
-              <div className="h-2 rounded-full bg-[#DCFCE7]">
+              <div className="h-2 rounded-full bg-[#E3F0F3]">
                 <div
-                  className="h-2 rounded-full bg-[#22C55E]"
+                  className="h-2 rounded-full bg-[#4A90A4]"
                   style={{
                     width:
                       typeof aiLimit === 'number' && aiLimit > 0
@@ -274,9 +274,9 @@ function SubscriptionContent() {
                   {activeHabitCount} / {formatLimit(habitLimit)}
                 </span>
               </div>
-              <div className="h-2 rounded-full bg-[#DCFCE7]">
+              <div className="h-2 rounded-full bg-[#E3F0F3]">
                 <div
-                  className="h-2 rounded-full bg-[#7ED957]"
+                  className="h-2 rounded-full bg-[#6FA8C7]"
                   style={{
                     width:
                       typeof habitLimit === 'number' && habitLimit > 0
@@ -300,22 +300,22 @@ function SubscriptionContent() {
           return (
             <GlassCard key={plan.key} delay={0.12 + index * 0.04}>
               <div className="flex items-start justify-between gap-3">
-                <div className="w-11 h-11 rounded-xl bg-[#DCFCE7] flex items-center justify-center">
-                  <Icon className="w-5 h-5 text-[#22C55E]" />
+                <div className="w-11 h-11 rounded-xl bg-[#E3F0F3] flex items-center justify-center">
+                  <Icon className="w-5 h-5 text-[#4A90A4]" />
                 </div>
                 {isCurrent && (
-                  <span className="rounded-full bg-[#22C55E] px-3 py-1 text-xs font-medium text-white">
+                  <span className="rounded-full bg-[#4A90A4] px-3 py-1 text-xs font-medium text-white">
                     Current
                   </span>
                 )}
               </div>
               <h3 className="mt-4 text-xl font-semibold">{plan.name}</h3>
-              <p className="mt-1 text-sm font-medium text-[#22C55E]">{plan.price}</p>
+              <p className="mt-1 text-sm font-medium text-[#4A90A4]">{plan.price}</p>
               <p className="mt-2 min-h-10 text-sm text-muted-foreground">{plan.description}</p>
               <div className="mt-5 space-y-2">
                 {plan.features.map((feature) => (
                   <div key={feature} className="flex items-center gap-2 text-sm">
-                    <Check className="w-4 h-4 text-[#22C55E]" />
+                    <Check className="w-4 h-4 text-[#4A90A4]" />
                     <span>{feature}</span>
                   </div>
                 ))}
@@ -326,8 +326,8 @@ function SubscriptionContent() {
                   onClick={() => setSelectedPlan(plan.key)}
                   className={`mt-6 w-full rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                     isSelected
-                      ? 'bg-[#22C55E] text-white shadow-lg shadow-green-500/20'
-                      : 'bg-[#DCFCE7] text-[#166534] hover:bg-[#BBF7D0]'
+                      ? 'bg-[#4A90A4] text-white shadow-lg shadow-[#4A90A4]/20'
+                      : 'bg-[#E3F0F3] text-[#2C6373] hover:bg-[#CDE6EB]'
                   }`}
                 >
                   Select {plan.name}
@@ -341,7 +341,7 @@ function SubscriptionContent() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <GlassCard delay={0.2} className="lg:col-span-2">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-[#22C55E]" />
+            <Sparkles className="w-5 h-5 text-[#4A90A4]" />
             <h2 className="text-lg font-semibold">Plan features</h2>
           </div>
           <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -352,12 +352,12 @@ function SubscriptionContent() {
               return (
                 <div key={feature.key} className="flex items-center justify-between rounded-2xl bg-white/55 p-4">
                   <div className="flex items-center gap-3">
-                    <Icon className="w-5 h-5 text-[#22C55E]" />
+                    <Icon className="w-5 h-5 text-[#4A90A4]" />
                     <span className="font-medium">{feature.label}</span>
                   </div>
                   <span
                     className={`rounded-full px-3 py-1 text-xs font-medium ${
-                      enabled ? 'bg-[#DCFCE7] text-[#166534]' : 'bg-slate-100 text-slate-500'
+                      enabled ? 'bg-[#E3F0F3] text-[#2C6373]' : 'bg-slate-100 text-slate-500'
                     }`}
                   >
                     {enabled ? 'Included' : 'Locked'}
@@ -367,10 +367,10 @@ function SubscriptionContent() {
             })}
             <div className="flex items-center justify-between rounded-2xl bg-white/55 p-4">
               <div className="flex items-center gap-3">
-                <InfinityIcon className="w-5 h-5 text-[#22C55E]" />
+                <InfinityIcon className="w-5 h-5 text-[#4A90A4]" />
                 <span className="font-medium">Habit limit</span>
               </div>
-              <span className="rounded-full bg-[#DCFCE7] px-3 py-1 text-xs font-medium text-[#166534]">
+              <span className="rounded-full bg-[#E3F0F3] px-3 py-1 text-xs font-medium text-[#2C6373]">
                 {formatLimit(summary?.limits.habits_limit)}
               </span>
             </div>
@@ -379,13 +379,13 @@ function SubscriptionContent() {
 
         <GlassCard delay={0.24}>
           <div className="flex items-center gap-2">
-            <Send className="w-5 h-5 text-[#22C55E]" />
+            <Send className="w-5 h-5 text-[#4A90A4]" />
             <h2 className="text-lg font-semibold">Request upgrade</h2>
           </div>
 
           {pendingRequest ? (
-            <div className="mt-5 rounded-2xl border border-[#A7F3A0]/50 bg-[#F3FAF4] p-4">
-              <p className="font-medium text-[#166534]">Request pending</p>
+            <div className="mt-5 rounded-2xl border border-[#A8D0D9]/50 bg-[#F1F5F7] p-4">
+              <p className="font-medium text-[#2C6373]">Request pending</p>
               <p className="mt-2 text-sm text-muted-foreground">
                 {planLabel(pendingRequest.requested_plan)} request sent on {formatDate(pendingRequest.created_at)}.
               </p>
@@ -400,8 +400,8 @@ function SubscriptionContent() {
                     onClick={() => setSelectedPlan(plan)}
                     className={`rounded-xl px-3 py-2 text-sm font-medium capitalize transition-colors ${
                       selectedPlan === plan
-                        ? 'bg-[#22C55E] text-white'
-                        : 'bg-white/60 text-foreground hover:bg-[#DCFCE7]'
+                        ? 'bg-[#4A90A4] text-white'
+                        : 'bg-white/60 text-foreground hover:bg-[#E3F0F3]'
                     }`}
                   >
                     {plan}
@@ -414,12 +414,12 @@ function SubscriptionContent() {
                 rows={4}
                 maxLength={1000}
                 placeholder="Optional note for the admin"
-                className="w-full resize-none rounded-xl border border-white/30 bg-white/60 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#22C55E]/30"
+                className="w-full resize-none rounded-xl border border-white/30 bg-white/60 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#4A90A4]/30"
               />
               <button
                 type="submit"
                 disabled={!canRequest || submitting}
-                className="flex w-full items-center justify-center gap-2 rounded-full bg-[#22C55E] px-4 py-2 text-sm font-medium text-white shadow-lg shadow-green-500/20 transition-colors hover:bg-[#16A34A] disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex w-full items-center justify-center gap-2 rounded-full bg-[#4A90A4] px-4 py-2 text-sm font-medium text-white shadow-lg shadow-[#4A90A4]/20 transition-colors hover:bg-[#3F7E90] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 Request {planLabel(selectedPlan)}

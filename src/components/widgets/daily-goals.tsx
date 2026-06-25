@@ -18,7 +18,7 @@ export function DailyGoals() {
     <GlassCard className="h-full" delay={0.2}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <CheckSquare className="w-4 h-4 text-[#22C55E]" />
+          <CheckSquare className="w-4 h-4 text-[#4A90A4]" />
           <span className="text-sm font-medium text-foreground">Today&apos;s Goals</span>
         </div>
         <span className="text-xs text-muted-foreground">
@@ -27,9 +27,9 @@ export function DailyGoals() {
       </div>
 
       {/* Progress Bar */}
-      <div className="h-1.5 w-full bg-[#EEF7EF] rounded-full mb-5 overflow-hidden">
+      <div className="h-1.5 w-full bg-[#EAF2F4] rounded-full mb-5 overflow-hidden">
         <motion.div
-          className="h-full bg-gradient-to-r from-[#7ED957] to-[#22C55E] rounded-full"
+          className="h-full bg-gradient-to-r from-[#6FA8C7] to-[#4A90A4] rounded-full"
           initial={{ width: 0 }}
           animate={{ width: `${progress}%` }}
           transition={{ duration: 0.8, ease: "easeOut" }}
@@ -50,8 +50,8 @@ export function DailyGoals() {
             <div className={cn(
               "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-300",
               goal.completed
-                ? "bg-[#22C55E] border-[#22C55E]"
-                : "border-gray-300 group-hover:border-[#22C55E]"
+                ? "bg-[#4A90A4] border-[#4A90A4]"
+                : "border-gray-300 group-hover:border-[#4A90A4]"
             )}>
               {goal.completed && (
                 <motion.svg
@@ -95,7 +95,7 @@ export function DailyGoals() {
       </div>
 
       <button
-        className="flex items-center gap-1 mt-5 text-xs text-muted-foreground hover:text-[#22C55E] transition-colors"
+        className="flex items-center gap-1 mt-5 text-xs text-muted-foreground hover:text-[#4A90A4] transition-colors"
         onClick={() => router.push('/habits')}
       >
         View all goals

@@ -22,11 +22,11 @@ export default function EmotionHeatmap({
 
   const getColor = (intensity: number) => {
     const colors = [
-      'bg-[#F3FAF4]', // 0 - No data
-      'bg-[#BBF7D0]', // 1 - Low
-      'bg-[#86EFAC]', // 2 - Medium-Low
-      'bg-[#4ADE80]', // 3 - Medium-High
-      'bg-[#22C55E]', // 4 - High
+      'bg-[#F1F5F7]', // 0 - No data
+      'bg-[#CDE6EB]', // 1 - Low
+      'bg-[#A8D0D9]', // 2 - Medium-Low
+      'bg-[#6FB3C7]', // 3 - Medium-High
+      'bg-[#4A90A4]', // 4 - High
     ];
     return colors[intensity] || colors[0];
   };
@@ -61,7 +61,7 @@ export default function EmotionHeatmap({
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: (weekIndex * 7 + dayIndex) * 0.03, duration: 0.2 }}
-                className={`w-8 h-8 rounded-lg ${getColor(intensity)} transition-all duration-200 hover:ring-2 hover:ring-[#22C55E] hover:ring-offset-1`}
+                className={`w-8 h-8 rounded-lg ${getColor(intensity)} transition-all duration-200 hover:ring-2 hover:ring-[#4A90A4] hover:ring-offset-1`}
                 title={`${weekLabels[weekIndex]} ${dayLabels[dayIndex]}: ${intensity === 0 ? 'No data' : intensity >= 3 ? 'Positive' : 'Moderate'}`}
               />
             ))}

@@ -46,10 +46,10 @@ export function JournalPreview() {
     <GlassCard className="h-full" delay={0.35}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <BookHeart className="w-4 h-4 text-[#22C55E]" />
+          <BookHeart className="w-4 h-4 text-[#4A90A4]" />
           <span className="text-sm font-medium text-foreground">Journal</span>
         </div>
-        <span className="px-2 py-0.5 rounded-full bg-[#DCFCE7] text-[#22C55E] text-[10px] font-medium">
+        <span className="px-2 py-0.5 rounded-full bg-[#E3F0F3] text-[#4A90A4] text-[10px] font-medium">
           Latest Entry
         </span>
       </div>
@@ -67,7 +67,7 @@ export function JournalPreview() {
             <>
               <h4 className="text-base font-semibold text-foreground mb-2 flex items-center gap-1">
                 {latestEntry.title || 'Untitled entry'}
-                <BookHeart className="h-4 w-4 text-[#22C55E]" />
+                <BookHeart className="h-4 w-4 text-[#4A90A4]" />
               </h4>
               <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
                 {latestEntry.content}
@@ -89,14 +89,14 @@ export function JournalPreview() {
         <motion.div
           animate={{ rotate: [0, 5, -5, 0] }}
           transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-          className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#DCFCE7] to-[#A7F3A0] flex items-center justify-center flex-shrink-0 shadow-lg shadow-green-500/10"
+          className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#E3F0F3] to-[#A8D0D9] flex items-center justify-center flex-shrink-0 shadow-lg shadow-[#4A90A4]/10"
         >
-          <BookHeart className="w-7 h-7 text-[#22C55E]" />
+          <BookHeart className="w-7 h-7 text-[#4A90A4]" />
         </motion.div>
       </div>
 
       <button
-        className="flex items-center gap-1 mt-4 text-xs text-muted-foreground hover:text-[#22C55E] transition-colors"
+        className="flex items-center gap-1 mt-4 text-xs text-muted-foreground hover:text-[#4A90A4] transition-colors"
         onClick={() => router.push('/journal')}
       >
         View all entries

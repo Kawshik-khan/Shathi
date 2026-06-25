@@ -132,9 +132,9 @@ export function SidebarPlanCard({ fallbackPlan, onNavigate }: SidebarPlanCardPro
 
   if (isFree) {
     return (
-      <div className="mt-auto mb-4 p-4 rounded-2xl bg-gradient-to-br from-[#DCFCE7] to-[#EEF7EF] border border-[#A7F3A0]/30">
+      <div className="mt-auto mb-4 p-4 rounded-2xl bg-gradient-to-br from-[#E3F0F3] to-[#EAF2F4] border border-[#A8D0D9]/30">
         <div className="flex items-center gap-2 mb-2">
-          <Crown className="w-5 h-5 text-[#22C55E]" />
+          <Crown className="w-5 h-5 text-[#4A90A4]" />
           <span className="font-semibold text-sm text-foreground">{t('plan.upgradeToPro')}</span>
         </div>
         <p className="text-xs text-muted-foreground mb-3">
@@ -143,7 +143,7 @@ export function SidebarPlanCard({ fallbackPlan, onNavigate }: SidebarPlanCardPro
         <Link
           href="/subscription"
           onClick={onNavigate}
-          className="block w-full py-2 px-4 rounded-full bg-[#22C55E] text-center text-white text-sm font-medium hover:bg-[#16A34A] transition-colors shadow-lg shadow-green-500/20"
+          className="block w-full py-2 px-4 rounded-full bg-[#4A90A4] text-center text-white text-sm font-medium hover:bg-[#3F7E90] transition-colors shadow-lg shadow-[#4A90A4]/20"
         >
           {t('actions.upgradeNow')}
         </Link>
@@ -152,10 +152,10 @@ export function SidebarPlanCard({ fallbackPlan, onNavigate }: SidebarPlanCardPro
   }
 
   return (
-    <div className="mt-auto mb-4 p-4 rounded-2xl bg-gradient-to-br from-[#DCFCE7] via-[#EEF7EF] to-white border border-[#A7F3A0]/40 shadow-sm shadow-green-500/10">
+    <div className="mt-auto mb-4 p-4 rounded-2xl bg-gradient-to-br from-[#E3F0F3] via-[#EAF2F4] to-white border border-[#A8D0D9]/40 shadow-sm shadow-[#4A90A4]/10">
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex min-w-0 items-center gap-2">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#22C55E] text-white shadow-lg shadow-green-500/20">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#4A90A4] text-white shadow-lg shadow-[#4A90A4]/20">
             <Crown className="w-4 h-4" />
           </div>
           <div className="min-w-0">
@@ -163,7 +163,7 @@ export function SidebarPlanCard({ fallbackPlan, onNavigate }: SidebarPlanCardPro
             <p className="text-[11px] text-muted-foreground">Current access</p>
           </div>
         </div>
-        <span className="shrink-0 rounded-full border border-[#A7F3A0]/50 bg-white/70 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#166534]">
+        <span className="shrink-0 rounded-full border border-[#A8D0D9]/50 bg-white/70 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#2C6373]">
           {summary?.subscription_status ?? 'active'}
         </span>
       </div>
@@ -178,14 +178,14 @@ export function SidebarPlanCard({ fallbackPlan, onNavigate }: SidebarPlanCardPro
                 <div key={row.label} className="space-y-1.5">
                   <div className="flex items-center justify-between gap-2 text-[11px]">
                     <span className="flex items-center gap-1.5 font-medium text-foreground">
-                      <Icon className="w-3.5 h-3.5 text-[#22C55E]" />
+                      <Icon className="w-3.5 h-3.5 text-[#4A90A4]" />
                       {row.label}
                     </span>
                     <span className="shrink-0 text-muted-foreground">{row.value}</span>
                   </div>
                   <div className="h-1.5 overflow-hidden rounded-full bg-white/80">
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-[#7ED957] to-[#22C55E]"
+                      className="h-full rounded-full bg-gradient-to-r from-[#6FA8C7] to-[#4A90A4]"
                       style={{ width: `${row.percent}%` }}
                     />
                   </div>
@@ -210,7 +210,7 @@ export function SidebarPlanCard({ fallbackPlan, onNavigate }: SidebarPlanCardPro
       <Link
         href="/subscription"
         onClick={onNavigate}
-        className="mt-3 block w-full py-2 px-4 rounded-full bg-[#22C55E] text-center text-white text-sm font-medium hover:bg-[#16A34A] transition-colors shadow-lg shadow-green-500/20"
+        className="mt-3 block w-full py-2 px-4 rounded-full bg-[#4A90A4] text-center text-white text-sm font-medium hover:bg-[#3F7E90] transition-colors shadow-lg shadow-[#4A90A4]/20"
       >
         View plan
       </Link>

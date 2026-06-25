@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: sathi-api
+    name: shathi-api
     runtime: docker
     rootDir: backend
     plan: free

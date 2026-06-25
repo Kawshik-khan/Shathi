@@ -61,7 +61,7 @@ export function MoodOverview() {
     <GlassCard className="h-full" delay={0.1}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <TrendingUp className="w-4 h-4 text-[#22C55E]" />
+          <TrendingUp className="w-4 h-4 text-[#4A90A4]" />
           <span className="text-sm font-medium text-muted-foreground">Mood Overview</span>
         </div>
         <button
@@ -79,15 +79,15 @@ export function MoodOverview() {
         <span className="text-4xl font-bold text-foreground">
           {loading ? '-' : currentScore ? currentScore.toFixed(1) : '0.0'}
         </span>
-        <span className="px-2 py-0.5 rounded-full bg-[#DCFCE7] text-[#22C55E] text-xs font-medium">
+        <span className="px-2 py-0.5 rounded-full bg-[#E3F0F3] text-[#4A90A4] text-xs font-medium">
           {trendLabel}
         </span>
       </div>
 
       {/* Trend */}
       <div className="flex items-center gap-1 mb-6">
-        <TrendingUp className="w-3.5 h-3.5 text-[#22C55E]" />
-        <span className="text-xs text-[#22C55E] font-medium capitalize">{analytics?.trend_direction ?? 'stable'}</span>
+        <TrendingUp className="w-3.5 h-3.5 text-[#4A90A4]" />
+        <span className="text-xs text-[#4A90A4] font-medium capitalize">{analytics?.trend_direction ?? 'stable'}</span>
         <span className="text-xs text-muted-foreground">this week</span>
       </div>
 
@@ -111,10 +111,10 @@ export function MoodOverview() {
               <Line
                 type="monotone"
                 dataKey="score"
-                stroke="#22C55E"
+                stroke="#4A90A4"
                 strokeWidth={2.5}
-                dot={{ fill: '#22C55E', strokeWidth: 0, r: 4 }}
-                activeDot={{ r: 6, fill: '#22C55E', stroke: '#fff', strokeWidth: 2 }}
+                dot={{ fill: '#4A90A4', strokeWidth: 0, r: 4 }}
+                activeDot={{ r: 6, fill: '#4A90A4', stroke: '#fff', strokeWidth: 2 }}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -126,7 +126,7 @@ export function MoodOverview() {
         {(weeklyData.length ? weeklyData : ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day) => ({ day, score: 0 }))).map((day, i) => (
           <span 
             key={i} 
-            className={`text-xs ${i === 6 ? 'text-[#22C55E] font-medium' : 'text-muted-foreground'}`}
+            className={`text-xs ${i === 6 ? 'text-[#4A90A4] font-medium' : 'text-muted-foreground'}`}
           >
             {day.day}
           </span>

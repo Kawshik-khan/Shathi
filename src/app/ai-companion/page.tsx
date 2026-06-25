@@ -441,7 +441,7 @@ function AICompanionContent() {
       <div className="p-3 flex items-center gap-2 border-b border-black/5 dark:border-white/10">
         <button
           onClick={handleNewChat}
-          className="flex-1 inline-flex items-center justify-center gap-2 h-10 rounded-lg bg-[#22C55E] text-white text-sm font-medium hover:bg-[#16A34A] transition-colors"
+          className="flex-1 inline-flex items-center justify-center gap-2 h-10 rounded-lg bg-[#4A90A4] text-white text-sm font-medium hover:bg-[#3F7E90] transition-colors"
         >
           <Plus className="w-4 h-4" />
           New Chat
@@ -473,8 +473,8 @@ function AICompanionContent() {
                 className={cn(
                   'group flex items-center gap-1 rounded-lg transition-colors',
                   isActive
-                    ? 'bg-[#DCFCE7] text-[#166534]'
-                    : 'text-muted-foreground hover:bg-[#F3FAF4] hover:text-foreground dark:hover:bg-white/10'
+                    ? 'bg-[#E3F0F3] text-[#2C6373]'
+                    : 'text-muted-foreground hover:bg-[#F1F5F7] hover:text-foreground dark:hover:bg-white/10'
                 )}
               >
                 <button
@@ -520,7 +520,7 @@ function AICompanionContent() {
           >
             <Menu className="w-5 h-5" />
           </button>
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7ED957] to-[#22C55E] flex items-center justify-center shadow-lg shadow-green-500/20">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6FA8C7] to-[#4A90A4] flex items-center justify-center shadow-lg shadow-[#4A90A4]/20">
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div className="min-w-0">
@@ -532,7 +532,7 @@ function AICompanionContent() {
             </p>
           </div>
           <div className="ml-auto hidden lg:flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-[#4A90A4] animate-pulse" />
             <span className="text-xs text-muted-foreground">Online</span>
           </div>
         </div>
@@ -547,14 +547,14 @@ function AICompanionContent() {
               <div className="hidden lg:flex items-center justify-between px-4 py-3 border-b border-black/5 dark:border-white/10">
                 <button
                   onClick={() => setIsSidebarCollapsed((collapsed) => !collapsed)}
-                  className="inline-flex items-center gap-2 h-9 px-3 rounded-lg text-sm text-muted-foreground hover:bg-[#F3FAF4] dark:hover:bg-white/10 transition-colors"
+                  className="inline-flex items-center gap-2 h-9 px-3 rounded-lg text-sm text-muted-foreground hover:bg-[#F1F5F7] dark:hover:bg-white/10 transition-colors"
                 >
                   <PanelLeftClose className="w-4 h-4" />
                   History
                 </button>
                 <button
                   onClick={handleNewChat}
-                  className="inline-flex items-center gap-2 h-9 px-3 rounded-lg text-sm font-medium bg-[#F3FAF4] dark:bg-white/10 hover:bg-[#DCFCE7] transition-colors"
+                  className="inline-flex items-center gap-2 h-9 px-3 rounded-lg text-sm font-medium bg-[#F1F5F7] dark:bg-white/10 hover:bg-[#E3F0F3] transition-colors"
                 >
                   <Plus className="w-4 h-4" />
                   New Chat
@@ -575,8 +575,8 @@ function AICompanionContent() {
                         className={cn(
                           'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
                           message.role === 'user'
-                            ? 'bg-gradient-to-br from-[#A7F3A0] to-[#7ED957]'
-                            : 'bg-gradient-to-br from-[#7ED957] to-[#22C55E]'
+                            ? 'bg-gradient-to-br from-[#A8D0D9] to-[#6FA8C7]'
+                            : 'bg-gradient-to-br from-[#6FA8C7] to-[#4A90A4]'
                         )}
                       >
                         {message.role === 'user' ? (
@@ -590,8 +590,8 @@ function AICompanionContent() {
                         className={cn(
                           'max-w-[82%] px-4 py-3 rounded-2xl',
                           message.role === 'user'
-                            ? 'bg-[#22C55E] text-white rounded-br-md'
-                            : 'bg-[#F3FAF4] dark:bg-white/10 text-foreground rounded-bl-md'
+                            ? 'bg-[#4A90A4] text-white rounded-br-md'
+                            : 'bg-[#F1F5F7] dark:bg-white/10 text-foreground rounded-bl-md'
                         )}
                       >
                         <div className="text-sm whitespace-pre-line break-words">
@@ -625,7 +625,7 @@ function AICompanionContent() {
                       key={action.label}
                       onClick={() => handleSend(action.prompt)}
                       disabled={isSending}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F3FAF4] dark:bg-white/10 text-xs font-medium text-muted-foreground hover:bg-[#EEF7EF] dark:hover:bg-white/20 hover:text-[#22C55E] transition-colors disabled:opacity-50"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F1F5F7] dark:bg-white/10 text-xs font-medium text-muted-foreground hover:bg-[#EAF2F4] dark:hover:bg-white/20 hover:text-[#4A90A4] transition-colors disabled:opacity-50"
                     >
                       <action.icon className="w-3.5 h-3.5" />
                       {action.label}
@@ -644,7 +644,7 @@ function AICompanionContent() {
                     disabled={isSending}
                     rows={1}
                     aria-label={voiceState === 'listening' && interimTranscript ? interimTranscript : 'Message'}
-                    className="min-w-0 flex-1 resize-none rounded-[1.25rem] border border-transparent bg-[#F3FAF4]/70 px-4 py-3 text-sm transition-all placeholder:text-muted-foreground/60 focus:border-[#A7F3A0] focus:outline-none focus:ring-2 focus:ring-[#22C55E]/10 dark:bg-white/10"
+                    className="min-w-0 flex-1 resize-none rounded-[1.25rem] border border-transparent bg-[#F1F5F7]/70 px-4 py-3 text-sm transition-all placeholder:text-muted-foreground/60 focus:border-[#A8D0D9] focus:outline-none focus:ring-2 focus:ring-[#4A90A4]/10 dark:bg-white/10"
                     style={{ minHeight: '44px', maxHeight: '120px' }}
                   />
                   <VoiceMicButton

@@ -50,7 +50,7 @@ export function Footer() {
               <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
                 <Leaf className="w-5 h-5 text-primary-foreground" />
               </div>
-              <span className="text-xl font-bold text-gradient-green">Sathi</span>
+              <span className="text-xl font-bold text-gradient-green">Shathi</span>
             </Link>
 
             <p className="text-muted-foreground mb-6 max-w-md">
@@ -167,7 +167,7 @@ export function Footer() {
           className="border-t border-border mt-12 pt-8 flex flex-col sm:flex-row justify-between items-center"
         >
           <p className="text-sm text-muted-foreground">
-            © 2026 Sathi. All rights reserved.
+            © 2026 Shathi. All rights reserved.
           </p>
           <div className="flex space-x-6 mt-4 sm:mt-0">
             <Link
