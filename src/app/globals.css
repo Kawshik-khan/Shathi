@@ -50,56 +50,57 @@
 }
 
 :root {
-  /* Sathi Design System - Calm Wellness Palette (teal-blue / sage / lavender) */
-  --background: #FAFBFC;
+  /* Sathi Design System - Warm Wellness Palette (Sage Green) */
+  --background: #F8F6F2;
   --foreground: #2D3748;
-  --card: rgba(255, 255, 255, 0.72);
+  --card: rgba(255, 255, 255, 0.8);
   --card-foreground: #2D3748;
   --popover: rgba(255, 255, 255, 0.95);
   --popover-foreground: #2D3748;
   
-  /* Primary - Calm Teal-Blue */
-  --primary: #4A90A4;
+  /* Primary - Warm Sage Green */
+  --primary: #5A8D7B;
   --primary-foreground: #ffffff;
-  --primary-light: #6FA8C7;
-  --primary-soft: #A8D0D9;
-  --primary-muted: #E3F0F3;
+  --primary-light: #8AB7A6;
+  --primary-soft: #CDE2DA;
+  --primary-muted: #EBF5F1;
   
-  /* Secondary - Sage Green */
-  --secondary: rgba(255, 255, 255, 0.84);
+  /* Secondary - Neutral Sage/Sand */
+  --secondary: rgba(242, 239, 233, 0.8);
   --secondary-foreground: #2D3748;
-  --muted: #F1F5F7;
-  --muted-foreground: #64748B;
-  /* Accent - Lavender */
-  --accent: #EEF7EF;
+  --muted: #E8E4DD;
+  --muted-foreground: #7D786D;
+  
+  /* Accent - Soft Warm Tones */
+  --accent: #F2EFE9;
   --accent-foreground: #2D3748;
-  --accent-lavender: #9B8FC7;
-  --warm: #F4C7AB;
+  --accent-lavender: #A59DB8;
+  --warm: #E6C2A5;
   --destructive: #D88373;
   --success: #6BAA75;
   --warning: #E0B15E;
-  --info: #6FA8C7;
+  --info: #8AB7A6;
   
   /* Glassmorphism */
-  --glass-bg: rgba(255, 255, 255, 0.72);
-  --glass-bg-strong: rgba(255, 255, 255, 0.84);
-  --glass-border: rgba(255, 255, 255, 0.4);
-  --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
-  --glass-shadow-hover: 0 20px 40px rgba(0, 0, 0, 0.08);
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-bg-strong: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.5);
+  --glass-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  --glass-shadow-hover: 0 10px 30px rgba(0, 0, 0, 0.06);
 
   /* Background Gradients */
-  --bg-gradient: radial-gradient(circle at top left, #E3F0F3, #FAFBFC), radial-gradient(circle at bottom right, #EEF7EF, #FAFBFC);
+  --bg-gradient: radial-gradient(circle at top left, #EBF5F1, #F8F6F2), radial-gradient(circle at bottom right, #F2EFE9, #F8F6F2);
   
-  --border: #E4E8EC;
-  --input: #E4E8EC;
-  --ring: #4A90A4;
+  --border: #E8E4DD;
+  --input: #E8E4DD;
+  --ring: #5A8D7B;
   
   /* Chart Colors */
-  --chart-1: #4A90A4;
-  --chart-2: #7FB069;
-  --chart-3: #9B8FC7;
-  --chart-4: #F4C7AB;
-  --chart-5: #A8D0D9;
+  --chart-1: #5A8D7B;
+  --chart-2: #8AB7A6;
+  --chart-3: #A59DB8;
+  --chart-4: #E6C2A5;
+  --chart-5: #CDE2DA;
   
   /* Spacing & Radius */
   --radius: 0.625rem;
@@ -305,32 +306,32 @@
     }
   }
   
-  /* Primary Gradient Button (teal-blue) */
+  /* Primary Gradient Button (Sage Green) */
   .btn-primary-gradient {
-    background: linear-gradient(135deg, #6FA8C7 0%, #4A90A4 100%);
+    background: linear-gradient(135deg, #8AB7A6 0%, #5A8D7B 100%);
     color: white;
     border-radius: 9999px;
-    box-shadow: 0 4px 14px rgba(74, 144, 164, 0.25);
+    box-shadow: 0 4px 14px rgba(90, 141, 123, 0.25);
     transition: all 0.3s ease;
   }
   
   .btn-primary-gradient:hover {
-    box-shadow: 0 6px 20px rgba(74, 144, 164, 0.35);
+    box-shadow: 0 6px 20px rgba(90, 141, 123, 0.35);
     transform: translateY(-1px);
   }
   
   /* Glow Effects */
-  .glow-green {
-    box-shadow: 0 0 20px rgba(74, 144, 164, 0.3);
+  .glow-sage {
+    box-shadow: 0 0 20px rgba(90, 141, 123, 0.3);
   }
   
-  .glow-green-subtle {
-    box-shadow: 0 0 40px rgba(168, 208, 217, 0.18);
+  .glow-sage-subtle {
+    box-shadow: 0 0 40px rgba(205, 226, 218, 0.18);
   }
   
   /* Text Gradients */
-  .text-gradient-green {
-    background: linear-gradient(135deg, #4A90A4 0%, #6FA8C7 100%);
+  .text-gradient-sage {
+    background: linear-gradient(135deg, #5A8D7B 0%, #8AB7A6 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -364,7 +365,7 @@
     content: '';
     position: absolute;
     inset: -20px;
-    background: radial-gradient(circle, rgba(74, 144, 164, 0.1) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(90, 141, 123, 0.1) 0%, transparent 70%);
     z-index: -1;
     pointer-events: none;
   }

@@ -29,7 +29,7 @@ export function AICompanionCard() {
         {/* Left Content */}
         <div className="flex-1 z-10">
           <div className="flex items-center gap-2 mb-4">
-            <Sparkles className="w-4 h-4 text-[#4A90A4]" />
+            <Sparkles className="w-4 h-4 text-primary" />
             <span className="text-sm font-medium text-muted-foreground">AI Companion</span>
           </div>
 
@@ -55,7 +55,7 @@ export function AICompanionCard() {
                 key={action.label}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="px-3 py-1.5 rounded-full bg-[#F1F5F7] text-xs font-medium text-muted-foreground hover:bg-[#EAF2F4] hover:text-[#4A90A4] transition-colors border border-[#A8D0D9]/30"
+                className="px-3 py-1.5 rounded-full bg-muted text-xs font-medium text-muted-foreground hover:bg-muted/80 hover:text-primary transition-colors border border-primary/20"
                 onClick={() => alert(`${action.label} conversation coming soon!`)}
               >
                 <span className="flex items-center gap-1.5">
@@ -70,7 +70,7 @@ export function AICompanionCard() {
         {/* Right - AI Avatar */}
         <div className="relative w-40 h-40 flex-shrink-0">
           {/* Glow Effect */}
-          <div className="absolute inset-0 bg-gradient-to-br from-[#6FA8C7]/20 to-[#4A90A4]/10 rounded-full blur-2xl" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary-light/20 to-primary/10 rounded-full blur-2xl" />
           
           {/* Avatar Circle */}
           <motion.div
@@ -82,7 +82,7 @@ export function AICompanionCard() {
               repeat: Infinity,
               ease: "easeInOut"
             }}
-            className="relative w-full h-full rounded-full bg-gradient-to-br from-[#A8D0D9] to-[#6FA8C7] flex items-center justify-center shadow-xl"
+            className="relative w-full h-full rounded-full bg-gradient-to-br from-primary-soft to-primary-light flex items-center justify-center shadow-xl"
           >
             {/* Smile Face */}
             <div className="text-white">

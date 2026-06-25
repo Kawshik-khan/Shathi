@@ -10,15 +10,15 @@ module.exports = {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#22C55E',
-          light: '#7ED957',
-          soft: '#A7F3A0',
-          muted: '#DCFCE7',
+          DEFAULT: '#5A8D7B',
+          light: '#8AB7A6',
+          soft: '#CDE2DA',
+          muted: '#EBF5F1',
         },
         Sathity: {
-          50: '#F8FBF8',
-          100: '#F5FAF5',
-          200: '#EEF7EF',
+          50: '#F8F6F2',
+          100: '#F2EFE9',
+          200: '#E8E4DD',
         },
       },
       borderRadius: {
