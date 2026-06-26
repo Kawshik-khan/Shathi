@@ -73,13 +73,25 @@ class Settings(BaseSettings):
     # Chat optimization
     CHAT_HISTORY_LIMIT: int = 12
     CHAT_HISTORY_FOR_LLM: int = 6  # Trim conversation history sent to the LLM
-    EMBEDDING_TIMEOUT_SECONDS: float = 1.5
+    # Bound on a single embeddings call. Must be shorter than
+    # ``CHAT_PROVIDER_TIMEOUT_MS`` (800ms) so the inner ``asyncio.timeout``
+    # inside ``memory.retrieve_memories`` fires before the per-provider
+    # budget can. The [redacted] SDK's internal retries are also
+    # disabled (max_retries=0 in memory.py) so this timeout is the only
+    # thing guarding the call.
+    EMBEDDING_TIMEOUT_SECONDS: float = 0.6
     USER_CONTEXT_CACHE_TTL: int = 300
 
     # Per-provider timeouts (milliseconds). Each provider has its own
     # bound so a slow source can never block the others or the LLM.
     CHAT_PROVIDER_TIMEOUT_MS: int = 800
-    CHAT_CONTEXT_HARD_BUDGET_MS: int = 1500
+    # Hard wall-clock ceiling for the whole context build gather. This is a
+    # safety net, not the SLA: in the steady state every provider should
+    # return at ``CHAT_PROVIDER_TIMEOUT_MS`` and the gather should resolve
+    # in ~800 ms. We keep the hard budget comfortably above that so the
+    # LLM always has a fair shot at starting to stream, even if Pinecone
+    # or the embeddings service is having a bad minute.
+    CHAT_CONTEXT_HARD_BUDGET_MS: int = 2500
     CHAT_HEARTBEAT_INTERVAL_MS: int = 250
 
     # Embedding cache (RAG optimization). LRU is in-process for speed;

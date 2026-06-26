@@ -16,7 +16,25 @@ logger = logging.getLogger(__name__)
 settings = get_settings()
 
 # Initialize OpenAI for embeddings
-openai_client = openai.AsyncOpenAI(api_key=settings.OPENAI_API_KEY) if settings.OPENAI_API_KEY else None
+#
+# ``max_retries=0`` is critical: the [redacted] SDK ships its own httpx
+# retry transport that sleeps ``0.5s, 1.0s`` (and longer under network
+# backpressure) inside the awaited coroutine. Those sleeps shield the
+# outer ``asyncio.timeout`` from cancelling the embeddings call on the
+# configured per-provider budget (CHAT_PROVIDER_TIMEOUT_MS=800ms),
+# which in turn stalls the chat-stream gather past its hard budget and
+# surfaces as a "failed to stream" toast on the client. We disable the
+# SDK retries so a single failed call fails fast and the outer timeout
+# can do its job.
+openai_client = (
+    openai.AsyncOpenAI(
+        api_key=settings.OPENAI_API_KEY,
+        max_retries=0,
+        timeout=settings.EMBEDDING_TIMEOUT_SECONDS,
+    )
+    if settings.OPENAI_API_KEY
+    else None
+)
 
 
 # ---------------------------------------------------------------------------

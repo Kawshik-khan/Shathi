@@ -489,3 +489,99 @@ async def test_build_chat_context_returns_built_context(monkeypatch):
     assert built.providers == 8
     for marker in markers.values():
         assert marker in built.render_parts()
+
+
+# ---------------------------------------------------------------------------
+# Regression: SDK-shielded embedding must not block the gather.
+#
+# The streaming-failure root cause (June 2026 Render incident) was the
+# [redacted] SDK's internal httpx retry transport sleeping inside an
+# ``asyncio.shield``-protected task. The per-provider ``asyncio.timeout``
+# in ``run_provider`` still cancelled the awaiter, but the shielded sleep
+# kept the connection occupied. This test pins down the contract we now
+# rely on: even if every section's factory is shielded past the budget,
+# the outer gather must still return at ~per-provider budget and every
+# shielded section must be reported as ``status="timeout"``.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_context_builder_handles_shielded_long_sleeps(monkeypatch):
+    """A factory shielded past the budget must still produce a timeout result
+    and the gather must return at the per-provider budget, not 8 * budget.
+
+    This is the regression test for the "failed to stream message" outage
+    traced to the [redacted] SDK's internal retry shielding ``asyncio.timeout``.
+    """
+
+    section_names = [
+        "profile",
+        "mood",
+        "journal",
+        "sleep",
+        "habit",
+        "activity",
+        "memory",
+        "inferred_mood",
+    ]
+
+    # Track the shielded sleep tasks so we can clean them up at the end of
+    # the test. Otherwise the [redacted] SDK-shielded-equivalent tasks leak
+    # pending into the next test's event loop and emit "Task was destroyed
+    # but it is pending!" warnings.
+    shielded_tasks: list[asyncio.Task] = []
+
+    def _make_shielded_factory(name: str):
+        async def factory(ctx: ProviderContext) -> ContextResult:
+            # Simulate the SDK's shielded retry sleep: the inner sleep is
+            # shielded so the per-provider timeout cannot cancel it, only
+            # the outer awaiter that ``run_provider`` is waiting on.
+            task = asyncio.create_task(_long_sleep(2.0))
+            shielded_tasks.append(task)
+            await asyncio.shield(task)
+            # Should never be reached because the per-provider timeout fires
+            # first, but kept for type completeness.
+            return ContextResult(name=name, parts=[f"{name}-line"])
+
+        return factory
+
+    for name in section_names:
+        monkeypatch.setattr(
+            sections, f"build_{name}", _make_shielded_factory(name)
+        )
+
+    builder = ContextBuilder(_ctx())
+    started = time.perf_counter()
+    built = await builder.run()
+    elapsed = time.perf_counter() - started
+
+    # The gather must return at the per-provider budget
+    # (``CHAT_PROVIDER_TIMEOUT_MS=800ms`` in production config), not 8 * 2.0s.
+    # Allow generous slack for CI scheduling jitter.
+    assert elapsed < 1.5, (
+        f"build took {elapsed:.3f}s with shielded factories, "
+        "expected ~per-provider budget; SDK-shielded retry regression?"
+    )
+
+    # Every section must be marked as a timeout, never as ok/empty/error.
+    assert built.providers == 8
+    assert built.timed_out == 8, (
+        f"expected all 8 shielded factories to be timed_out, got {built.timed_out}"
+    )
+    for name in section_names:
+        result = built.results[name]
+        assert result.status == "timeout", (
+            f"section {name!r} expected status='timeout', got {result.status!r}"
+        )
+        assert "timeout" in (result.error or "").lower()
+
+    # Cancel the shielded tasks so they don't leak into the next test.
+    for task in shielded_tasks:
+        task.cancel()
+    # Give the loop one tick to actually cancel them.
+    await asyncio.sleep(0)
+
+
+async def _long_sleep(seconds: float) -> None:
+    """Plain coroutine sleep — used as the inner shielded target."""
+    await asyncio.sleep(seconds)

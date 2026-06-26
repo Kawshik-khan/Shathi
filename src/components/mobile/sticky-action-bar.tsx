@@ -10,7 +10,7 @@ interface StickyActionBarProps {
 /** Primary CTA bar pinned above the bottom tab bar on mobile.
  *  Tab bar = 64pt; this bar sits at bottom: calc(4rem + env(safe-area)) so it stacks
  *  above the tab bar without overlapping it. Content padding must clear this height
- *  (DashboardShell uses pb-40 on dashboard route).
+ *  (DashboardShell uses pb-24 on dashboard route).
  */
 export function StickyActionBar({ children, className }: StickyActionBarProps) {
   return (

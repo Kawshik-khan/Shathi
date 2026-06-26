@@ -22,6 +22,38 @@ logger = logging.getLogger(__name__)
 
 SECTION_NAME = "memory"
 
+# Short-lived negative cache. When an embeddings call fails we mark
+# the user as "embeddings unhealthy" for this window so subsequent
+# turns in the same outage don't keep paying the timeout cost. 30s is
+# long enough to absorb a burst, short enough that a brief blip
+# recovers quickly without the user noticing.
+_EMBEDDINGS_UNHEALTHY_TTL_SECONDS = 30
+
+
+async def _embeddings_unhealthy(user_id: str, redis: Any) -> bool:
+    """Return True if a recent embeddings failure should short-circuit."""
+    if redis is None:
+        return False
+    try:
+        return bool(await redis.get(f"chat_ctx:emb_unhealthy:{user_id}"))
+    except Exception as exc:  # noqa: BLE001 - probe must never raise
+        logger.debug("embeddings-unhealthy probe failed: %s", exc)
+        return False
+
+
+async def _mark_embeddings_unhealthy(user_id: str, redis: Any) -> None:
+    """Record that the last embeddings attempt failed for this user."""
+    if redis is None:
+        return
+    try:
+        await redis.set(
+            f"chat_ctx:emb_unhealthy:{user_id}",
+            "1",
+            ex=_EMBEDDINGS_UNHEALTHY_TTL_SECONDS,
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.debug("embeddings-unhealthy mark failed: %s", exc)
+
 
 def _format(memories: list[dict[str, Any]]) -> tuple[list[str], int]:
     parts: list[str] = []
@@ -125,6 +157,19 @@ async def _load(ctx: ProviderContext) -> ContextResult:
             tokens=cached["tokens"],
         )
 
+    # Short-lived negative cache: if a previous turn in the last 30s
+    # failed at the embeddings layer, skip the embeddings call entirely
+    # so we don't burn another per-provider timeout budget on the same
+    # outage. The LLM still gets an empty memory section, which is the
+    # same outcome but at near-zero cost.
+    if await _embeddings_unhealthy(ctx.user_id, ctx.redis):
+        return ContextResult(
+            name=SECTION_NAME,
+            parts=[],
+            tokens=0,
+            data={"memory_count": 0, "skipped": "embeddings_unhealthy"},
+        )
+
     turns = await _fetch_recent_assistant_turns(
         ctx,
         last_n=settings.MEMORY_QUERY_LAST_TURNS,
@@ -145,6 +190,17 @@ async def _load(ctx: ProviderContext) -> ContextResult:
         score_floor=settings.MEMORY_SCORE_FLOOR,
         min_keep=settings.MEMORY_MIN_KEEP,
     )
+
+    # If Pinecone returned nothing AND the embeddings path is the only
+    # reason (query expansion still succeeded), record a short-lived
+    # "embeddings unhealthy" hint. ``retrieve_relevant_memories`` never
+    # raises, so the only way we get an empty list is the embeddings
+    # call failing or Pinecone returning no matches. We can't
+    # distinguish them from here, so only mark unhealthy when we have
+    # a non-empty query (otherwise the user just has no memories yet).
+    if not memories and query:
+        await _mark_embeddings_unhealthy(ctx.user_id, ctx.redis)
+
     parts, tokens = _format(memories)
 
     await set_section(
