@@ -114,21 +114,24 @@ export function SummaryStrip() {
             initial={reducedMotion ? false : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, delay: reducedMotion ? 0 : i * 0.04, ease: 'easeOut' }}
-            className={cn('card card-tight hover-calm group', tile.tileClass)}
+            className={cn(
+              'card card-tight hover-calm group min-w-0 overflow-hidden',
+              tile.tileClass,
+            )}
           >
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between gap-2">
               <div
                 className={cn(
-                  'flex h-9 w-9 items-center justify-center rounded-xl bg-white/70 shadow-sm ring-1 ring-black/5 dark:bg-white/5',
+                  'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/70 shadow-sm ring-1 ring-black/5 dark:bg-white/5',
                 )}
               >
                 <Icon className={cn('h-4.5 w-4.5', tile.iconClass)} aria-hidden="true" />
               </div>
-              <span className="card-eyebrow">{tile.label}</span>
+              <span className="card-eyebrow truncate">{tile.label}</span>
             </div>
-            <div className="mt-2">
-              <p className="card-value text-xl">{tile.value}</p>
-              <p className="card-caption mt-0.5">{tile.caption}</p>
+            <div className="mt-2 min-w-0">
+              <p className="card-value truncate text-xl">{tile.value}</p>
+              <p className="card-caption mt-0.5 truncate">{tile.caption}</p>
             </div>
           </motion.div>
         );

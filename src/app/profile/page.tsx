@@ -6,7 +6,8 @@ import { GlassCard } from '@/components/shared/glass-card';
 import { getUserProfile, updateUserProfile, UserProfileResponse } from '@/lib/api';
 import { useAuthStore } from '@/lib/store';
 import { AuthUser } from '@/types';
-import { Camera, HeartHandshake, Loader2, Save, Shield, User } from 'lucide-react';
+import { Camera, CheckCircle2, HeartHandshake, Library, Loader2, Moon, Save, Settings, Shield, Smile, User } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 const wellnessGoalOptions = [
@@ -32,6 +33,16 @@ interface ProfileFormState {
   emergency_contact_name: string;
   emergency_contact_phone: string;
 }
+
+// Quick Links shown only on mobile (`lg:hidden`) — replaces the removed
+// overflow "More options" bottom-sheet from the mobile top bar.
+const MOBILE_QUICK_LINKS = [
+  { key: 'mood', href: '/mood', icon: Smile, label: 'Mood', description: 'How you feel today' },
+  { key: 'habits', href: '/habits', icon: CheckCircle2, label: 'Habits', description: 'Daily streaks' },
+  { key: 'sleep', href: '/sleep', icon: Moon, label: 'Sleep', description: 'Rest & recovery' },
+  { key: 'resources', href: '/resources', icon: Library, label: 'Resources', description: 'Helpful guides' },
+  { key: 'settings', href: '/settings', icon: Settings, label: 'Settings', description: 'App preferences' },
+] as const;
 
 const emptyProfile: ProfileFormState = {
   name: '',
@@ -187,7 +198,7 @@ function ProfileContent() {
   return (
     <form onSubmit={handleSave} className="max-w-5xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#6FA8C7] to-[#4A90A4] flex items-center justify-center">
+        <div className="w-12 h-12 rounded-xl bg-linear-to-br from-[#6FA8C7] to-[#4A90A4] flex items-center justify-center">
           <User className="w-6 h-6 text-white" />
         </div>
         <div>
@@ -195,6 +206,38 @@ function ProfileContent() {
           <p className="text-sm text-muted-foreground">Manage your account and wellness preferences.</p>
         </div>
       </div>
+
+      {/* Mobile-only Quick Links — replaces the removed top-bar overflow sheet. */}
+      <GlassCard className="lg:hidden" delay={0.03}>
+        <section className="space-y-4">
+          <div className="flex items-center gap-3">
+            <Library className="w-5 h-5 text-[#4A90A4]" />
+            <h2 className="text-lg font-semibold">Quick Links</h2>
+          </div>
+          <nav aria-label="Quick links" className="grid grid-cols-1 gap-2">
+            {MOBILE_QUICK_LINKS.map((link) => {
+              const Icon = link.icon;
+              return (
+                <Link
+                  key={link.key}
+                  href={link.href}
+                  className="focus-ring btn-haptic flex min-h-14 items-center gap-3 rounded-2xl border border-black/5 bg-white/60 px-4 text-foreground transition-colors hover:bg-white dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+                >
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#E3F0F3] text-[#4A90A4] dark:bg-white/5">
+                    <Icon className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                  <span className="min-w-0 flex-1 leading-tight">
+                    <span className="block text-base font-medium">{link.label}</span>
+                    <span className="block truncate text-sm text-muted-foreground">
+                      {link.description}
+                    </span>
+                  </span>
+                </Link>
+              );
+            })}
+          </nav>
+        </section>
+      </GlassCard>
 
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -215,7 +258,7 @@ function ProfileContent() {
           </div>
 
           <div className="flex flex-col md:flex-row gap-6">
-            <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-[#A8D0D9] to-[#4A90A4] flex items-center justify-center overflow-hidden text-white text-3xl font-semibold">
+            <div className="w-24 h-24 rounded-2xl bg-linear-to-br from-[#A8D0D9] to-[#4A90A4] flex items-center justify-center overflow-hidden text-white text-3xl font-semibold">
               {form.avatar_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={form.avatar_url} alt="" className="w-full h-full object-cover" />
