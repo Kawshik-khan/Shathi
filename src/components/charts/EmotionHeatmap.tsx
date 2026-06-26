@@ -8,9 +8,10 @@ interface EmotionHeatmapProps {
   weeks?: number;
 }
 
-export default function EmotionHeatmap({ 
-  days = 7, 
-  weeks = 4 
+export default function EmotionHeatmap({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  days = 7,
+  weeks = 4
 }: EmotionHeatmapProps) {
   // Generate sample data with intensity levels (0-4)
   const sampleData: number[][] = [

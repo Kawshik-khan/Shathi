@@ -1,7 +1,7 @@
 "use client"
 import React from "react";
 import { motion } from 'framer-motion';
-import { Brain, Sparkles, Heart } from 'lucide-react';
+import { Brain, Sparkles, Heart, type LucideIcon } from 'lucide-react';
 
 interface GrowthMilestoneProps {
   title: string;
@@ -11,36 +11,29 @@ interface GrowthMilestoneProps {
   trend?: 'up' | 'down';
 }
 
-export function GrowthMilestone({ 
-  title, 
-  description, 
+// Static maps declared at module scope so the icon/component references are
+// stable across renders (avoids the react-hooks/static-components error).
+const ICON_MAP: Record<NonNullable<GrowthMilestoneProps['type']>, LucideIcon> = {
+  achievement: Brain,
+  reflection: Heart,
+  breakthrough: Sparkles,
+};
+
+const COLOR_MAP: Record<NonNullable<GrowthMilestoneProps['type']>, string> = {
+  achievement: 'bg-[#A7F3D0] text-[#15803D]',
+  reflection: 'bg-[#FECACA] text-[#DC2626]',
+  breakthrough: 'bg-[#FCD34D] text-[#B45309]',
+};
+
+export function GrowthMilestone({
+  title,
+  description,
   date,
   type = 'achievement',
   trend = 'up'
 }: GrowthMilestoneProps) {
-  const getIcon = () => {
-    switch (type) {
-      case 'breakthrough':
-        return Sparkles;
-      case 'reflection':
-        return Heart;
-      default:
-        return Brain;
-    }
-  };
-
-  const getColor = () => {
-    switch (type) {
-      case 'breakthrough':
-        return 'bg-[#FCD34D] text-[#B45309]';
-      case 'reflection':
-        return 'bg-[#FECACA] text-[#DC2626]';
-      default:
-        return 'bg-[#A7F3D0] text-[#15803D]';
-    }
-  };
-
-  const Icon = getIcon();
+  const Icon = ICON_MAP[type];
+  const iconColor = COLOR_MAP[type];
 
   return (
     <motion.div 
@@ -51,7 +44,7 @@ export function GrowthMilestone({
       role="article"
       aria-label={title}
     >
-      <div className={`w-10 h-10 rounded-xl ${getColor()} flex items-center justify-center flex-shrink-0`}>
+      <div className={`w-10 h-10 rounded-xl ${iconColor} flex items-center justify-center flex-shrink-0`}>
         <Icon className="w-5 h-5" />
       </div>
       

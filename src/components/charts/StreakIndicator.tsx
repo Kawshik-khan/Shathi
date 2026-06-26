@@ -1,7 +1,7 @@
 "use client"
 import React from "react";
 import { motion } from 'framer-motion';
-import { Flame, TrendingUp, TrendingDown } from 'lucide-react';
+import { Flame, TrendingUp } from 'lucide-react';
 
 interface StreakIndicatorProps {
   streak?: number;

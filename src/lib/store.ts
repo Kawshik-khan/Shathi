@@ -183,7 +183,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (tokens.user) {
         useDashboardStore.getState().setUser(tokens.user);
       }
-    } catch (error) {
+    } catch {
       // On refresh failure, logout
       state.logout();
     }
@@ -210,7 +210,7 @@ const initAuth = () => {
 
     useAuthStore.getState().login(user, { access_token, refresh_token, token_type: 'bearer', expires_in: 1800 });
     useDashboardStore.getState().setUser(user);
-  } catch (e) {
+  } catch {
     localStorage.removeItem('auth');
     clearAuthCookie();
     useAuthStore.setState({
@@ -322,8 +322,9 @@ export const useDashboardStore = create<DashboardState>((set) => ({
     set({ selectedMood: mood }),
 
   saveCheckIn: (note: string) =>
-    set((state) => {
-      // TODO: Implement actual check-in saving to API
+    set(() => {
+      // TODO: Implement actual check-in saving to API (note is intentionally unused for now)
+      void note;
       return { selectedMood: null };
     }),
 }));

@@ -1,7 +1,7 @@
 "use client"
 import React from "react";
 import { motion } from 'framer-motion';
-import { Calendar, Download, Filter, TrendingUp } from 'lucide-react';
+import { Calendar, Download, Filter } from 'lucide-react';
 
 export default function Header() {
   return (

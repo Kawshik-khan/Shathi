@@ -4,7 +4,6 @@ import { GlassCard } from '@/components/shared/glass-card';
 import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { useRouter } from 'next/navigation';
 
 // Generate June 2024 calendar data
 const generateCalendar = () => {
@@ -38,7 +37,6 @@ const weekDays = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 
 export function TrainingCalendar() {
   const calendarDays = generateCalendar();
-  const router = useRouter();
 
   return (
     <GlassCard className="h-full" delay={0.3}>
