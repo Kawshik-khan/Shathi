@@ -3,7 +3,6 @@
 import { Sidebar } from './sidebar';
 import { MobileSidebar } from './mobile-sidebar';
 import { Header } from './header';
-import { motion } from 'framer-motion';
 import { Suspense } from 'react';
 
 interface DashboardShellProps {
@@ -12,35 +11,31 @@ interface DashboardShellProps {
 
 export function DashboardShell({ children }: DashboardShellProps) {
   return (
-    <div className="min-h-screen">
-      {/* Desktop Sidebar - hidden on mobile */}
-      <div className="hidden lg:block">
+    // Outer flex container fills the viewport and lays the fixed sidebar
+    // (desktop) and scrollable main column side-by-side at lg+.
+    <div className="flex min-h-screen bg-background">
+      {/* Desktop Sidebar - hidden on mobile. The fixed-position <Sidebar/>
+          is removed from flow, so this wrapper contributes 0 width. */}
+      <div className="hidden lg:block" aria-hidden="true">
         <Suspense fallback={null}>
           <Sidebar />
         </Suspense>
       </div>
 
-      {/* Mobile Sidebar */}
+      {/* Mobile drawer + top bar */}
       <Suspense fallback={null}>
         <MobileSidebar />
       </Suspense>
 
-      {/* Main Content - fills the available width after the sidebar so the
-          dashboard cards sit close to the sidebar instead of being centered
-          inside a max-w container (which produces an empty middle gap on
-          wide viewports). */}
-      <main className="lg:ml-72 lg:mr-4 px-4 lg:px-0 py-6 min-h-screen">
-        <div className="w-full max-w-[1600px]">
+      {/* Main column: fills remaining width (flex-1), is its own scroll
+          container so the dashboard starts at the top of the column and
+          scrolls independently of the fixed sidebar. ml-72 reserves room
+          for the fixed w-64 sidebar plus its 16px left offset. */}
+      <main className="flex-1 min-w-0 lg:ml-72 lg:mr-4 overflow-y-auto">
+        <div className="w-full max-w-[1600px] mx-auto px-4 lg:px-6 py-6">
           <Header />
-          
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="pb-8"
-          >
-            {children}
-          </motion.div>
+
+          <div className="pb-8">{children}</div>
         </div>
       </main>
     </div>

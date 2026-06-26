@@ -91,7 +91,7 @@ export default function RootLayout({
       )}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col font-sans bg-fixed" style={{ backgroundImage: 'var(--bg-gradient)' }} suppressHydrationWarning={true}>
+      <body className="min-h-full font-sans bg-fixed" style={{ backgroundImage: 'var(--bg-gradient)' }} suppressHydrationWarning={true}>
         <AuthProvider>
           <I18nProvider>
             <ThemeProvider>
