@@ -1,8 +1,7 @@
 'use client';
 
-import { GlassCard } from '@/components/shared/glass-card';
-import { getAuthToken, getMoodAnalytics, type MoodAnalytics } from '@/lib/api';
-import { TrendingUp, ChevronDown, Loader2 } from 'lucide-react';
+import { motion, useReducedMotion } from 'framer-motion';
+import { TrendingUp, TrendingDown, Minus, ChevronDown, Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import {
   LineChart,
@@ -10,8 +9,11 @@ import {
   ResponsiveContainer,
   YAxis,
 } from 'recharts';
+import { getAuthToken, getMoodAnalytics, type MoodAnalytics } from '@/lib/api';
+import { cn } from '@/lib/utils';
 
 export function MoodOverview() {
+  const reducedMotion = useReducedMotion();
   const [analytics, setAnalytics] = useState<MoodAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -47,7 +49,6 @@ export function MoodOverview() {
 
   const weeklyData = useMemo(() => {
     if (!analytics?.daily_data?.length) return [];
-
     return analytics.daily_data.slice(-7).map((day) => ({
       day: new Intl.DateTimeFormat('en', { weekday: 'short' }).format(new Date(day.date)).slice(0, 1),
       score: Number(day.avg_mood.toFixed(1)),
@@ -55,84 +56,96 @@ export function MoodOverview() {
   }, [analytics]);
 
   const currentScore = analytics?.avg_mood_7d ?? 0;
-  const trendLabel = analytics?.trend_direction === 'down' ? 'Lower' : analytics?.trend_direction === 'up' ? 'Rising' : 'Stable';
+  const direction = analytics?.trend_direction ?? 'stable';
+  const TrendIcon = direction === 'up' ? TrendingUp : direction === 'down' ? TrendingDown : Minus;
+  const trendLabel = direction === 'down' ? 'Lower' : direction === 'up' ? 'Rising' : 'Stable';
+  const tone = direction === 'down' ? 'text-mood-red' : 'text-mood-green';
 
   return (
-    <GlassCard className="h-full" delay={0.1}>
-      <div className="flex items-center justify-between mb-4">
+    <div className="card card-interactive h-full tile-mood">
+      <header className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <TrendingUp className="w-4 h-4 text-[#4A90A4]" />
-          <span className="text-sm font-medium text-muted-foreground">Mood Overview</span>
+          <span className="card-eyebrow">Mood Overview</span>
         </div>
         <button
-          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
           type="button"
           disabled
+          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground focus-ring rounded-md px-2 py-1 transition-colors"
         >
           Weekly
-          <ChevronDown className="w-3 h-3" />
+          <ChevronDown className="h-3 w-3" aria-hidden="true" />
         </button>
-      </div>
+      </header>
 
-      {/* Score Display */}
-      <div className="flex items-baseline gap-3 mb-1">
-        <span className="text-4xl font-bold text-foreground">
-          {loading ? '-' : currentScore ? currentScore.toFixed(1) : '0.0'}
+      <div className="flex items-baseline gap-2">
+        <span className="card-value text-3xl">
+          {loading ? '–' : currentScore ? currentScore.toFixed(1) : '0.0'}
         </span>
-        <span className="px-2 py-0.5 rounded-full bg-[#E3F0F3] text-[#4A90A4] text-xs font-medium">
-          {trendLabel}
-        </span>
+        <span className="card-caption">/10</span>
       </div>
 
-      {/* Trend */}
-      <div className="flex items-center gap-1 mb-6">
-        <TrendingUp className="w-3.5 h-3.5 text-[#4A90A4]" />
-        <span className="text-xs text-[#4A90A4] font-medium capitalize">{analytics?.trend_direction ?? 'stable'}</span>
-        <span className="text-xs text-muted-foreground">this week</span>
+      <div className="mt-1 flex items-center gap-1.5">
+        <TrendIcon className={cn('h-3.5 w-3.5', tone)} aria-hidden="true" />
+        <span className={cn('text-xs font-medium capitalize', tone)}>{trendLabel} this week</span>
       </div>
 
-      {/* Chart */}
-      <div className="h-24 min-h-[96px] -mx-2 relative">
+      <div className="-mx-2 mt-4 h-24 min-h-24">
         {loading ? (
           <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
             Loading
           </div>
         ) : error ? (
-          <div className="flex h-full items-center justify-center px-4 text-center text-xs text-red-500">{error}</div>
+          <div className="flex h-full items-center justify-center px-4 text-center text-xs text-error">
+            {error}
+          </div>
         ) : weeklyData.length === 0 ? (
           <div className="flex h-full items-center justify-center px-4 text-center text-xs text-muted-foreground">
             Log your first mood to see a trend.
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={96}>
-            <LineChart data={weeklyData}>
-              <YAxis domain={[0, 10]} hide />
-              <Line
-                type="monotone"
-                dataKey="score"
-                stroke="#4A90A4"
-                strokeWidth={2.5}
-                dot={{ fill: '#4A90A4', strokeWidth: 0, r: 4 }}
-                activeDot={{ r: 6, fill: '#4A90A4', stroke: '#fff', strokeWidth: 2 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          <motion.div
+            initial={reducedMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            className="h-full"
+          >
+            <ResponsiveContainer width="100%" height={96}>
+              <LineChart data={weeklyData}>
+                <YAxis domain={[0, 10]} hide />
+                <Line
+                  type="monotone"
+                  dataKey="score"
+                  className="text-mood-green"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                  dot={{ fill: 'currentColor', strokeWidth: 0, r: 4 }}
+                  activeDot={{ r: 6, fill: 'currentColor', stroke: '#fff', strokeWidth: 2 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </motion.div>
         )}
       </div>
 
-      {/* Days Labels */}
-      <div className="flex justify-between mt-2 px-1">
-        {(weeklyData.length ? weeklyData : ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day) => ({ day, score: 0 }))).map((day, i) => (
-          <span 
-            key={i} 
-            className={`text-xs ${i === 6 ? 'text-[#4A90A4] font-medium' : 'text-muted-foreground'}`}
-          >
-            {day.day}
-          </span>
-        ))}
+      <div className="mt-2 flex justify-between px-1">
+        {(weeklyData.length ? weeklyData : ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d) => ({ day: d, score: 0 }))).map(
+          (day, i) => (
+            <span
+              key={i}
+              className={cn(
+                'text-[11px]',
+                i === weeklyData.length - 1 && weeklyData.length
+                  ? 'font-semibold text-mood-green'
+                  : 'text-muted-foreground',
+              )}
+            >
+              {day.day}
+            </span>
+          ),
+        )}
       </div>
-    </GlassCard>
+    </div>
   );
 }
 

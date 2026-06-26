@@ -1,88 +1,74 @@
 'use client';
 
-import { GlassCard } from '@/components/shared/glass-card';
-import { useDashboardStore } from '@/lib/store';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Moon, ChevronDown, ArrowRight } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { useDashboardStore } from '@/lib/store';
 import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 export function SleepTracking() {
+  const reducedMotion = useReducedMotion();
   const { sleepData } = useDashboardStore();
   const router = useRouter();
 
-  // Calculate stroke dasharray for circular progress
   const radius = 50;
   const circumference = 2 * Math.PI * radius;
-  const progress = (sleepData.hours + sleepData.minutes / 60) / 10; // Assuming 10 hours is max
+  const progress = Math.min(1, (sleepData.hours + sleepData.minutes / 60) / 10);
   const strokeDashoffset = circumference - progress * circumference;
+  const filledBars = Math.round((sleepData.quality / 100) * 10);
 
   return (
-    <GlassCard className="h-full" delay={0.15}>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Moon className="w-4 h-4 text-[#4A90A4]" />
-          <span className="text-sm font-medium text-muted-foreground">Sleep</span>
-        </div>
+    <div className="card card-interactive h-full tile-sleep">
+      <header className="mb-4 flex items-center justify-between">
+        <span className="card-eyebrow flex items-center gap-1.5">
+          <Moon className="h-3.5 w-3.5 text-sleep-blue" aria-hidden="true" />
+          Sleep
+        </span>
         <button
-          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          type="button"
           onClick={() => alert('Period selection coming soon!')}
+          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground focus-ring rounded-md px-2 py-1 transition-colors"
         >
           Tonight
-          <ChevronDown className="w-3 h-3" />
+          <ChevronDown className="h-3 w-3" aria-hidden="true" />
         </button>
-      </div>
+      </header>
 
-      <div className="flex items-center justify-between">
-        {/* Circular Progress */}
-        <div className="relative w-28 h-28">
-          <svg className="w-full h-full transform -rotate-90" viewBox="0 0 120 120">
-            {/* Background Circle */}
-            <circle
-              cx="60"
-              cy="60"
-              r={radius}
-              stroke="#EAF2F4"
-              strokeWidth="8"
-              fill="none"
-            />
-            {/* Progress Circle */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="relative h-24 w-24">
+          <svg className="h-full w-full -rotate-90" viewBox="0 0 120 120" aria-hidden="true">
+            <circle cx="60" cy="60" r={radius} className="stroke-sleep-blue/15" strokeWidth="8" fill="none" />
             <motion.circle
               cx="60"
               cy="60"
               r={radius}
-              stroke="#4A90A4"
+              className="stroke-sleep-blue"
               strokeWidth="8"
               fill="none"
               strokeLinecap="round"
               strokeDasharray={circumference}
-              initial={{ strokeDashoffset: circumference }}
+              initial={reducedMotion ? false : { strokeDashoffset: circumference }}
               animate={{ strokeDashoffset }}
-              transition={{ duration: 1.5, ease: "easeOut" }}
+              transition={{ duration: 1.5, ease: 'easeOut' }}
             />
           </svg>
-          
-          {/* Center Text */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-xl font-bold text-foreground">{sleepData.duration}</span>
-            <span className="text-xs text-[#4A90A4] font-medium">{sleepData.qualityLabel}</span>
+            <span className="card-value text-lg">{sleepData.duration}</span>
+            <span className="card-caption text-sleep-blue">{sleepData.qualityLabel}</span>
           </div>
         </div>
 
-        {/* Right Info */}
         <div className="text-right">
-          <p className="text-xs text-muted-foreground mb-1">Sleep quality</p>
-          <p className="text-2xl font-bold text-foreground">{sleepData.quality}%</p>
-          
-          {/* Quality Bars */}
-          <div className="flex gap-0.5 mt-2 justify-end">
+          <p className="card-caption mb-1">Sleep quality</p>
+          <p className="card-value text-2xl text-sleep-blue">{sleepData.quality}%</p>
+          <div className="mt-2 flex justify-end gap-0.5" aria-hidden="true">
             {Array.from({ length: 10 }).map((_, i) => (
               <div
                 key={i}
-                className={`w-1.5 h-4 rounded-full ${
-                  i < sleepData.quality / 10 
-                    ? 'bg-[#4A90A4]' 
-                    : 'bg-[#EAF2F4]'
-                }`}
+                className={cn(
+                  'h-4 w-1.5 rounded-full transition-colors',
+                  i < filledBars ? 'bg-sleep-blue' : 'bg-sleep-blue/15',
+                )}
               />
             ))}
           </div>
@@ -90,13 +76,14 @@ export function SleepTracking() {
       </div>
 
       <button
-        className="flex items-center gap-1 mt-4 text-xs text-muted-foreground hover:text-[#4A90A4] transition-colors"
+        type="button"
         onClick={() => router.push('/sleep')}
+        className="mt-4 flex items-center gap-1 text-xs text-muted-foreground hover:text-sleep-blue focus-ring rounded-md px-2 py-1 transition-colors"
       >
         View details
-        <ArrowRight className="w-3 h-3" />
+        <ArrowRight className="h-3 w-3" aria-hidden="true" />
       </button>
-    </GlassCard>
+    </div>
   );
 }
 

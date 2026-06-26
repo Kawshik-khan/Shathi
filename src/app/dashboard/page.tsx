@@ -12,6 +12,8 @@ import { TrainingCalendar } from '@/components/widgets/training-calendar';
 import { JournalPreview } from '@/components/widgets/journal-preview';
 import { AIInsight } from '@/components/widgets/ai-insight';
 import { DailyCheckIn } from '@/components/widgets/daily-check-in';
+import { SummaryStrip } from '@/components/widgets/summary-strip';
+import { QuickActions } from '@/components/widgets/quick-actions';
 import { useAuthStore } from '@/lib/store';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
@@ -41,42 +43,49 @@ function DashboardContent() {
   }
 
   return (
-    <BentoGrid>
-      <BentoCard colSpan={6} smColSpan={2} glowOnHover={false} className="order-1" delay={0}>
-        <AICompanionCard />
-      </BentoCard>
+    <div className="space-y-6">
+      {/* At-a-glance tiles + primary actions */}
+      <SummaryStrip />
+      <QuickActions />
 
-      <BentoCard colSpan={3} smColSpan={1} glowOnHover={false} className="order-2" delay={0.05}>
-        <MoodOverview />
-      </BentoCard>
+      {/* Detailed widgets in 12-column responsive grid */}
+      <BentoGrid>
+        <BentoCard colSpan={6} smColSpan={2} glowOnHover={false} className="order-1" delay={0}>
+          <AICompanionCard />
+        </BentoCard>
 
-      <BentoCard colSpan={3} smColSpan={1} glowOnHover={false} className="order-3" delay={0.1}>
-        <SleepTracking />
-      </BentoCard>
+        <BentoCard colSpan={3} smColSpan={1} glowOnHover={false} className="order-2" delay={0.05}>
+          <MoodOverview />
+        </BentoCard>
 
-      <BentoCard colSpan={4} smColSpan={1} glowOnHover={false} className="order-4" delay={0.15}>
-        <DailyGoals />
-      </BentoCard>
+        <BentoCard colSpan={3} smColSpan={1} glowOnHover={false} className="order-3" delay={0.1}>
+          <SleepTracking />
+        </BentoCard>
 
-      <BentoCard colSpan={4} smColSpan={1} glowOnHover={false} className="order-5" delay={0.2}>
-        <HabitsTracker />
-      </BentoCard>
+        <BentoCard colSpan={4} smColSpan={1} glowOnHover={false} className="order-4" delay={0.15}>
+          <DailyGoals />
+        </BentoCard>
 
-      <BentoCard colSpan={4} smColSpan={2} glowOnHover={false} className="order-6" delay={0.25}>
-        <TrainingCalendar />
-      </BentoCard>
+        <BentoCard colSpan={4} smColSpan={1} glowOnHover={false} className="order-5" delay={0.2}>
+          <HabitsTracker />
+        </BentoCard>
 
-      <BentoCard colSpan={4} smColSpan={1} glowOnHover={false} className="order-7" delay={0.3}>
-        <JournalPreview />
-      </BentoCard>
+        <BentoCard colSpan={4} smColSpan={2} glowOnHover={false} className="order-6" delay={0.25}>
+          <TrainingCalendar />
+        </BentoCard>
 
-      <BentoCard colSpan={4} smColSpan={1} glowOnHover={false} className="order-8" delay={0.35}>
-        <AIInsight />
-      </BentoCard>
+        <BentoCard colSpan={4} smColSpan={1} glowOnHover={false} className="order-7" delay={0.3}>
+          <JournalPreview />
+        </BentoCard>
 
-      <BentoCard colSpan={4} smColSpan={2} glowOnHover={false} className="order-9" delay={0.4}>
-        <DailyCheckIn />
-      </BentoCard>
-    </BentoGrid>
+        <BentoCard colSpan={4} smColSpan={1} glowOnHover={false} className="order-8" delay={0.35}>
+          <AIInsight />
+        </BentoCard>
+
+        <BentoCard colSpan={4} smColSpan={2} glowOnHover={false} className="order-9" delay={0.4}>
+          <DailyCheckIn />
+        </BentoCard>
+      </BentoGrid>
+    </div>
   );
 }

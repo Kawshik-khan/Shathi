@@ -40,6 +40,25 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+
+  /* Semantic colors - exposed as Tailwind utility classes
+     e.g. text-mood-green, bg-sleep-blue-soft, ring-habits-emerald */
+  --color-mood-green: var(--mood-green);
+  --color-mood-yellow: var(--mood-yellow);
+  --color-mood-orange: var(--mood-orange);
+  --color-mood-red: var(--mood-red);
+  --color-sleep-blue: var(--sleep-blue);
+  --color-sleep-blue-soft: var(--sleep-blue-soft);
+  --color-goals-purple: var(--goals-purple);
+  --color-goals-purple-soft: var(--goals-purple-soft);
+  --color-habits-emerald: var(--habits-emerald);
+  --color-habits-emerald-soft: var(--habits-emerald-soft);
+  --color-insights-teal: var(--insights-teal);
+  --color-insights-teal-soft: var(--insights-teal-soft);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -119,6 +138,51 @@
   --sidebar-accent-foreground: #2D3748;
   --sidebar-border: rgba(0, 0, 0, 0.04);
   --sidebar-ring: #4A90A4;
+
+  /* Semantic color system - intentional, restrained */
+  --mood-green: #6BAA75;
+  --mood-yellow: #E0B15E;
+  --mood-orange: #E89B5C;
+  --mood-red: #D88373;
+
+  --sleep-blue: #6FA8C7;
+  --sleep-blue-soft: #E3F0F3;
+
+  --goals-purple: #A59DB8;
+  --goals-purple-soft: #ECE9F2;
+
+  --habits-emerald: #5A8D7B;
+  --habits-emerald-soft: #E3F0E9;
+
+  --insights-teal: #6FB3C7;
+  --insights-teal-soft: #E3F0F4;
+
+  --success: #6BAA75;
+  --warning: #E0B15E;
+  --error: #D88373;
+
+  /* Spacing scale (8px base) */
+  --space-1: 0.5rem;   /* 8  */
+  --space-2: 1rem;     /* 16 */
+  --space-3: 1.5rem;   /* 24 */
+  --space-4: 2rem;     /* 32 */
+  --space-6: 3rem;     /* 48 */
+  --space-8: 4rem;     /* 64 */
+
+  /* Typography scale */
+  --text-h1: 2rem;     /* 32 */
+  --text-h2: 1.125rem; /* 18 */
+  --text-h3: 1rem;     /* 16 */
+  --text-body: 0.875rem;  /* 14 */
+  --text-caption: 0.75rem; /* 12 */
+
+  /* Card system */
+  --card-radius: 1.25rem;        /* 20px */
+  --card-radius-lg: 1.5rem;     /* 24px */
+  --card-padding: 1.25rem;       /* 20px */
+  --card-border: 1px solid rgba(0, 0, 0, 0.05);
+  --card-shadow: 0 1px 2px rgba(15, 23, 42, 0.03), 0 4px 16px rgba(15, 23, 42, 0.03);
+  --card-shadow-hover: 0 4px 12px rgba(15, 23, 42, 0.05), 0 12px 32px rgba(15, 23, 42, 0.05);
 }
 
 .dark {
@@ -178,6 +242,28 @@
   --sidebar-accent-foreground: #E8EDF2;
   --sidebar-border: rgba(111, 179, 199, 0.1);
   --sidebar-ring: #6FB3C7;
+
+  /* Semantic tokens (dark mode) */
+  --mood-green: #7FB069;
+  --mood-yellow: #E0B15E;
+  --mood-orange: #E89B5C;
+  --mood-red: #E69684;
+
+  --sleep-blue: #8FC6D6;
+  --sleep-blue-soft: rgba(143, 198, 214, 0.14);
+
+  --goals-purple: #B0A4DA;
+  --goals-purple-soft: rgba(176, 164, 218, 0.14);
+
+  --habits-emerald: #7FB069;
+  --habits-emerald-soft: rgba(127, 176, 105, 0.14);
+
+  --insights-teal: #8FC6D6;
+  --insights-teal-soft: rgba(143, 198, 214, 0.14);
+
+  --card-border: 1px solid rgba(255, 255, 255, 0.08);
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.25);
+  --card-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.3);
 }
 
 @layer base {
@@ -389,8 +475,147 @@
     background: rgba(0, 0, 0, 0.1);
     border-radius: 3px;
   }
-  
+
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgba(0, 0, 0, 0.2);
+  }
+
+  /* ============================================================== */
+  /* Dashboard v2 - standardized card spec                            */
+  /* ============================================================== */
+
+  .card {
+    background: var(--card);
+    border: var(--card-border);
+    border-radius: var(--card-radius-lg);
+    padding: var(--card-padding);
+    box-shadow: var(--card-shadow);
+    transition: box-shadow 200ms ease-out, transform 200ms ease-out;
+  }
+
+  .card-interactive {
+    cursor: pointer;
+  }
+
+  .card-interactive:hover {
+    box-shadow: var(--card-shadow-hover);
+    transform: translateY(-2px);
+  }
+
+  .card-tight {
+    padding: 1rem; /* 16px */
+  }
+
+  /* Card header/title pattern: tiny eyebrow + title + optional action */
+  .card-eyebrow {
+    font-size: 0.6875rem;       /* 11px */
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
+
+  .card-title {
+    font-size: var(--text-h3);   /* 16 */
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--foreground);
+  }
+
+  .card-value {
+    font-size: var(--text-h1);   /* 32 */
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--foreground);
+  }
+
+  .card-section-title {
+    font-size: var(--text-h2);   /* 18 */
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--foreground);
+  }
+
+  .card-body {
+    font-size: var(--text-body); /* 14 */
+    color: var(--muted-foreground);
+    line-height: 1.5;
+  }
+
+  .card-caption {
+    font-size: var(--text-caption); /* 12 */
+    color: var(--muted-foreground);
+  }
+
+  /* Status pills - semantic intent colors */
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  .status-pill--success {
+    background: rgba(107, 170, 117, 0.12);
+    color: var(--mood-green);
+  }
+  .status-pill--warning {
+    background: rgba(224, 177, 94, 0.14);
+    color: #8a6a25;
+  }
+  .dark .status-pill--warning {
+    color: var(--mood-yellow);
+  }
+  .status-pill--danger {
+    background: rgba(216, 131, 115, 0.14);
+    color: #a64a3a;
+  }
+  .dark .status-pill--danger {
+    color: var(--mood-red);
+  }
+  .status-pill--info {
+    background: rgba(74, 144, 164, 0.12);
+    color: var(--sidebar-primary);
+  }
+  .status-pill--neutral {
+    background: rgba(0, 0, 0, 0.04);
+    color: var(--muted-foreground);
+  }
+  .dark .status-pill--neutral {
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  /* Semantic tile backgrounds for category cards */
+  .tile-mood { background: rgba(107, 170, 117, 0.10); color: var(--mood-green); }
+  .tile-sleep { background: rgba(74, 144, 164, 0.10); color: var(--sidebar-primary); }
+  .tile-goals { background: rgba(165, 157, 184, 0.14); color: var(--goals-purple); }
+  .tile-habits { background: rgba(90, 141, 123, 0.10); color: var(--habits-emerald); }
+  .tile-insights { background: rgba(111, 179, 199, 0.12); color: var(--insights-teal); }
+  .tile-journal { background: rgba(232, 155, 92, 0.10); color: var(--mood-orange); }
+
+  /* Touch target utility (44px Apple HIG) */
+  .touch-target {
+    min-height: 2.75rem; /* 44px */
+    min-width: 2.75rem;
+  }
+
+  /* Focus ring (WCAG) */
+  .focus-ring:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  /* Calm hover lift (replaces the heavier hover-lift for cards) */
+  .hover-calm {
+    transition: transform 180ms ease-out, box-shadow 180ms ease-out;
+  }
+  .hover-calm:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--card-shadow-hover);
   }
 }
