@@ -23,13 +23,13 @@ export function SkeletonCard({
   hasProgress = false
 }: SkeletonCardProps) {
   return (
-    <div className={cn('glass-card p-6 animate-pulse', className)}>
+    <div className={cn('glass-card p-6', className)} aria-busy="true" aria-label="Loading">
       {/* Header */}
       {hasHeader && (
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-gray-200/50" />
-            <div className="w-24 h-3.5 rounded bg-gray-200/50" />
+            <div className="w-4 h-4 rounded-full skeleton-shimmer" />
+            <div className="w-24 h-3.5 rounded skeleton-shimmer" />
           </div>
           <div className="w-16 h-3 rounded bg-gray-200/50" />
         </div>
@@ -40,7 +40,7 @@ export function SkeletonCard({
         {Array.from({ length: rows }).map((_, i) => (
           <div 
             key={i} 
-            className="h-3 rounded bg-gray-200/50"
+            className="h-3 rounded skeleton-shimmer"
             style={{ width: `${skeletonRowWidths[i % skeletonRowWidths.length]}%` }}
           />
         ))}

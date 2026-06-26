@@ -21,6 +21,8 @@ export interface SettingsState {
   accentColor: string
   fontSize: number
   motionEnabled: boolean
+  density: 'comfortable' | 'compact'
+  highContrast: boolean
   
   // Wellness Goals
   sleepGoal: number
@@ -66,7 +68,7 @@ export interface SettingsStore extends SettingsState {
   saveSettings: () => Promise<void>
   updateProfile: (profile: Partial<Pick<SettingsState, 'displayName' | 'email' | 'timezone' | 'bio'>>) => void
   updatePersonality: (personality: Partial<Pick<SettingsState, 'personalityMode' | 'responseLength' | 'emotionalWarmth' | 'conversationDepth' | 'motivationalTone'>>) => void
-  updateTheme: (theme: Partial<Pick<SettingsState, 'theme' | 'accentColor' | 'fontSize' | 'motionEnabled'>>) => void
+  updateTheme: (theme: Partial<Pick<SettingsState, 'theme' | 'accentColor' | 'fontSize' | 'motionEnabled' | 'density' | 'highContrast'>>) => void
   updateWellness: (wellness: Partial<Pick<SettingsState, 'sleepGoal' | 'hydrationReminders' | 'mindfulnessGoal' | 'workoutGoal' | 'journalingFrequency'>>) => void
   updateNotifications: (notif: Partial<Pick<SettingsState, 'emotionalCheckIns' | 'reminderFrequency' | 'bedtimeReminders' | 'journalingPrompts' | 'motivationalNudges'>>) => void
   updatePrivacy: (privacy: Partial<Pick<SettingsState, 'aiMemoryEnabled' | 'dataExportSchedule'>>) => void
@@ -92,6 +94,8 @@ const defaultState: SettingsState = {
   accentColor: '#4A90A4',
   fontSize: 16,
   motionEnabled: true,
+  density: 'comfortable',
+  highContrast: false,
   
   sleepGoal: 8,
   hydrationReminders: true,
@@ -138,6 +142,8 @@ function selectSettings(state: SettingsStore): SettingsState {
     accentColor: state.accentColor,
     fontSize: state.fontSize,
     motionEnabled: state.motionEnabled,
+    density: state.density,
+    highContrast: state.highContrast,
     sleepGoal: state.sleepGoal,
     hydrationReminders: state.hydrationReminders,
     mindfulnessGoal: state.mindfulnessGoal,

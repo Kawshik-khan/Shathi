@@ -22,6 +22,8 @@ import {
   RefreshCcw,
   Send,
 } from 'lucide-react';
+import { MoodCheckIn } from '@/components/mobile/mood-check-in';
+import { SkeletonCard } from '@/components/shared/skeleton-card';
 
 const reflectionPrompts = [
   'আজ দিনটা কেমন গেল?',
@@ -193,7 +195,9 @@ export default function MoodPage() {
     <ProtectedRoute>
       <DashboardShell>
         <div className="max-w-6xl">
-          <div className="mb-6 flex items-center gap-3">
+          <MoodCheckIn className="mb-5" />
+
+          <div className="mb-6 flex items-center gap-3 lg:mt-0">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#6FA8C7] to-[#4A90A4]">
               <Brain className="h-5 w-5 text-white" />
             </div>
@@ -283,10 +287,7 @@ export default function MoodPage() {
                 </div>
 
                 {loading ? (
-                  <div className="flex min-h-44 items-center justify-center text-sm text-muted-foreground">
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    সিগন্যাল পড়া হচ্ছে
-                  </div>
+                  <SkeletonCard rows={4} hasHeader className="min-h-44" />
                 ) : inference ? (
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">

@@ -12,6 +12,7 @@ import { TrainingCalendar } from '@/components/widgets/training-calendar';
 import { JournalPreview } from '@/components/widgets/journal-preview';
 import { AIInsight } from '@/components/widgets/ai-insight';
 import { DailyCheckIn } from '@/components/widgets/daily-check-in';
+import { MoodCheckIn, DailyCheckInStickyCTA } from '@/components/mobile/mood-check-in';
 import { SummaryStrip } from '@/components/widgets/summary-strip';
 import { QuickActions } from '@/components/widgets/quick-actions';
 import { useAuthStore } from '@/lib/store';
@@ -44,6 +45,10 @@ function DashboardContent() {
 
   return (
     <div className="space-y-6">
+      <div className="lg:hidden">
+        <MoodCheckIn compact className="mb-2" />
+      </div>
+
       {/* At-a-glance tiles + primary actions */}
       <SummaryStrip />
       <QuickActions />
@@ -82,10 +87,12 @@ function DashboardContent() {
           <AIInsight />
         </BentoCard>
 
-        <BentoCard colSpan={4} smColSpan={2} glowOnHover={false} className="order-9" delay={0.4}>
+        <BentoCard colSpan={4} smColSpan={2} glowOnHover={false} className="order-9 hidden lg:block" delay={0.4}>
           <DailyCheckIn />
         </BentoCard>
       </BentoGrid>
+
+      <DailyCheckInStickyCTA />
     </div>
   );
 }

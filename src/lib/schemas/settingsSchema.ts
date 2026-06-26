@@ -20,6 +20,8 @@ export const themeSchema = z.object({
   accentColor: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, 'Invalid hex color'),
   fontSize: z.number().min(12).max(24),
   motionEnabled: z.boolean(),
+  density: z.enum(['comfortable', 'compact']),
+  highContrast: z.boolean(),
 })
 
 export const wellnessSchema = z.object({

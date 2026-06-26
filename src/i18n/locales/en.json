@@ -54,15 +54,41 @@
     "toggleLabel": "Change language"
   },
   "navigation": {
+    "admin": "Admin",
     "aiCompanion": "AI Companion",
+    "companion": "Companion",
     "dashboard": "Dashboard",
     "habits": "Habits",
+    "home": "Home",
     "insights": "Insights",
     "journal": "Journal",
     "mood": "Mood",
+    "profile": "Profile",
     "resources": "Resources",
     "settings": "Settings",
-    "sleep": "Sleep"
+    "sleep": "Sleep",
+    "subscription": "Subscription"
+  },
+  "mobile": {
+    "confirmMood": "Confirm your mood",
+    "crisisHelp": "Reach out now for crisis support",
+    "dailyCheckIn": "Daily check-in",
+    "density": "Display density",
+    "densityCompact": "Compact",
+    "densityComfortable": "Comfortable",
+    "edit": "Edit",
+    "goBack": "Go back",
+    "highContrast": "High contrast",
+    "howFeeling": "How are you feeling?",
+    "mainNavigation": "Main navigation",
+    "moodLoggedToday": "Logged for today",
+    "moodTwoTap": "Pick an emoji — just 2 taps to log.",
+    "moreOptions": "More options",
+    "offline": "You're offline. Changes will sync when reconnected.",
+    "retry": "Retry",
+    "saveFailed": "Unable to save",
+    "saveMood": "Save mood",
+    "textSize": "Text size"
   },
   "plan": {
     "premium": "Premium Plan",

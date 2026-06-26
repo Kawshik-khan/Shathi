@@ -54,15 +54,41 @@
     "toggleLabel": "ভাষা পরিবর্তন করুন"
   },
   "navigation": {
+    "admin": "অ্যাডমিন",
     "aiCompanion": "এআই সঙ্গী",
+    "companion": "সঙ্গী",
     "dashboard": "ড্যাশবোর্ড",
     "habits": "অভ্যাস",
+    "home": "হোম",
     "insights": "ইনসাইট",
     "journal": "জার্নাল",
     "mood": "মুড",
+    "profile": "প্রোফাইল",
     "resources": "রিসোর্স",
     "settings": "সেটিংস",
-    "sleep": "ঘুম"
+    "sleep": "ঘুম",
+    "subscription": "সাবস্ক্রিপশন"
+  },
+  "mobile": {
+    "confirmMood": "আপনার মুড নিশ্চিত করুন",
+    "crisisHelp": "জরুরি সহায়তার জন্য এখনই যোগাযোগ করুন",
+    "dailyCheckIn": "দৈনিক চেক-ইন",
+    "density": "ডিসপ্লে ঘনত্ব",
+    "densityCompact": "কম্প্যাক্ট",
+    "densityComfortable": "আরামদায়ক",
+    "edit": "সম্পাদনা",
+    "goBack": "পিছনে যান",
+    "highContrast": "উচ্চ কনট্রাস্ট",
+    "howFeeling": "আজ আপনি কেমন অনুভব করছেন?",
+    "mainNavigation": "প্রধান নেভিগেশন",
+    "moodLoggedToday": "আজ লগ করা হয়েছে",
+    "moodTwoTap": "একটি ইমোজি বেছে নিন — মাত্র ২ ট্যাপে লগ করুন।",
+    "moreOptions": "আরও অপশন",
+    "offline": "আপনি অফলাইনে আছেন। পুনরায় সংযুক্ত হলে সিঙ্ক হবে।",
+    "retry": "আবার চেষ্টা",
+    "saveFailed": "সেভ করা যায়নি",
+    "saveMood": "মুড সেভ করুন",
+    "textSize": "টেক্সট সাইজ"
   },
   "plan": {
     "premium": "প্রিমিয়াম প্ল্যান",

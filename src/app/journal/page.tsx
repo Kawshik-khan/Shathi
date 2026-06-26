@@ -12,8 +12,22 @@ import {
   type JournalEntry,
 } from '@/lib/api';
 import { BookHeart, Edit3, Loader2, Plus, Save, Trash2 } from 'lucide-react';
+import { EmptyState } from '@/components/mobile/empty-state';
+import { StickyActionBar } from '@/components/mobile/sticky-action-bar';
+import { SkeletonCard } from '@/components/shared/skeleton-card';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 
 const draftKey = 'sathi_journal_draft';
+
+function relativeTime(date: string) {
+  const diff = Date.now() - new Date(date).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
 
 function formatDate(date: string) {
   return new Intl.DateTimeFormat('en', {
@@ -51,6 +65,8 @@ export default function JournalPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const online = useOnlineStatus();
+  const isEditing = Boolean(editingEntry) || title.trim() || content.trim();
 
   async function loadEntries() {
     setLoading(true);
@@ -206,13 +222,23 @@ export default function JournalPage() {
               </div>
             </div>
             <button
-              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full btn-primary-gradient text-sm font-medium"
+              className="hidden sm:inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full btn-primary-gradient text-sm font-medium touch-target"
               onClick={startNewEntry}
             >
               <Plus className="w-4 h-4" />
               New Entry
             </button>
           </div>
+
+          {/* Mobile FAB */}
+          <button
+            type="button"
+            onClick={startNewEntry}
+            className="lg:hidden fixed bottom-[calc(4rem+1rem+env(safe-area-inset-bottom,0px))] right-4 z-40 btn-haptic touch-target flex h-14 w-14 items-center justify-center rounded-full btn-primary-gradient text-white shadow-lg"
+            aria-label="New journal entry"
+          >
+            <Plus className="h-6 w-6" />
+          </button>
 
           {error && (
             <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
@@ -236,19 +262,17 @@ export default function JournalPage() {
               </div>
 
               {loading ? (
-                <div className="flex h-72 items-center justify-center text-muted-foreground">
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Loading entries
-                </div>
+                <SkeletonCard rows={5} hasHeader className="min-h-72" />
               ) : entries.length === 0 ? (
-                <div className="flex h-72 flex-col items-center justify-center text-center">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/illustrations/empty-journal.svg" alt="" aria-hidden="true" className="w-36 h-auto mb-4 select-none pointer-events-none" />
-                  <p className="font-medium text-foreground">No entries yet</p>
-                  <p className="mt-1 text-sm text-muted-foreground">Your saved reflections will appear here.</p>
-                </div>
+                <EmptyState
+                  illustration="/illustrations/empty-journal.svg"
+                  title="No entries yet"
+                  description="Your saved reflections will appear here."
+                  actionLabel="Write first entry"
+                  onAction={startNewEntry}
+                />
               ) : (
-                <div className="space-y-3">
+                <div className="divide-y divide-border">
                   {entries.map((entry) => (
                     <button
                       key={entry.id}
@@ -257,15 +281,22 @@ export default function JournalPage() {
                         setSelectedEntry(entry);
                         setEditingEntry(null);
                       }}
-                      className={`w-full rounded-2xl p-4 text-left transition-colors ${
+                      className={`density-list-row mobile-list-row focus-ring btn-haptic w-full px-1 py-3 text-left transition-colors touch-target ${
                         selectedEntry?.id === entry.id
                           ? 'bg-[#E3F0F3]/80'
-                          : 'bg-[#F1F5F7]/70 hover:bg-[#EAF2F4]'
+                          : 'hover:bg-[#F1F5F7]/70'
                       }`}
                     >
-                      <p className="font-medium text-foreground line-clamp-1">{entry.title || 'Untitled entry'}</p>
-                      <p className="mt-1 text-xs text-muted-foreground">{formatDate(entry.written_at)}</p>
-                      <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{entry.content}</p>
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 shrink-0 rounded-full bg-[#4A90A4]" aria-hidden="true" />
+                        <p className="flex-1 truncate text-base font-medium text-foreground">
+                          {entry.title || 'Untitled entry'}
+                        </p>
+                        <span className="shrink-0 text-sm text-muted-foreground">
+                          {relativeTime(entry.written_at)}
+                        </span>
+                      </div>
+                      <p className="mt-1 truncate pl-4 text-sm text-muted-foreground">{entry.content}</p>
                     </button>
                   ))}
                 </div>
@@ -274,7 +305,7 @@ export default function JournalPage() {
 
             <div className="space-y-5">
               <GlassCard delay={0.15} glowOnHover={false}>
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form id="journal-editor-form" onSubmit={handleSubmit} className="space-y-4">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <h2 className="text-lg font-medium text-foreground">
@@ -295,7 +326,7 @@ export default function JournalPage() {
                       value={title}
                       onChange={(event) => setTitle(event.target.value)}
                       placeholder="Entry title"
-                      className="w-full rounded-2xl border border-border bg-white/70 px-4 py-3 text-sm outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-[#4A90A4]/30 dark:bg-secondary"
+                      className="input-mobile w-full rounded-2xl border border-border bg-white/70 px-4 py-3 text-base outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-[#4A90A4]/30 dark:bg-secondary"
                     />
                   </label>
 
@@ -306,15 +337,15 @@ export default function JournalPage() {
                       onChange={(event) => setContent(event.target.value)}
                       rows={12}
                       placeholder="Write what is on your mind..."
-                      className="w-full resize-none rounded-2xl border border-border bg-white/70 px-4 py-3 text-sm leading-relaxed outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-[#4A90A4]/30 dark:bg-secondary"
+                      className="input-mobile w-full resize-none rounded-2xl border border-border bg-white/70 px-4 py-3 text-base leading-relaxed outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-[#4A90A4]/30 dark:bg-secondary"
                     />
                   </label>
 
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <div className="hidden sm:flex flex-col gap-2 sm:flex-row sm:items-center">
                     <button
                       type="submit"
                       disabled={saving}
-                      className="inline-flex items-center justify-center gap-2 rounded-full btn-primary-gradient px-5 py-2.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60"
+                      className="inline-flex items-center justify-center gap-2 rounded-full btn-primary-gradient px-5 py-2.5 text-sm font-medium touch-target disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                       {editingEntry ? 'Save changes' : 'Save entry'}
@@ -323,14 +354,38 @@ export default function JournalPage() {
                       <button
                         type="button"
                         onClick={startNewEntry}
-                        className="rounded-full border border-border px-5 py-2.5 text-sm font-medium text-muted-foreground hover:bg-[#F1F5F7]"
+                        className="rounded-full border border-border px-5 py-2.5 text-sm font-medium text-muted-foreground hover:bg-[#F1F5F7] touch-target"
                       >
                         Cancel edit
                       </button>
                     )}
                   </div>
+
+                  {!online && (
+                    <p role="status" className="text-sm text-amber-700 dark:text-amber-300">
+                      Offline — draft saved locally until you reconnect.
+                    </p>
+                  )}
+
+                  <p className="fixed bottom-28 right-6 text-xs text-muted-foreground lg:static lg:text-right">
+                    {wordCount} words · autosaved locally
+                  </p>
                 </form>
               </GlassCard>
+
+              {isEditing && (
+                <StickyActionBar className="sm:hidden">
+                  <button
+                    type="submit"
+                    form="journal-editor-form"
+                    disabled={saving}
+                    className="btn-haptic touch-target flex min-h-13 w-full items-center justify-center gap-2 rounded-full btn-primary-gradient text-base font-semibold text-white disabled:opacity-60"
+                  >
+                    {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                    {editingEntry ? 'Save changes' : 'Save entry'}
+                  </button>
+                </StickyActionBar>
+              )}
 
               {selectedEntry && (
                 <GlassCard delay={0.2} glowOnHover={false}>

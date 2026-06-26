@@ -120,40 +120,47 @@ export default function LoginForm() {
 
       <form className="space-y-3 sm:space-y-4" onSubmit={handleSubmit}>
         <label className="block">
-          <span className="sr-only">{t('auth.email')}</span>
-          <div className="flex items-center gap-3 border border-gray-200 rounded-lg sm:rounded-xl px-3 py-2 sm:py-3 bg-white hover:border-gray-300 transition-colors">
-            <Mail className="text-[#94A3B8] flex-shrink-0" size={18} />
+          <span className="mb-1.5 block text-base font-medium text-[#0F172A]">{t('auth.email')}</span>
+          <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-3 input-mobile hover:border-gray-300 transition-colors">
+            <Mail className="text-[#94A3B8] flex-shrink-0" size={18} aria-hidden="true" />
             <input
-              className="w-full outline-none text-sm sm:text-base text-[#0F172A] placeholder:text-[#94A3B8] bg-transparent"
+              className="w-full outline-none text-base text-[#0F172A] placeholder:text-[#94A3B8] bg-transparent focus-ring"
               placeholder={t('auth.enterEmail')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               type="email"
+              autoComplete="email"
               required
             />
           </div>
         </label>
 
         <label className="block">
-          <span className="sr-only">{t('auth.password')}</span>
-          <div className="flex items-center gap-3 border border-gray-200 rounded-lg sm:rounded-xl px-3 py-2 sm:py-3 bg-white hover:border-gray-300 transition-colors">
-            <Lock className="text-[#94A3B8] flex-shrink-0" size={18} />
+          <span className="mb-1.5 block text-base font-medium text-[#0F172A]">{t('auth.password')}</span>
+          <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-3 input-mobile hover:border-gray-300 transition-colors">
+            <Lock className="text-[#94A3B8] flex-shrink-0" size={18} aria-hidden="true" />
             <input
-              className="w-full outline-none text-sm sm:text-base text-[#0F172A] placeholder:text-[#94A3B8] bg-transparent"
+              className="w-full outline-none text-base text-[#0F172A] placeholder:text-[#94A3B8] bg-transparent focus-ring"
               placeholder={t('auth.enterPassword')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               type={show ? "text" : "password"}
+              autoComplete="current-password"
               required
             />
-            <button type="button" aria-label={t('auth.togglePassword')} onClick={() => setShow((s) => !s)} className="text-[#94A3B8] flex-shrink-0 hover:text-[#0F172A] transition-colors">
-              {show ? <EyeOff size={18} /> : <Eye size={18} />}
+            <button
+              type="button"
+              aria-label={t('auth.togglePassword')}
+              onClick={() => setShow((s) => !s)}
+              className="btn-haptic touch-target text-[#94A3B8] flex-shrink-0 hover:text-[#0F172A] transition-colors"
+            >
+              {show ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
         </label>
 
         {error && (
-          <div className="text-red-500 text-sm text-center">{error}</div>
+          <p role="alert" className="text-red-600 text-base text-center">{error}</p>
         )}
 
         <div className="flex items-center justify-between text-xs sm:text-sm gap-2">
@@ -174,7 +181,8 @@ export default function LoginForm() {
         <motion.button
           whileHover={{ y: -2 }}
           disabled={loading}
-          className="w-full py-2.5 sm:py-3 rounded-full text-white font-medium text-sm sm:text-base bg-gradient-to-r from-[#5F9DB0] to-[#4A90A4] shadow-sm hover:shadow-glow transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
+          type="submit"
+          className="btn-haptic touch-target w-full input-mobile rounded-full text-white font-medium text-base bg-gradient-to-r from-[#5F9DB0] to-[#4A90A4] shadow-sm hover:shadow-glow transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? t('actions.loggingIn') : t('actions.logIn')}
         </motion.button>

@@ -618,4 +618,176 @@
     transform: translateY(-2px);
     box-shadow: var(--card-shadow-hover);
   }
+
+  /* --- Mobile Optimization Pass Utilities --- */
+
+  /* Reduced Motion Utility */
+  .motion-disabled,
+  .motion-disabled * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+    transform: none !important;
+  }
+
+  /* High Contrast Mode Styles */
+  .high-contrast {
+    --background: #FFFFFF;
+    --foreground: #000000;
+    --card: #FFFFFF;
+    --card-foreground: #000000;
+    --muted: #E2E8F0;
+    --muted-foreground: #1A202C;
+    --primary: #1E3A8A; /* high contrast deep blue */
+    --primary-foreground: #FFFFFF;
+    --border: #000000;
+    --ring: #1E3A8A;
+    --success: #15803D;
+    --warning: #B45309;
+    --destructive: #B91C1C;
+  }
+  
+  .high-contrast .glass-card,
+  .high-contrast .glass-card-strong {
+    background: #FFFFFF !important;
+    border: 2px solid #000000 !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: none !important;
+    color: #000000 !important;
+  }
+
+  /* Haptic-style Press Action */
+  .btn-haptic {
+    transition: transform 120ms ease-out, opacity 120ms ease-out;
+  }
+  .btn-haptic:active {
+    transform: scale(0.97);
+    opacity: 0.9;
+  }
+
+  /* Density Styles */
+  [data-density="compact"] {
+    --density-padding: 0.5rem;
+    --density-gap: 0.5rem;
+  }
+  [data-density="comfortable"] {
+    --density-padding: 1rem;
+    --density-gap: 1rem;
+  }
+
+  /* General list row height adjustments in compact mode */
+  [data-density="compact"] .density-list-row {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+    min-height: 2.75rem !important;
+  }
+
+  /* Bangla specific line-height and typography modifications */
+  [data-language="bn"] {
+    line-height: 1.5 !important;
+  }
+  [data-language="bn"] body,
+  [data-language="bn"] .text-base {
+    font-size: 1rem !important; /* 16px min */
+  }
+  [data-language="bn"] .text-sm {
+    font-size: 0.875rem !important; /* 14px min captions */
+  }
+
+  /* Safe area insets (iOS notch + home indicator) */
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .mobile-gutter {
+    padding-left: max(1rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1rem, env(safe-area-inset-right, 0px));
+  }
+  @media (min-width: 390px) {
+    .mobile-gutter {
+      padding-left: max(1.25rem, env(safe-area-inset-left, 0px));
+      padding-right: max(1.25rem, env(safe-area-inset-right, 0px));
+    }
+  }
+
+  /* Compact viewport: reduce glass blur for GPU savings */
+  @media (max-width: 389px) {
+    .glass-card,
+    .glass-card-strong {
+      backdrop-filter: blur(12px) saturate(140%) !important;
+      -webkit-backdrop-filter: blur(12px) saturate(140%) !important;
+    }
+  }
+
+  /* Mobile typography floor (WCAG body 16pt) */
+  @media (max-width: 1023px) {
+    body {
+      font-size: 1rem;
+    }
+    .text-xs {
+      font-size: 0.875rem; /* 14pt captions min */
+    }
+  }
+
+  /* List rows: hairline dividers, no shadows */
+  .mobile-list-row {
+    border-bottom: 1px solid var(--border);
+    box-shadow: none !important;
+  }
+  .mobile-list-row:last-child {
+    border-bottom: none;
+  }
+
+  /* Skeleton shimmer @ 1.4s */
+  @keyframes skeleton-shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  .skeleton-shimmer {
+    background: linear-gradient(
+      90deg,
+      var(--muted) 0%,
+      color-mix(in srgb, var(--muted) 70%, var(--foreground) 8%) 50%,
+      var(--muted) 100%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  }
+  .motion-disabled .skeleton-shimmer {
+    animation: none;
+    background: var(--muted);
+  }
+
+  /* Segmented control (insights time range) */
+  .segmented-control {
+    display: inline-flex;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    border-radius: 9999px;
+    background: var(--muted);
+  }
+  .segmented-control button {
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: background 120ms ease-out, color 120ms ease-out;
+  }
+  .segmented-control button[aria-pressed="true"] {
+    background: var(--card);
+    color: var(--foreground);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  }
+
+  /* Mobile form inputs — 52pt height */
+  .input-mobile {
+    min-height: 3.25rem;
+    font-size: 1rem;
+  }
 }

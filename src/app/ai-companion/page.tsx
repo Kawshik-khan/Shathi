@@ -98,6 +98,37 @@ function inferOrbEmotion(text: string): OrbEmotion {
   return 'neutral';
 }
 
+function MessageBubbleContent({ content, isStreaming }: { content: string; isStreaming?: boolean }) {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = content.split('\n').length > 6 || content.length > 300;
+
+  if (isStreaming && !content) {
+    return (
+      <div className="flex items-center gap-1.5 py-2.5 px-1" aria-label="Streaming response">
+        <span className="w-2 h-2 rounded-full bg-[#4A90A4] animate-pulse [animation-delay:-0.3s]"></span>
+        <span className="w-2 h-2 rounded-full bg-[#4A90A4] animate-pulse [animation-delay:-0.15s]"></span>
+        <span className="w-2 h-2 rounded-full bg-[#4A90A4] animate-pulse"></span>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className={cn("text-sm whitespace-pre-line break-words leading-relaxed", !expanded && isLong && "line-clamp-6")}>
+        {content}
+      </div>
+      {!expanded && isLong && (
+        <button
+          onClick={() => setExpanded(true)}
+          className="mt-2 text-xs font-semibold underline text-[#4A90A4] focus-ring touch-target flex items-center h-11"
+        >
+          Show more / আরো দেখুন
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function AICompanionPage() {
   return (
     <ProtectedRoute>
@@ -120,6 +151,7 @@ function AICompanionContent() {
   const [voiceState, setVoiceState] = useState<VoiceState>('idle');
   const [, setOrbEmotion] = useState<OrbEmotion>('neutral');
   const [interimTranscript, setInterimTranscript] = useState('');
+  const [isCrisisOverlayOpen, setIsCrisisOverlayOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageIdRef = useRef(0);
   const streamAbortRef = useRef<AbortController | null>(null);
@@ -303,6 +335,10 @@ function AICompanionContent() {
           model: 'llama-3.3-70b',
         },
         (event) => {
+          if (event.crisis_flag) {
+            setIsCrisisOverlayOpen(true);
+          }
+
           if (event.language) {
             setActiveLanguage(event.language);
             responseLanguage = event.language;
@@ -594,9 +630,10 @@ function AICompanionContent() {
                             : 'bg-[#F1F5F7] dark:bg-white/10 text-foreground rounded-bl-md'
                         )}
                       >
-                        <div className="text-sm whitespace-pre-line break-words">
-                          {message.content || (isSending ? '...' : '')}
-                        </div>
+                        <MessageBubbleContent
+                          content={message.content}
+                          isStreaming={isSending && index === messages.length - 1 && message.role === 'assistant'}
+                        />
                         <div
                           className={cn(
                             'text-[10px] mt-1',
@@ -618,14 +655,14 @@ function AICompanionContent() {
                 </div>
               )}
 
-              <div className="px-4 py-3 border-t border-black/5 dark:border-white/5">
-                <div className="flex flex-wrap gap-2">
+              <div className="px-4 py-3 border-t border-black/5 dark:border-white/5 overflow-x-auto scrollbar-none snap-x snap-mandatory">
+                <div className="flex flex-row gap-2 whitespace-nowrap">
                   {quickActions.map((action) => (
                     <button
                       key={action.label}
                       onClick={() => handleSend(action.prompt)}
                       disabled={isSending}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F1F5F7] dark:bg-white/10 text-xs font-medium text-muted-foreground hover:bg-[#EAF2F4] dark:hover:bg-white/20 hover:text-[#4A90A4] transition-colors disabled:opacity-50"
+                      className="flex-shrink-0 snap-start flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F1F5F7] dark:bg-white/10 text-xs font-medium text-muted-foreground hover:bg-[#EAF2F4] dark:hover:bg-white/20 hover:text-[#4A90A4] transition-colors disabled:opacity-50 btn-haptic touch-target"
                     >
                       <action.icon className="w-3.5 h-3.5" />
                       {action.label}
@@ -636,6 +673,14 @@ function AICompanionContent() {
 
               <div className="p-3 sm:p-4 border-t border-black/5 dark:border-white/5">
                 <div className="flex items-end gap-2 rounded-[1.6rem] border border-black/5 bg-white/75 p-2 shadow-[0_16px_45px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-white/8">
+                  <button
+                    type="button"
+                    onClick={() => setIsCrisisOverlayOpen(true)}
+                    className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#F1F5F7] hover:bg-[#EAF2F4] dark:bg-white/10 transition-colors btn-haptic touch-target"
+                    aria-label="Get emergency help"
+                  >
+                    <Plus className="w-5 h-5 text-muted-foreground" />
+                  </button>
                   <textarea
                     value={input}
                     onChange={(event) => setInput(event.target.value)}
@@ -680,6 +725,56 @@ function AICompanionContent() {
           </div>
         )}
       </div>
+
+      {/* Safety overlay for crisis detected state */}
+      <AnimatePresence>
+        {isCrisisOverlayOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-4 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              className="w-full max-w-md bg-white dark:bg-[#1A202C] rounded-t-3xl p-6 shadow-2xl pb-safe"
+            >
+              <div className="w-12 h-1.5 bg-black/10 dark:bg-white/10 rounded-full mx-auto mb-4" />
+              <h2 className="text-xl font-bold text-red-600 dark:text-red-400 mb-2 flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-ping" />
+                We are here for you / আমরা আপনার পাশে আছি
+              </h2>
+              <p className="text-sm text-muted-foreground mb-4">
+                It sounds like you might be going through a very tough time. Please reach out to someone who can help. You are not alone.
+              </p>
+              <div className="space-y-3">
+                <a
+                  href="tel:109"
+                  className="flex items-center justify-between p-4 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-2xl font-bold text-red-700 dark:text-red-400 touch-target"
+                >
+                  <span>National Helpline (Bangladesh)</span>
+                  <span>109</span>
+                </a>
+                <a
+                  href="tel:999"
+                  className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl font-bold text-foreground touch-target"
+                >
+                  <span>Emergency Services</span>
+                  <span>999</span>
+                </a>
+                <button
+                  onClick={() => setIsCrisisOverlayOpen(false)}
+                  className="w-full py-3 bg-[#4A90A4] text-white rounded-2xl font-semibold touch-target mt-2"
+                >
+                  Close / বন্ধ করুন
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </DashboardShell>
   );
 }

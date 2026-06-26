@@ -112,7 +112,7 @@ export function MobileSidebar() {
           {/* Menu Button */}
           <button
             onClick={() => setIsOpen(true)}
-            className="p-2 rounded-lg hover:bg-[#F1F5F7] transition-colors"
+            className="p-3 w-11 h-11 flex items-center justify-center rounded-lg hover:bg-[#F1F5F7] transition-colors btn-haptic touch-target"
             aria-label="Open menu"
           >
             <Menu className="w-5 h-5 text-foreground" />
@@ -159,7 +159,7 @@ export function MobileSidebar() {
               </Link>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-2 rounded-lg hover:bg-[#F1F5F7] transition-colors"
+                className="p-3 w-11 h-11 flex items-center justify-center rounded-lg hover:bg-[#F1F5F7] transition-colors btn-haptic touch-target"
                 aria-label="Close menu"
               >
                 <X className="w-5 h-5 text-muted-foreground" />

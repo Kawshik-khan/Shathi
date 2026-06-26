@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, useSyncExternalStore } from 'react';
+import { useSettingsStore } from '@/lib/stores/settingsStore';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -54,6 +55,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   );
   const resolvedTheme: 'light' | 'dark' = theme === 'system' ? systemTheme : theme;
 
+  const motionEnabled = useSettingsStore((state) => state.motionEnabled);
+  const density = useSettingsStore((state) => state.density);
+  const highContrast = useSettingsStore((state) => state.highContrast);
+  const fontSize = useSettingsStore((state) => state.fontSize);
+  const loadSettings = useSettingsStore((state) => state.loadSettings);
+
+  // Load settings on mount
+  useEffect(() => {
+    if (mounted) {
+      void loadSettings();
+    }
+  }, [mounted, loadSettings]);
+
   useEffect(() => {
     if (!mounted) return;
 
@@ -61,6 +75,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     root.classList.toggle('dark', resolvedTheme === 'dark');
     localStorage.setItem('Sathi-theme', theme);
   }, [mounted, resolvedTheme, theme]);
+
+  useEffect(() => {
+    if (!mounted) return;
+
+    const root = document.documentElement;
+    root.classList.toggle('motion-disabled', !motionEnabled);
+    root.classList.toggle('high-contrast', !!highContrast);
+    root.setAttribute('data-density', density || 'comfortable');
+    root.style.fontSize = `${fontSize ?? 16}px`;
+  }, [mounted, motionEnabled, density, highContrast, fontSize]);
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
@@ -85,4 +109,3 @@ export function useTheme() {
   }
   return context;
 }
-
