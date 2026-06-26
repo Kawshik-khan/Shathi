@@ -26,6 +26,12 @@ class ChatContext:
     memory_count: int = 0
     mood_signal: str | None = None
     prediction: str | None = None
+    # RAG visibility flags. ``rag_used`` is true whenever the memory
+    # section actually returned at least one Pinecone hit; ``memory_status``
+    # mirrors the section status ("ok" | "timeout" | "error" | "empty")
+    # so the streaming SSE can surface RAG state to the client.
+    rag_used: bool = False
+    memory_status: str | None = None
 
 
 _MAX_CONTEXT_CHARS = 1600
@@ -127,13 +133,23 @@ async def build_chat_context(
         prediction = inferred.data.get("support_tone") or prediction
 
     memory_count = 0
+    memory_status: str | None = None
+    rag_used = False
     memory_result = built.results.get("memory")
     if memory_result and memory_result.data:
         memory_count = int(memory_result.data.get("memory_count", 0))
+    if memory_result is not None:
+        # ``status`` is one of "ok" | "timeout" | "error" | "empty" — we
+        # forward it so the streaming SSE can render a "memory: timed
+        # out" or "memory: ok (3 hits)" hint when useful.
+        memory_status = memory_result.status
+        rag_used = memory_count > 0 and memory_result.status == "ok"
 
     return ChatContext(
         text=_finalize_context(parts),
         memory_count=memory_count,
         mood_signal=mood_signal,
         prediction=prediction,
+        rag_used=rag_used,
+        memory_status=memory_status,
     )

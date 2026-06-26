@@ -907,6 +907,41 @@ export function getSessions() {
   return apiFetch<SessionInfo[]>('/api/v1/users/me/sessions');
 }
 
+export async function uploadAvatar(file: Blob): Promise<{ avatar_url: string } & Record<string, unknown>> {
+  const token = getAuthToken();
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await fetch(resolveApiUrl('/api/v1/users/me/avatar'), {
+    method: 'POST',
+    headers: {
+      ...(token && { Authorization: `Bearer ${token}` }),
+      // Do NOT set Content-Type here; the browser will fill in the
+      // correct multipart boundary when given a FormData body.
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error('Unable to upload avatar');
+  }
+
+  return response.json();
+}
+
+export async function deleteAvatar(): Promise<void> {
+  const token = getAuthToken();
+  const response = await fetch(resolveApiUrl('/api/v1/users/me/avatar'), {
+    method: 'DELETE',
+    headers: {
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Unable to remove avatar');
+  }
+}
+
 export function deleteAccount(confirmation: string, password?: string) {
   return apiFetch<void>('/api/v1/users/me', {
     method: 'DELETE',

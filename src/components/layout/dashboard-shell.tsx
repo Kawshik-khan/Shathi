@@ -1,53 +1,52 @@
 'use client';
 
-import { MobileTopBar } from '@/components/mobile/mobile-top-bar';
-import { OfflineBanner } from '@/components/mobile/offline-banner';
-import { MobileBottomNav } from './mobile-bottom-nav';
+import { Sidebar } from './sidebar';
+import { MobileSidebar } from './mobile-sidebar';
 import { Header } from './header';
+import { SafetyBanner } from './safety-banner';
+import { motion } from 'framer-motion';
 import { Suspense } from 'react';
 
 interface DashboardShellProps {
   children: React.ReactNode;
 }
 
-/**
- * Dashboard layout.
- *
- * The desktop `Sidebar` was removed in favour of:
- *  - Mobile bottom tab bar (5 primary routes) for one-handed navigation.
- *  - Profile page "Quick Links" section (Mood / Habits / Sleep / Resources /
- *    Settings) for everything else, so users always know where to find them.
- *  - Desktop top header (greeting, search, notifications, profile menu) for
- *    the wide-viewport experience.
- *
- * Layout is now a single full-width main column; no left rail.
- */
 export function DashboardShell({ children }: DashboardShellProps) {
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="min-h-screen">
+      {/* Desktop Sidebar - hidden on mobile */}
+      <div className="hidden lg:block">
+        <Suspense fallback={null}>
+          <Sidebar />
+        </Suspense>
+      </div>
+
+      {/* Mobile Sidebar */}
       <Suspense fallback={null}>
-        <MobileTopBar />
+        <MobileSidebar />
       </Suspense>
 
-      <main className="flex-1 min-w-0 overflow-y-auto">
-        <Suspense fallback={null}>
-          <OfflineBanner />
-        </Suspense>
+      {/* Main Content - fills the available width after the sidebar so the
+          dashboard cards sit close to the sidebar instead of being centered
+          inside a max-w container (which produces an empty middle gap on
+          wide viewports). */}
+      <main className="lg:ml-72 lg:mr-4 px-4 lg:px-0 py-6 min-h-screen">
+        <div className="w-full max-w-400">
+          <Header />
 
-        <div className="mx-auto w-full max-w-[1600px] px-4 py-4 mobile-gutter lg:px-6 lg:py-6">
-          <div className="hidden lg:block">
-            <Header />
-          </div>
+          <SafetyBanner />
 
-          {/* Bottom padding: tab bar (64) + sticky CTA (~80) + safe area (>=16) = ~160px.
-             On lg the sticky CTA is hidden so we only need tab/FAB clearance (~32px). */}
-          <div className="pb-40 lg:pb-8">{children}</div>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="pb-8"
+          >
+            {children}
+          </motion.div>
         </div>
       </main>
-
-      <Suspense fallback={null}>
-        <MobileBottomNav />
-      </Suspense>
     </div>
   );
 }
+

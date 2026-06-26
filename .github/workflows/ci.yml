@@ -38,8 +38,57 @@ jobs:
         env:
           APP_ENV: test
 
+  # Quality gates that don't fit the per-stack jobs: secrets scan (always)
+  # and Lighthouse budget (optional — only when LH_ENABLED=true).
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history so gitleaks can scan every commit ever pushed.
+          fetch-depth: 0
+
+      - name: Secrets scan (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          # GitHub token lets the action post PR annotations.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Lighthouse budget
+        # Gated behind LH_ENABLED so the default CI doesn't pay the
+        # ~5-7 min cost of booting Chrome + running Lighthouse. Set
+        # the repo variable ``LH_ENABLED=true`` on protected branches
+        # or schedule it from a nightly workflow if desired.
+        if: ${{ vars.LH_ENABLED == 'true' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+        if: ${{ vars.LH_ENABLED == 'true' }}
+      - name: Install Lighthouse + Chrome
+        if: ${{ vars.LH_ENABLED == 'true' }}
+        run: |
+          npm install -g lighthouse
+          # chromium-browser is the simplest headless Chrome for
+          # GitHub's ubuntu-latest image; lighthouse auto-discovers it.
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends chromium-browser
+      - name: Build + Lighthouse
+        if: ${{ vars.LH_ENABLED == 'true' }}
+        run: |
+          npm run build
+          node scripts/lighthouse.mjs
+      - name: Upload Lighthouse reports
+        if: ${{ vars.LH_ENABLED == 'true' && always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-reports
+          path: docs/lighthouse/
+          if-no-files-found: ignore
+
   deploy-backend:
-    needs: [backend, frontend]
+    needs: [backend, frontend, quality]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:

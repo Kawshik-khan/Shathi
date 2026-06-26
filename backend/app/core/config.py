@@ -73,14 +73,38 @@ class Settings(BaseSettings):
     # Chat optimization
     CHAT_HISTORY_LIMIT: int = 12
     CHAT_HISTORY_FOR_LLM: int = 6  # Trim conversation history sent to the LLM
-    EMBEDDING_TIMEOUT_SECONDS: float = 3.0
+    EMBEDDING_TIMEOUT_SECONDS: float = 1.5
     USER_CONTEXT_CACHE_TTL: int = 300
 
     # Per-provider timeouts (milliseconds). Each provider has its own
     # bound so a slow source can never block the others or the LLM.
-    CHAT_PROVIDER_TIMEOUT_MS: int = 1200
+    CHAT_PROVIDER_TIMEOUT_MS: int = 800
     CHAT_CONTEXT_HARD_BUDGET_MS: int = 1500
     CHAT_HEARTBEAT_INTERVAL_MS: int = 250
+
+    # Embedding cache (RAG optimization). LRU is in-process for speed;
+    # Redis is shared across workers and avoids repeated paid
+    # embedding calls for the same user message across requests.
+    EMBEDDING_CACHE_ENABLED: bool = True
+    EMBEDDING_CACHE_TTL_SECONDS: int = 3600
+    EMBEDDING_CACHE_MAX_ENTRIES: int = 1024
+
+    # Time we wait for the semantic response cache to answer before
+    # committing to building full RAG context. A hit here lets us
+    # skip the Pinecone call entirely (no memory section, no
+    # embedding request).
+    RESPONSE_CACHE_RACE_BUDGET_MS: int = 100
+
+    # Memory retrieval tuning. ``MEMORY_SCORE_FLOOR`` drops weak
+    # matches unless fewer than ``MEMORY_MIN_KEEP`` survive. The
+    # query expansion block bounds how much prior assistant context
+    # is mixed into the embedding call.
+    MEMORY_TOP_K: int = 3
+    MEMORY_SCORE_FLOOR: float = 0.7
+    MEMORY_MIN_KEEP: int = 2
+    MEMORY_QUERY_MAX_CHARS: int = 400
+    MEMORY_QUERY_TURN_CHARS: int = 120
+    MEMORY_QUERY_LAST_TURNS: int = 2
 
     # Per-section Redis cache TTLs (seconds).
     CHAT_CACHE_TTL_PROFILE: int = 1800   # 30 min
@@ -113,6 +137,14 @@ class Settings(BaseSettings):
     AUTH_RATE_LIMIT_MAX: int = 20
     CHAT_RATE_LIMIT_MAX: int = 60
 
+    # Avatar uploads. AVATAR_STORAGE_DIR controls where avatars land when
+    # Supabase storage isn't configured. AVATAR_MAX_BYTES caps the request
+    # size; anything bigger is rejected with 413 before we touch disk.
+    AVATAR_STORAGE_DIR: str = "uploads/avatars"
+    AVATAR_PUBLIC_BASE_URL: str = "/static/avatars"
+    AVATAR_MAX_BYTES: int = 2 * 1024 * 1024  # 2 MiB
+    AVATAR_ALLOWED_MIME: str = "image/jpeg,image/png,image/webp"
+
     # Monitoring
     SENTRY_DSN: Optional[str] = None
     
@@ -120,18 +152,55 @@ class Settings(BaseSettings):
     def cors_origins_list(self) -> List[str]:
         """Parse CORS origins from comma-separated string."""
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
-    
+
     @property
     def is_production(self) -> bool:
         """Check if running in production."""
         return self.APP_ENV == "production"
-    
+
     @property
     def effective_database_url(self) -> str:
         """Get the effective database URL, preferring Supabase if configured."""
         if self.SUPABASE_DB_URL:
             return self.SUPABASE_DB_URL
         return self.DATABASE_URL
+
+    def validate_production(self) -> None:
+        """Fail-fast checks for production deployments.
+
+        Called once at lifespan startup so a misconfigured deploy doesn't
+        silently serve traffic with the wrong posture. The checks are
+        intentionally noisy: the goal is to break the deploy, not to
+        degrade gracefully into a less-secure mode.
+        """
+        if not self.is_production:
+            return
+        issues: list[str] = []
+        if not self.SECRET_KEY or self.SECRET_KEY == "change-me-in-production":
+            issues.append("SECRET_KEY must be set to a strong random value")
+        if not self.effective_database_url:
+            issues.append("DATABASE_URL or SUPABASE_DB_URL is required")
+        bad_origins = [
+            o
+            for o in self.cors_origins_list
+            if o
+            and (
+                o.startswith("http://localhost")
+                or o.startswith("http://127.")
+                or "*" in o
+            )
+        ]
+        if bad_origins:
+            issues.append(
+                f"CORS_ORIGINS must not contain localhost or wildcards in "
+                f"production (found: {bad_origins})"
+            )
+        if not self.SUPABASE_URL and not self.DATABASE_URL:
+            issues.append("SUPABASE_URL or DATABASE_URL is required")
+        if issues:
+            raise RuntimeError(
+                "Production configuration invalid:\n  - " + "\n  - ".join(issues)
+            )
 
 
 @lru_cache

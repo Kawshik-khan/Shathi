@@ -1,0 +1,20 @@
+{
+  "routes": [
+    "/landing",
+    "/dashboard",
+    "/mood",
+    "/ai-companion"
+  ],
+  "thresholds": {
+    "performance": 0.85,
+    "accessibility": 0.9,
+    "best-practices": 0.9,
+    "seo": 0.85,
+    "lcp-ms": 2500,
+    "cls": 0.1,
+    "tbt-ms": 200,
+    "fcp-ms": 1800,
+    "speed-index-ms": 3000,
+    "transfer-size-kb": 500
+  }
+}

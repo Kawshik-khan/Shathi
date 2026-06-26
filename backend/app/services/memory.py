@@ -1,7 +1,10 @@
 """Memory service using Pinecone for vector storage."""
 import asyncio
+import hashlib
+import json
 import logging
-from typing import List, Dict, Any, Optional
+from collections import OrderedDict
+from typing import Any, Dict, List, Optional
 import uuid
 
 import httpx
@@ -16,53 +19,181 @@ settings = get_settings()
 openai_client = openai.AsyncOpenAI(api_key=settings.OPENAI_API_KEY) if settings.OPENAI_API_KEY else None
 
 
-async def generate_embedding(text: str) -> List[float]:
-    """Generate embedding vector for text."""
+# ---------------------------------------------------------------------------
+# Embedding cache (RAG optimization)
+# ---------------------------------------------------------------------------
+# Two-tier: an in-process LRU for speed (single-digit ms), and a Redis
+# fallback for cross-worker reuse. Cache only covers the OpenAI path;
+# the HF fallback has a different vector shape and is intentionally
+# excluded to avoid dimension mixing on retrieval.
+
+_EMBEDDING_LRU: "OrderedDict[str, List[float]]" = OrderedDict()
+
+
+# Shared HTTP client for HF inference. Re-using the connection pool
+# saves ~50-150 ms per embedding call vs. opening a new client each
+# time (HF fallback path; primary embedding uses OpenAI SDK directly).
+_HF_CLIENT: Optional[httpx.AsyncClient] = None
+
+
+def _get_hf_client() -> Optional[httpx.AsyncClient]:
+    global _HF_CLIENT
+    if _HF_CLIENT is None:
+        _HF_CLIENT = httpx.AsyncClient(timeout=10.0)
+    return _HF_CLIENT
+
+
+async def close_embedding_clients() -> None:
+    """Close shared HTTP resources. Call from FastAPI lifespan shutdown."""
+    global _HF_CLIENT
+    if _HF_CLIENT is not None:
+        try:
+            await _HF_CLIENT.aclose()
+        except Exception:  # noqa: BLE001
+            pass
+        _HF_CLIENT = None
+
+
+def _normalize_for_cache(text: str) -> str:
+    """Normalize whitespace before hashing so trivial variations collide."""
+    return " ".join((text or "").split())
+
+
+def _embedding_key(text: str) -> str:
+    return hashlib.sha256(_normalize_for_cache(text).encode("utf-8")).hexdigest()
+
+
+def _embedding_redis_key(text: str) -> str:
+    return f"embed:{_embedding_key(text)[:32]}"
+
+
+def _lru_get(key: str) -> Optional[List[float]]:
+    if key not in _EMBEDDING_LRU:
+        return None
+    # Move to end so LRU eviction sees recent usage.
+    _EMBEDDING_LRU.move_to_end(key)
+    return _EMBEDDING_LRU[key]
+
+
+def _lru_put(key: str, value: List[float]) -> None:
+    cap = max(1, int(get_settings().EMBEDDING_CACHE_MAX_ENTRIES))
+    _EMBEDDING_LRU[key] = value
+    _EMBEDDING_LRU.move_to_end(key)
+    while len(_EMBEDDING_LRU) > cap:
+        _EMBEDDING_LRU.popitem(last=False)
+
+
+async def _redis_get_embedding(key: str, redis: Any) -> Optional[List[float]]:
+    """Fetch a cached embedding from Redis.
+
+    ``key`` is the full SHA-256 hex digest produced by ``_embedding_key``.
+    We use the first 32 hex chars as the Redis key suffix to keep it short.
+    """
+    if redis is None:
+        return None
+    try:
+        raw = await redis.get(f"embed:{key[:32]}")
+    except Exception as exc:  # noqa: BLE001 - cache must never raise
+        logger.warning("embedding cache get failed: %s", exc)
+        return None
+    if not raw:
+        return None
+    try:
+        return list(json.loads(raw))
+    except (TypeError, ValueError):
+        return None
+
+
+async def _redis_put_embedding(key: str, value: List[float], redis: Any) -> None:
+    if redis is None:
+        return
+    try:
+        await redis.set(
+            f"embed:{key[:32]}",
+            json.dumps(value),
+            ex=int(get_settings().EMBEDDING_CACHE_TTL_SECONDS),
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("embedding cache set failed: %s", exc)
+
+
+async def generate_embedding(
+    text: str,
+    *,
+    redis: Any = None,
+) -> List[float]:
+    """Generate embedding vector for text.
+
+    Lookup order: in-process LRU → Redis → OpenAI. The HF fallback is
+    intentionally not cached because it produces a different vector
+    shape that would corrupt Pinecone similarity scoring.
+    """
+    settings_ = get_settings()
+    if not text:
+        return [0.0] * 1536
+
+    if settings_.EMBEDDING_CACHE_ENABLED:
+        cache_key = _embedding_key(text)
+        cached = _lru_get(cache_key)
+        if cached is not None:
+            return cached
+        cached = await _redis_get_embedding(cache_key, redis)
+        if cached is not None:
+            _lru_put(cache_key, cached)
+            return cached
+
+    embedding: List[float]
     if openai_client:
         try:
             response = await openai_client.embeddings.create(
                 model="text-embedding-3-small",
                 input=text,
             )
-            return response.data[0].embedding
+            embedding = list(response.data[0].embedding)
+            if settings_.EMBEDDING_CACHE_ENABLED:
+                _lru_put(_embedding_key(text), embedding)
+                await _redis_put_embedding(_embedding_key(text), embedding, redis)
+            return embedding
         except Exception:
             pass
-    
-    # Fallback: Use Hugging Face for embeddings
-    if settings.HF_API_TOKEN:
+
+    # Fallback: Use Hugging Face for embeddings (uncached on purpose).
+    if settings_.HF_API_TOKEN:
         return await _generate_hf_embedding(text)
-    
+
     # Last resort: zero vector (will match nothing)
     return [0.0] * 1536
 
 
 async def _generate_hf_embedding(text: str) -> List[float]:
-    """Generate embedding using Hugging Face."""
+    """Generate embedding using a shared Hugging Face inference client."""
     model = "sentence-transformers/all-MiniLM-L6-v2"
     api_url = f"https://api-inference.huggingface.co/pipeline/feature-extraction/{model}"
     headers = {"Authorization": f"Bearer {settings.HF_API_TOKEN}"}
-    
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.post(
-                api_url,
-                headers=headers,
-                json={"inputs": text},
-                timeout=30.0,
-            )
-            response.raise_for_status()
-            result = response.json()
-            
-            # HF returns list of embeddings, take the first one
-            if isinstance(result, list) and len(result) > 0:
-                embedding = result[0]
-                # Normalize to 1536 dimensions if needed
-                if len(embedding) < 1536:
-                    embedding.extend([0.0] * (1536 - len(embedding)))
-                return embedding[:1536]
-        except Exception:
-            pass
-    
+
+    client = _get_hf_client()
+    if client is None:
+        return [0.0] * 1536
+
+    try:
+        response = await client.post(
+            api_url,
+            headers=headers,
+            json={"inputs": text},
+        )
+        response.raise_for_status()
+        result = response.json()
+
+        # HF returns list of embeddings, take the first one
+        if isinstance(result, list) and len(result) > 0:
+            embedding = result[0]
+            # Normalize to 1536 dimensions if needed
+            if len(embedding) < 1536:
+                embedding = list(embedding) + [0.0] * (1536 - len(embedding))
+            return list(embedding[:1536])
+    except Exception as exc:
+        logger.warning("HF embedding failed: %s", exc)
+
     return [0.0] * 1536
 
 
@@ -75,6 +206,7 @@ async def store_memory(
     source_type: Optional[str] = None,
     source_id: Optional[str] = None,
     pinecone_index=None,
+    redis: Any = None,
 ) -> Dict[str, Any]:
     """Store a memory in Pinecone."""
     if not pinecone_index:
@@ -93,7 +225,7 @@ async def store_memory(
     # Store in Pinecone using SDK
     try:
         async with asyncio.timeout(settings.EMBEDDING_TIMEOUT_SECONDS):
-            embedding = await generate_embedding(memory_text)
+            embedding = await generate_embedding(memory_text, redis=redis)
             metadata = {
                 "user_id": user_id,
                 "memory_text": memory_text[:1000],  # Truncate for metadata
@@ -138,8 +270,19 @@ async def retrieve_memories(
     top_k: int = 5,
     emotion_filter: Optional[str] = None,
     pinecone_index=None,
+    redis: Any = None,
+    *,
+    score_floor: Optional[float] = None,
+    min_keep: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
-    """Retrieve relevant memories for a user."""
+    """Retrieve relevant memories for a user.
+
+    When ``score_floor`` is provided, matches with a similarity score
+    below the floor are dropped unless fewer than ``min_keep`` would
+    remain. This lets the chat path keep the embedding call cost low
+    (smaller ``top_k``) while still returning something useful when
+    results are weak.
+    """
     if not pinecone_index:
         # Return empty list if Pinecone not configured
         return []
@@ -147,7 +290,7 @@ async def retrieve_memories(
     # Query Pinecone using SDK
     try:
         async with asyncio.timeout(settings.EMBEDDING_TIMEOUT_SECONDS):
-            query_embedding = await generate_embedding(query)
+            query_embedding = await generate_embedding(query, redis=redis)
             filter_dict = {"user_id": user_id}
             if emotion_filter:
                 filter_dict["emotion"] = emotion_filter
@@ -170,6 +313,13 @@ async def retrieve_memories(
                 "category": match["metadata"].get("category", "general"),
                 "importance": match["metadata"].get("importance", 0.5),
             })
+
+        if score_floor is not None and memories:
+            keep = min_keep if min_keep is not None else 0
+            filtered = [m for m in memories if m.get("score", 0.0) >= score_floor]
+            if len(filtered) >= keep or keep == 0:
+                memories = filtered
+            # else: keep original (weak) results so we still surface something
 
         return memories
     except Exception as exc:
@@ -237,6 +387,10 @@ async def retrieve_relevant_memories(
     top_k: int = 5,
     emotion_filter: Optional[str] = None,
     pinecone_index=None,
+    redis: Any = None,
+    *,
+    score_floor: Optional[float] = None,
+    min_keep: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
     """Retrieve memories through the startup-initialized Pinecone index."""
     return await retrieve_memories(
@@ -245,6 +399,9 @@ async def retrieve_relevant_memories(
         top_k=top_k,
         emotion_filter=emotion_filter,
         pinecone_index=pinecone_index,
+        redis=redis,
+        score_floor=score_floor,
+        min_keep=min_keep,
     )
 
 

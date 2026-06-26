@@ -12,7 +12,8 @@
     "test:backend": "cd backend && set APP_ENV=test&& python -m compileall app && python -m pytest -p no:cacheprovider tests",
     "test:dev": "npm run lint && npm run typecheck && npm run test:backend",
     "test:prod": "npm run test:frontend && npm run test:backend",
-    "deploy:check": "npm run test:prod"
+    "deploy:check": "npm run test:prod",
+    "lighthouse": "node scripts/lighthouse.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.1",

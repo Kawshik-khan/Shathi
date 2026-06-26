@@ -9,6 +9,8 @@ import PrivacyWidget from './widgets/PrivacyWidget'
 import ConnectedAppsWidget from './widgets/ConnectedAppsWidget'
 import MemoryWidget from './widgets/MemoryWidget'
 import SecurityWidget from './widgets/SecurityWidget'
+import AvatarWidget from './widgets/AvatarWidget'
+import AccountWidget from './widgets/AccountWidget'
 import { useSettingsStore } from '@/lib/stores/settingsStore'
 import { BentoGrid, BentoCard } from '@/components/shared/bento-grid'
 
@@ -63,6 +65,15 @@ export default function SettingsGrid() {
         </BentoCard>
         <BentoCard colSpan={4} smColSpan={2} glowOnHover={false} delay={0.4}>
           <SecurityWidget />
+        </BentoCard>
+      </BentoGrid>
+
+      <BentoGrid className="gap-6 mt-6">
+        <BentoCard colSpan={4} smColSpan={1} glowOnHover={false} delay={0.45}>
+          <AvatarWidget />
+        </BentoCard>
+        <BentoCard colSpan={8} smColSpan={2} glowOnHover={false} delay={0.5}>
+          <AccountWidget />
         </BentoCard>
       </BentoGrid>
     </div>

@@ -126,7 +126,7 @@ export default function Header({
         {/* Mobile: sticky segmented time range */}
         <div
           className="segmented-control w-full md:w-auto sticky top-14 z-30 lg:static"
-          role="group"
+          role="radiogroup"
           aria-label="Select date range"
         >
           {RANGE_OPTIONS.map((opt) => {
@@ -135,7 +135,8 @@ export default function Header({
               <button
                 key={opt.value}
                 type="button"
-                aria-pressed={selected}
+                role="radio"
+                aria-checked={selected}
                 disabled={isLoading}
                 onClick={() => onRangeChange(opt.value)}
                 className="btn-haptic touch-target flex-1 md:flex-none"

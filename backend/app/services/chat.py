@@ -1,11 +1,14 @@
 """Chat service for database operations."""
 import asyncio
+import logging
 from datetime import datetime, timezone
 from typing import List, Optional
 from sqlalchemy import select, and_, desc, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
+
+logger = logging.getLogger(__name__)
 from app.models.conversation import Conversation, Message
 from app.schemas.chat import Conversation as ConversationSchema, MessageCreate
 from app.services.ai import (
@@ -38,6 +41,41 @@ from app.services.token_usage import (
 
 def _chat_history_limit() -> int:
     return get_settings().CHAT_HISTORY_LIMIT
+
+
+async def _race_response_cache(
+    user_id: str,
+    message_content: str,
+    pinecone_index,
+    budget_s: Optional[float] = None,
+) -> Optional[str]:
+    """Race the response-cache lookup against the caller's parallel work.
+
+    Awaits the cache lookup for up to ``budget_s`` (clamped to the
+    ``RESPONSE_CACHE_RACE_BUDGET_MS`` setting). On a timeout, the
+    underlying Pinecone task is left running in the background and
+    awaited to completion here so callers always get a definitive
+    ``Optional[str]`` — no need for them to drain the task themselves.
+
+    Returns the cached reply string if one is found, else ``None``.
+    """
+    settings = get_settings()
+    ceiling = float(settings.RESPONSE_CACHE_RACE_BUDGET_MS) / 1000.0
+    requested = ceiling if budget_s is None else budget_s
+    effective = max(0.01, min(requested, ceiling))
+    task = asyncio.create_task(
+        lookup_cached_response(user_id, message_content, pinecone_index)
+    )
+    try:
+        return await asyncio.wait_for(asyncio.shield(task), timeout=effective)
+    except asyncio.TimeoutError:
+        # Race lost: wait for the slower Pinecone lookup to settle so
+        # we return a final answer rather than a partial ``None``.
+        try:
+            return await task
+        except Exception as exc:  # noqa: BLE001 - cache is best-effort
+            logger.debug("response cache lookup failed: %s", exc)
+            return None
 
 
 async def _maybe_schedule_summary(db: AsyncSession, conversation_id: str) -> None:
@@ -258,22 +296,40 @@ async def send_chat_message(
 
         return conversation, user_message, ai_message
 
-    # Non-crisis: run independent work concurrently (emotion, cache lookup, context).
-    # Only build_chat_context touches the DB session within this gather.
-    emotion_result, cached_reply, chat_context = await asyncio.gather(
-        detect_emotion(message_content),
-        lookup_cached_response(user_id, message_content, pinecone_index),
-        build_chat_context(
-            db=db,
-            user_id=user_id,
-            message=message_content,
-            conversation_id=conversation.id,
-            language=selected_language,
-            redis=redis,
-            pinecone_index=pinecone_index,
-            include_memory=include_memory,
-        ),
+    # Non-crisis: race the response-cache lookup against the context
+    # build so a cache hit can skip Pinecone entirely (no memory
+    # section, no embedding call). If the cache loses the race we
+    # still build full context with ``include_memory`` honored.
+    # The helper handles budget + drain; on miss we still need a full
+    # context build below.
+    emotion_task = asyncio.create_task(detect_emotion(message_content))
+    cache_reply = await _race_response_cache(
+        user_id, message_content, pinecone_index
     )
+
+    if cache_reply is None:
+        # Cache lost the race — drain emotion + build full context with
+        # ``include_memory`` honored.
+        emotion_result, chat_context = await asyncio.gather(
+            emotion_task,
+            asyncio.create_task(
+                build_chat_context(
+                    db=db,
+                    user_id=user_id,
+                    message=message_content,
+                    conversation_id=conversation.id,
+                    language=selected_language,
+                    redis=redis,
+                    pinecone_index=pinecone_index,
+                    include_memory=include_memory,
+                )
+            ),
+            return_exceptions=False,
+        )
+    else:
+        # Cache won — emotion is still useful for the cached reply.
+        emotion_result = await emotion_task
+        chat_context = None  # type: ignore[assignment]
 
     # Create user message
     user_message = await create_message(
@@ -289,14 +345,14 @@ async def send_chat_message(
     )
 
     # Semantic response cache hit short-circuits LLM generation
-    if cached_reply:
+    if cache_reply:
         ai_message = await create_message(
             db=db,
             conversation_id=conversation.id,
             role="assistant",
-            content=cached_reply,
+            content=cache_reply,
             model_used="cache",
-            token_count=estimate_text_tokens(cached_reply),
+            token_count=estimate_text_tokens(cache_reply),
         )
         if conversation.title == "New Chat":
             conversation.title = message_content[:50] + "..." if len(message_content) > 50 else message_content
@@ -544,10 +600,39 @@ async def send_chat_message_stream(
 
     user_message_task = asyncio.create_task(_persist_user_message())
     history_task = asyncio.create_task(_history())
-    context_task = asyncio.create_task(_build_context())
     cache_task = asyncio.create_task(
         lookup_cached_response(user_id, message_content, pinecone_index)
     )
+
+    # Race the cache against the context build so a cache hit can
+    # skip the memory section. We build context lazily: only if cache
+    # loses the race do we kick off the (more expensive) Pinecone path.
+    # The actual race + drain lives in ``_race_response_cache``.
+    context_task: Optional[asyncio.Task] = None
+
+    async def _build_context_full():
+        return await build_chat_context(
+            db=db,
+            user_id=user_id,
+            message=message_content,
+            conversation_id=conversation.id,
+            language=selected_language,
+            redis=redis,
+            pinecone_index=pinecone_index,
+            include_memory=include_memory,
+        )
+
+    async def _build_context_no_memory():
+        return await build_chat_context(
+            db=db,
+            user_id=user_id,
+            message=message_content,
+            conversation_id=conversation.id,
+            language=selected_language,
+            redis=redis,
+            pinecone_index=pinecone_index,
+            include_memory=False,
+        )
 
     # Heartbeat keeps the SSE connection warm while context/history
     # are still building. It is an async generator we yield from.
@@ -601,16 +686,31 @@ async def send_chat_message_stream(
     chat_context = None
     history: list[dict[str, str]] = []
 
-    async def _drain_remaining():
+    async def _drain_after_cache():
         nonlocal cache_reply, chat_context, history
-        cache_reply, chat_context, history = await asyncio.gather(
-            cache_task,
+        # Race the cache lookup against the (lazily-started) context
+        # build via the shared helper. The helper handles budget +
+        # drain internally.
+        cache_reply = await _race_response_cache(
+            user_id, message_content, pinecone_index
+        )
+
+        nonlocal context_task
+        if cache_reply:
+            # Cache hit: build a lightweight context (no memory
+            # section) just to keep user_context populated.
+            context_task = asyncio.create_task(_build_context_no_memory())
+        else:
+            # Cache miss: build full context with memory enabled.
+            context_task = asyncio.create_task(_build_context_full())
+
+        chat_context, history = await asyncio.gather(
             context_task,
             history_task,
             return_exceptions=False,
         )
 
-    drain_task = asyncio.create_task(_drain_remaining())
+    drain_task = asyncio.create_task(_drain_after_cache())
 
     async for hb in heartbeat():
         if drain_task.done():
@@ -640,11 +740,15 @@ async def send_chat_message_stream(
             # ``chat_context`` is the legacy ChatContext shim. The
             # underlying BuiltContext carries the structured summary
             # but isn't directly exposed here; we surface the
-            # heuristic fields the UI already understands.
+            # heuristic fields the UI already understands, plus the
+            # RAG state (memory hits / status) so the client can
+            # show a "Personalized with memory" badge.
             context_summary = {
                 "memory_count": chat_context.memory_count,
                 "mood_signal": chat_context.mood_signal,
                 "prediction": chat_context.prediction,
+                "rag_used": chat_context.rag_used,
+                "memory_status": chat_context.memory_status,
                 "hard_budget_hit": chat_context is None,
             }
             yield {"type": "context", "context": context_summary}
@@ -684,7 +788,18 @@ async def send_chat_message_stream(
     # If context build failed entirely we still proceed with an empty
     # context; the LLM path accepts an empty ``user_context``.
     if chat_context is None:
-        chat_context = type("EmptyCtx", (), {"text": "", "memory_count": 0, "mood_signal": None, "prediction": None})()
+        chat_context = type(
+            "EmptyCtx",
+            (),
+            {
+                "text": "",
+                "memory_count": 0,
+                "mood_signal": None,
+                "prediction": None,
+                "rag_used": False,
+                "memory_status": "timeout",
+            },
+        )()
 
     # Filter the just-inserted user message out of the history.
     conversation_history = [m for m in history if m["content"] != message_content][-history_limit:]

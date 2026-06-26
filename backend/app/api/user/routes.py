@@ -1,5 +1,5 @@
 """User API routes."""
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -26,6 +26,11 @@ from app.services.user import (
     update_user_profile,
     update_user_password,
     update_user_settings,
+)
+from app.services.user_avatar import (
+    delete_avatar_files,
+    read_and_validate_avatar,
+    save_avatar,
 )
 from app.services.subscription import build_subscription_summary
 from app.services.chat.cache import invalidate_user_context_sections
@@ -85,6 +90,59 @@ async def get_current_user(
 ) -> User:
     """Get current user profile."""
     return user_response(current_user)
+
+
+@router.post("/me/avatar", response_model=User)
+async def upload_current_user_avatar(
+    file: UploadFile = File(..., description="JPEG, PNG, or WEBP image, <= 2 MiB."),
+    current_user: UserModel = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+) -> User:
+    """Upload a new avatar image for the authenticated user.
+
+    Stores the file under ``AVATAR_STORAGE_DIR`` and writes the public URL
+    back to ``users.avatar_url``. Each user only ever has one canonical
+    avatar file on disk — re-uploads overwrite.
+    """
+    blob, ext, _mime = await read_and_validate_avatar(file)
+    public_url = save_avatar(current_user.id, blob, ext)
+
+    updated = await update_user(
+        db,
+        current_user.id,
+        UserUpdate(avatar_url=public_url),
+    )
+
+    if not updated:
+        # If the row disappeared between auth and write, clean up the file
+        # we just wrote so we don't leak orphan blobs on disk.
+        delete_avatar_files(current_user.id)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    return user_response(updated)
+
+
+@router.delete("/me/avatar", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_current_user_avatar(
+    current_user: UserModel = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    """Clear the user's avatar URL and remove the on-disk file (if any)."""
+    updated = await update_user(
+        db,
+        current_user.id,
+        UserUpdate(avatar_url=None),
+    )
+    if not updated:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    delete_avatar_files(current_user.id)
 
 
 @router.put("/me", response_model=User)

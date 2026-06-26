@@ -2,11 +2,13 @@
 import asyncio
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.core.config import get_settings
 from app.core.errors import (
@@ -28,6 +30,17 @@ async def lifespan(app: FastAPI):
     # Startup
     settings = get_settings()
     configure_logging(settings.LOG_LEVEL)
+
+    # Fail fast on bad production config — see Settings.validate_production
+    # for the exact checks. We surface errors as RuntimeError so the
+    # container restart loop catches it and the deploy fails instead of
+    # silently serving traffic with the wrong posture.
+    try:
+        settings.validate_production()
+    except RuntimeError as exc:
+        logger.error("Refusing to start: %s", exc)
+        raise
+
     app.state.pinecone_index = None
     app.state.redis = None
 
@@ -65,6 +78,9 @@ async def lifespan(app: FastAPI):
     if app.state.redis:
         await app.state.redis.aclose()
     await engine.dispose()
+    # Close shared embedding HTTP clients (HF fallback httpx + AsyncOpenAI).
+    from app.services.memory import close_embedding_clients
+    await close_embedding_clients()
 
 
 def create_application() -> FastAPI:
@@ -107,6 +123,21 @@ def create_application() -> FastAPI:
     
     # API Routes
     app.include_router(api_router, prefix="/api/v1")
+
+    # Avatar static files. Resolve to an absolute path so the cwd at
+    # server start doesn't matter. Mount lazily — the directory may not
+    # exist on a fresh checkout until the first upload happens, so
+    # fall back to a known-existing dir if needed (the StaticFiles mount
+    # would otherwise raise on startup).
+    avatar_dir = Path(settings.AVATAR_STORAGE_DIR).expanduser()
+    if not avatar_dir.is_absolute():
+        avatar_dir = (Path.cwd() / avatar_dir).resolve()
+    avatar_dir.mkdir(parents=True, exist_ok=True)
+    app.mount(
+        settings.AVATAR_PUBLIC_BASE_URL,
+        StaticFiles(directory=str(avatar_dir)),
+        name="avatars",
+    )
 
     @app.get("/", tags=["health"])
     async def root_status():
