@@ -1,7 +1,7 @@
 "use client"
 import React from "react"
 import { motion } from 'framer-motion'
-import GlassCard from "@/components/ui/GlassCard"
+import { GlassCard } from "@/components/ui/GlassCard"
 import LineChartSoft from "@/components/charts/LineChartSoft"
 import BarChartSoft from "@/components/charts/BarChartSoft"
 import EmotionHeatmap from "@/components/charts/EmotionHeatmap"

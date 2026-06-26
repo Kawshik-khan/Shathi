@@ -1,7 +1,7 @@
 "use client"
 import React from "react"
 import { motion } from 'framer-motion'
-import GlassCard from "@/components/ui/GlassCard"
+import { GlassCard } from "@/components/ui/GlassCard"
 import ProgressRing from "@/components/charts/ProgressRing"
 import LineChartSoft from "@/components/charts/LineChartSoft"
 import StreakIndicator from "@/components/charts/StreakIndicator"

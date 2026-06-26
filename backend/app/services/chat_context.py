@@ -8,11 +8,14 @@ downstream consumers (e.g. ``chat.send_chat_message_stream``).
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING
 
 from app.services.chat.builder import (
     build_chat_context_with_budget,
 )
+
+if TYPE_CHECKING:  # pragma: no cover - only for type hints
+    from app.models.mood import MoodLog
 
 
 @dataclass
@@ -32,6 +35,44 @@ _MAX_CONTEXT_CHARS = 1600
 MAX_CONTEXT_CHARS = _MAX_CONTEXT_CHARS
 
 
+def _mood_prediction(logs):
+    """Derive a coarse mood signal + reply-tone prediction from logs.
+
+    Preserved from the pre-refactor implementation so existing tests
+    and downstream consumers keep working unchanged.
+    """
+    if not logs:
+        return None, None
+
+    recent = logs[:3]
+    older = logs[3:8]
+    recent_avg = sum(log.mood for log in recent) / len(recent)
+    older_avg = (
+        sum(log.mood for log in older) / len(older) if older else recent_avg
+    )
+
+    stress_values = [log.stress for log in recent if log.stress is not None]
+    stress_avg = (
+        sum(stress_values) / len(stress_values) if stress_values else None
+    )
+
+    if recent_avg <= 4 or recent_avg < older_avg - 1:
+        mood_signal = "recent mood is low or trending down"
+        prediction = "needs gentle support"
+    elif recent_avg >= 7 and recent_avg > older_avg:
+        mood_signal = "recent mood is positive or improving"
+        prediction = "can use upbeat energy"
+    else:
+        mood_signal = "recent mood is stable"
+        prediction = "use normal casual tone"
+
+    if stress_avg is not None and stress_avg >= 7:
+        mood_signal = f"{mood_signal}; recent stress is high"
+        prediction = "may be stressed, keep reply calm and practical"
+
+    return mood_signal, prediction
+
+
 def _truncate(value: str, max_chars: int) -> str:
     cleaned = " ".join(value.split())
     if len(cleaned) <= max_chars:
@@ -39,7 +80,7 @@ def _truncate(value: str, max_chars: int) -> str:
     return cleaned[: max_chars - 3].rstrip() + "..."
 
 
-def _finalize_context(parts: list[str]) -> str:
+def _finalize_context(parts):
     if not parts:
         return ""
     header = (
@@ -51,23 +92,16 @@ def _finalize_context(parts: list[str]) -> str:
 
 
 async def build_chat_context(
-    db: Any,
-    user_id: str,
-    message: str,
-    conversation_id: str | None = None,
-    language: str | None = None,
-    redis: Any = None,
-    pinecone_index: Any = None,
-    include_memory: bool = True,
-) -> ChatContext:
-    """Back-compat wrapper that delegates to the parallel builder.
-
-    The new pipeline runs every section concurrently with per-provider
-    isolation; this shim only translates the resulting
-    ``BuiltContext`` back into the legacy ``ChatContext`` shape so
-    call-sites that still use ``.text`` / ``.memory_count`` keep
-    working.
-    """
+    db,
+    user_id,
+    message,
+    conversation_id=None,
+    language=None,
+    redis=None,
+    pinecone_index=None,
+    include_memory=True,
+):
+    """Back-compat wrapper that delegates to the parallel builder."""
     built = await build_chat_context_with_budget(
         user_id=user_id,
         db=db,
