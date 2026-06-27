@@ -1,4 +1,5 @@
 """Chat API routes."""
+import asyncio
 import json
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
@@ -113,12 +114,18 @@ async def stream_message(
         # would see a hard connection close which surfaces as
         # "Failed to stream" in the UI.
         done_seen = False
+        # Periodic SSE comment keeps the connection warm through Render's
+        # edge proxy and any in-front Nginx. Some proxies close idle
+        # connections after ~30s; a 15s keepalive is comfortably below
+        # that and is ignored by the browser's EventSource/ReadableStream
+        # parser because lines starting with ``:`` are SSE comments.
+        keepalive_seconds = 15.0
         try:
             crisis_result = await detect_crisis(request.message)
             if not crisis_result.is_crisis:
                 await assert_ai_message_quota(db, current_user)
 
-            async for event in send_chat_message_stream(
+            iterator = send_chat_message_stream(
                 db=db,
                 user_id=current_user.id,
                 message_content=request.message,
@@ -129,7 +136,20 @@ async def stream_message(
                 pinecone_index=pinecone_index,
                 include_memory=has_feature(current_user, "ai_memory"),
                 precomputed_crisis=crisis_result,
-            ):
+            ).__aiter__()
+            while True:
+                # Race the next event against the keepalive tick so a slow
+                # LLM never idles the socket past the proxy's timeout.
+                try:
+                    event = await asyncio.wait_for(
+                        iterator.__anext__(), timeout=keepalive_seconds
+                    )
+                except StopAsyncIteration:
+                    break
+                except asyncio.TimeoutError:
+                    yield ": keepalive\n\n"
+                    continue
+
                 if event.get("type") == "done":
                     done_seen = True
                 yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"

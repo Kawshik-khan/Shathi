@@ -80,6 +80,14 @@ class Settings(BaseSettings):
     # disabled (max_retries=0 in memory.py) so this timeout is the only
     # thing guarding the call.
     EMBEDDING_TIMEOUT_SECONDS: float = 0.6
+    # Embedding vector width. MUST match the Pinecone index dim exactly
+    # or upsert/query will fail with ``Vector dimension X does not match
+    # the dimension of the index Y`` and the chat path will surface a
+    # "Failed to stream message" error on every retrieval. The legacy
+    # code assumed 1536 (text-embedding-ada-002); the live index is
+    # 1024 (text-embedding-3-small / HF MiniLM-padded). Override via
+    # env only if a different index is provisioned.
+    EMBEDDING_DIM: int = 1024
     USER_CONTEXT_CACHE_TTL: int = 300
 
     # Per-provider timeouts (milliseconds). Each provider has its own

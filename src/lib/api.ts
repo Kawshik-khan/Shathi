@@ -1176,22 +1176,66 @@ export async function streamChatMessage(
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
+  let gotAnyChunk = false;
+  let networkError: unknown = null;
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
+  // Outer try/finally guarantees we always emit a terminal ``done`` so the
+  // UI never hangs waiting for an EOF that never arrives when the server
+  // connection is severed (e.g. Render restart mid-stream).
+  try {
+    while (true) {
+      let done = false;
+      let value: Uint8Array | undefined;
+      try {
+        ({ done, value } = await reader.read());
+      } catch (err) {
+        // Capture network-severed errors and break out of the loop. We
+        // don't rethrow here — the caller has already received any chunks
+        // that made it through, so we let the function fall through to
+        // the synthetic ``done`` below and report a soft error via the
+        // optional callback instead of crashing the whole chat state.
+        networkError = err;
+        break;
+      }
+      if (done) break;
 
-    buffer += decoder.decode(value, { stream: true });
-    const events = buffer.split('\n\n');
-    buffer = events.pop() ?? '';
+      buffer += decoder.decode(value, { stream: true });
+      const events = buffer.split('\n\n');
+      buffer = events.pop() ?? '';
 
-    for (const event of events) {
-      const line = event.split('\n').find((entry) => entry.startsWith('data: '));
-      if (!line) continue;
+      for (const event of events) {
+        // SSE comment lines (keepalive pings) start with ``:`` and are
+        // intentionally ignored by the consumer.
+        if (event.startsWith(':')) continue;
 
-      const data = JSON.parse(line.slice(6)) as ChatStreamEvent;
-      onEvent(data);
+        const line = event.split('\n').find((entry) => entry.startsWith('data: '));
+        if (!line) continue;
+
+        try {
+          const data = JSON.parse(line.slice(6)) as ChatStreamEvent;
+          if (data.type === 'chunk') gotAnyChunk = true;
+          onEvent(data);
+        } catch {
+          // Skip malformed payloads rather than killing the whole stream.
+        }
+      }
     }
+  } finally {
+    if (networkError && !gotAnyChunk) {
+      // Nothing made it through — surface as a real error so the UI can
+      // show a "Failed to stream message" toast.
+      throw networkError instanceof Error ? networkError : new Error(String(networkError));
+    }
+    if (networkError && gotAnyChunk) {
+      // Partial response. Inform the caller that the connection was
+      // severed so it can keep the partial text and stop the spinner,
+      // but avoid throwing — the assistant message is already visible.
+      onEvent({
+        type: 'error',
+        message: 'Connection interrupted. Showing partial response.',
+      } as ChatStreamEvent);
+    }
+    onEvent({ type: 'done' } as ChatStreamEvent);
   }
 }
 

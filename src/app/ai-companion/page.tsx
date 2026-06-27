@@ -387,6 +387,16 @@ function AICompanionContent() {
           }
 
           if (event.type === 'error') {
+            // Partial-stream errors (e.g. "Connection interrupted. Showing
+            // partial response.") come from the SSE reader after we've
+            // already accumulated assistant text. Don't clobber the
+            // partial response with an error message — just log and
+            // surface a soft warning so the user knows it was cut short.
+            if (assistantResponseText.trim().length > 0) {
+              setError(event.message || 'Connection interrupted. Showing partial response.');
+              setVoiceState('idle');
+              return;
+            }
             throw new Error(event.message || 'Failed to stream message');
           }
         },

@@ -145,10 +145,16 @@ async def generate_embedding(
     Lookup order: in-process LRU → Redis → OpenAI. The HF fallback is
     intentionally not cached because it produces a different vector
     shape that would corrupt Pinecone similarity scoring.
+
+    Vector width is governed by ``settings.EMBEDDING_DIM`` and MUST
+    match the configured Pinecone index exactly; the legacy hardcoded
+    1536-d shape caused ``Vector dimension 1536 does not match the
+    dimension of the index 1024`` errors on every retrieval.
     """
     settings_ = get_settings()
+    dim = int(settings_.EMBEDDING_DIM)
     if not text:
-        return [0.0] * 1536
+        return [0.0] * dim
 
     if settings_.EMBEDDING_CACHE_ENABLED:
         cache_key = _embedding_key(text)
@@ -180,7 +186,7 @@ async def generate_embedding(
         return await _generate_hf_embedding(text)
 
     # Last resort: zero vector (will match nothing)
-    return [0.0] * 1536
+    return [0.0] * dim
 
 
 async def _generate_hf_embedding(text: str) -> List[float]:
@@ -189,9 +195,15 @@ async def _generate_hf_embedding(text: str) -> List[float]:
     api_url = f"https://api-inference.huggingface.co/pipeline/feature-extraction/{model}"
     headers = {"Authorization": f"Bearer {settings.HF_API_TOKEN}"}
 
+    # Match the configured Pinecone index width exactly. HF MiniLM
+    # returns 384-d, which we pad/truncate to fit. Keeping this
+    # driven by ``EMBEDDING_DIM`` prevents the historical drift
+    # between ``memory.py`` (1536) and the live index (1024).
+    dim = int(get_settings().EMBEDDING_DIM)
+
     client = _get_hf_client()
     if client is None:
-        return [0.0] * 1536
+        return [0.0] * dim
 
     try:
         response = await client.post(
@@ -205,14 +217,14 @@ async def _generate_hf_embedding(text: str) -> List[float]:
         # HF returns list of embeddings, take the first one
         if isinstance(result, list) and len(result) > 0:
             embedding = result[0]
-            # Normalize to 1536 dimensions if needed
-            if len(embedding) < 1536:
-                embedding = list(embedding) + [0.0] * (1536 - len(embedding))
-            return list(embedding[:1536])
+            # Normalize to the configured index width if needed
+            if len(embedding) < dim:
+                embedding = list(embedding) + [0.0] * (dim - len(embedding))
+            return list(embedding[:dim])
     except Exception as exc:
         logger.warning("HF embedding failed: %s", exc)
 
-    return [0.0] * 1536
+    return [0.0] * dim
 
 
 async def store_memory(
