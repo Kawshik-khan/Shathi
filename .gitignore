@@ -67,6 +67,21 @@ venv/
 # generated snapshots/exports
 insights.html
 
+# temp/research/probe files
+probe.*
+r.mjs
+out.txt
+research_notes_*.txt
+.output.txt
+sentinel-ai-evidence/
+backend/users.txt
+backend/test_admin_api_output.txt
+backend/smoke.py
+backend/test_*.py
+backend/_auth.py
+backend/_err.py
+backend/_t.py
+
 # vercel local metadata
 .vercel
 .junie/plans/modern-wellness-identity-upgrade.md
