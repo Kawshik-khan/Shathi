@@ -228,11 +228,18 @@ async def update_user_password(
     current_password: str,
     new_password: str,
 ) -> bool:
-    """Update a user's password after validating the current password."""
+    """Update a user's password after validating the current password.
+
+    Bumps ``token_version`` so every outstanding access *and* refresh
+    token for this user is invalidated (P1 1.2). The user must log in
+    again on every device — exactly the desired behavior after a
+    credential change.
+    """
     if not user.hashed_password or not verify_password(current_password, user.hashed_password):
         return False
 
     user.hashed_password = get_password_hash(new_password)
+    user.token_version = int(getattr(user, "token_version", 0) or 0) + 1
     await db.commit()
     return True
 

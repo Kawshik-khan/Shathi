@@ -26,6 +26,7 @@ from app.services.subscription import FeatureLimitExceeded, assert_habit_create_
 from app.services.chat.cache import invalidate_user_context_sections
 from app.models.user import User
 from app.models.habit import Habit as HabitModel, HabitCompletion as HabitCompletionModel
+from app.services.gamification import award_xp, evaluate_badges
 
 router = APIRouter()
 
@@ -208,6 +209,9 @@ async def complete_habit(
             )
 
         completion_record = await complete_habit_service(db, current_user.id, habit_id, completion)
+        await award_xp(db, current_user.id, "habit_completion")
+        await evaluate_badges(db, current_user.id)
+        await db.commit()
         await invalidate_user_context_sections(current_user.id, redis, ["habit"])
         
         return HabitCompletionSchema(

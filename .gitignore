@@ -46,6 +46,12 @@ next-env.d.ts
 .vscode/
 .agents/
 .kilo/
+.claude/
+.junie/
+
+# markdown docs (not for deployment)
+*.md
+!README.md
 
 # backend generated files
 *.db
@@ -70,3 +76,6 @@ docs/figma-modern-mobile-ui-prompt.md
 docs/figma-modern-mobile-ui-prompt.md
 docs/figma-modern-mobile-ui-prompt.md
 docs/figma-modern-mobile-ui-prompt.md
+.backend/docs
+
+.backend\tests

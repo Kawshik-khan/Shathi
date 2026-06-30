@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.security import create_access_token, create_refresh_token
+from app.core.security import issue_token_pair
 from app.schemas.auth import Token, LoginRequest, RegisterRequest, RefreshTokenRequest, GoogleCallbackRequest
 from app.services.auth import (
     DuplicateEmailError,
@@ -30,10 +30,9 @@ async def login(
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
-    access_token = create_access_token({"sub": user.id})
-    refresh_token = create_refresh_token({"sub": user.id})
-    
+
+    access_token, refresh_token = issue_token_pair(user.id, user.token_version)
+
     return Token(
         access_token=access_token,
         refresh_token=refresh_token,
@@ -61,9 +60,8 @@ async def register(
             status_code=status.HTTP_409_CONFLICT,
             detail=str(exc),
         ) from exc
-    
-    access_token = create_access_token({"sub": user.id})
-    refresh_token = create_refresh_token({"sub": user.id})
+
+    access_token, refresh_token = issue_token_pair(user.id, user.token_version)
 
     return Token(
         access_token=access_token,
@@ -88,8 +86,7 @@ async def google_callback(
         )
 
     user = await get_or_create_google_user(db, google_payload)
-    access_token = create_access_token({"sub": user.id})
-    refresh_token = create_refresh_token({"sub": user.id})
+    access_token, refresh_token = issue_token_pair(user.id, user.token_version)
 
     return Token(
         access_token=access_token,

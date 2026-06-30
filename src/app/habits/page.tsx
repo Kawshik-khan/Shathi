@@ -185,7 +185,7 @@ export default function HabitsPage() {
   return (
     <ProtectedRoute>
       <DashboardShell>
-        <div className="max-w-5xl">
+        <div className="w-full min-w-0">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6FA8C7] to-[#4A90A4] flex items-center justify-center">

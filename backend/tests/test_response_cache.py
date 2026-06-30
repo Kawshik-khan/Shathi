@@ -32,7 +32,7 @@ class FakeIndex:
 
 def _patch_embedding(monkeypatch):
     async def fake_embedding(_text):
-        return [0.1] * 1536
+        return [0.1] * rc.settings.EMBEDDING_DIM
 
     monkeypatch.setattr(rc, "generate_embedding", fake_embedding)
 

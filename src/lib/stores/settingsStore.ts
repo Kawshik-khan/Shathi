@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
-import { getAuthToken, getUserSettings, updateUserSettings } from '@/lib/api'
+import { getUserSettings, updateUserSettings } from '@/lib/api'
+import { useAuthStore } from '@/lib/store'
 
 export interface SettingsState {
   // Profile
@@ -175,7 +176,7 @@ export const useSettingsStore = create<SettingsStore>()(
         lastError: null,
 
         loadSettings: async () => {
-          if (!getAuthToken()) return
+          if (!useAuthStore.getState().user) return
 
           set({ lastError: null }, false, 'loadSettings:start')
           try {
@@ -203,7 +204,7 @@ export const useSettingsStore = create<SettingsStore>()(
         },
 
         saveSettings: async () => {
-          if (!getAuthToken()) return
+          if (!useAuthStore.getState().user) return
 
           set({ isSaving: true, lastError: null }, false, 'saveSettings:start')
           try {

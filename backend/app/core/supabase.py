@@ -71,7 +71,7 @@ def get_supabase_db_url() -> Optional[str]:
     """Construct Supabase database URL from configuration."""
     if not settings.SUPABASE_URL or not settings.SUPABASE_DB_PASSWORD:
         return None
-    
+
     # Extract project reference from Supabase URL
     # Example: https://your-project.supabase.co
     if "supabase.co" in settings.SUPABASE_URL:
@@ -81,10 +81,22 @@ def get_supabase_db_url() -> Optional[str]:
             # Convert standard URL to asyncpg format if needed
             if settings.SUPABASE_DB_URL.startswith("postgresql://"):
                 return settings.SUPABASE_DB_URL.replace("postgresql://", "postgresql+asyncpg://")
-        # Fallback: construct URL using the correct pooler format
+        # Fallback: construct URL using the correct pooler format.
+        # The pooler host encodes the region — derive it from the
+        # explicit URL if possible, otherwise fall back to the most
+        # common region. Using the wrong region is a silent failure
+        # (long timeout, then DNS error), so we prefer the explicit
+        # path whenever SUPABASE_DB_URL is set.
+        host_segment = "aws-0-us-east-1.pooler.supabase.com"
+        if settings.SUPABASE_DB_URL:
+            from urllib.parse import urlparse
+
+            parsed = urlparse(settings.SUPABASE_DB_URL)
+            if parsed.hostname and "pooler.supabase.com" in parsed.hostname:
+                host_segment = parsed.hostname
         # Format: postgresql+asyncpg://postgres.[PROJECT_REF]:[PASSWORD]@[REGION].pooler.supabase.com:6543/postgres
-        return f"postgresql+asyncpg://postgres.{project_ref}:{settings.SUPABASE_DB_PASSWORD}@aws-0-us-east-1.pooler.supabase.com:6543/postgres"
-    
+        return f"postgresql+asyncpg://postgres.{project_ref}:{settings.SUPABASE_DB_PASSWORD}@{host_segment}:6543/postgres"
+
     return None
 
 

@@ -4,6 +4,23 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* =========================================================================
+   SATHI DESIGN SYSTEM — "Botanical Dawn"
+   -----------------------------------------------------------------------
+   Layered token architecture. New tokens are additive. Legacy token names
+   that shadcn primitives depend on (`--primary`, `--background`,
+   `--foreground`, `--card`, `--popover`, `--secondary`, `--muted`,
+   `--accent`, `--destructive`, `--border`, `--input`, `--ring`,
+   `--radius`, etc.) are kept as aliases of the new equivalents so every
+   existing component continues to work without modification.
+
+     Layer 1  --p-*           Primitive (raw values, never used in components)
+     Layer 2  --color-*       Semantic (role meaning)
+     Layer 3  --<component>-* Component (scoped, opt-in via PR2)
+     Layer 4  --<c>-state-*   State overrides (opt-in via PR2)
+     Layer 5  :root / .dark   Theme overrides
+   ======================================================================== */
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -47,137 +64,361 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* -- PR1 addendum: expose new semantic tokens to Tailwind utilities -- */
+  --color-bg-default: var(--color-bg-default);
+  --color-bg-deep: var(--color-bg-deep);
+  --color-bg-card: var(--color-bg-card);
+  --color-bg-elevated: var(--color-bg-elevated);
+  --color-bg-sunken: var(--color-bg-sunken);
+  --color-bg-hover: var(--color-bg-hover);
+  --color-bg-selected: var(--color-bg-selected);
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-inverse: var(--color-text-inverse);
+  --color-text-link: var(--color-text-link);
+  --color-border-subtle: var(--color-border-subtle);
+  --color-border-strong: var(--color-border-strong);
+  --color-border-focus: var(--color-border-focus);
+  --color-accent-mood: var(--color-accent-mood);
+  --color-accent-habit: var(--color-accent-habit);
+  --color-accent-journal: var(--color-accent-journal);
+  --color-accent-sleep: var(--color-accent-sleep);
+  --color-accent-energy: var(--color-accent-energy);
+  --color-accent-crisis: var(--color-accent-crisis);
+  --color-feedback-success: var(--color-feedback-success);
+  --color-feedback-warning: var(--color-feedback-warning);
+  --color-feedback-danger: var(--color-feedback-danger);
+  --color-feedback-info: var(--color-feedback-info);
+
+  /* Sage scale, exposed for arbitrary `bg-sage-500` etc. usage. */
+  --color-sage-50: var(--p-sage-50);
+  --color-sage-100: #DDEEE3;
+  --color-sage-300: var(--p-sage-300);
+  --color-sage-500: var(--p-sage-500);
+  --color-sage-600: var(--p-sage-600);
+  --color-sage-700: var(--p-sage-700);
+
+  /* Sand scale. */
+  --color-sand-50: var(--p-sand-50);
+  --color-sand-100: var(--p-sand-100);
+  --color-sand-200: var(--p-sand-200);
+  --color-sand-300: var(--p-sand-300);
+
+  /* New radii (PR1 — values live as primitives; PR2 will introduce utilities). */
+  --radius-pill: 9999px;
+  --radius-card: 20px;
+  --radius-tile: 12px;
+
+  /* Display + numeric font tokens. Variables are bound in layout.tsx. */
+  --font-display: var(--font-fraunces), var(--font-geist), Georgia, serif;
+  --font-stats: var(--font-jetbrains), var(--font-geist-mono), ui-monospace, monospace;
 }
 
+/* -----------------------------------------------------------------------
+   LAYER 1 — PRIMITIVES (light defaults)
+   ----------------------------------------------------------------------- */
 :root {
-  /* Sathi Design System - Warm Wellness Palette (Sage Green) */
-  --background: #F8F6F2;
-  --foreground: #2D3748;
-  --card: rgba(255, 255, 255, 0.8);
-  --card-foreground: #2D3748;
-  --popover: rgba(255, 255, 255, 0.95);
-  --popover-foreground: #2D3748;
-  
-  /* Primary - Warm Sage Green */
-  --primary: #5A8D7B;
+  /* Sand (warm neutral) */
+  --p-sand-50:  #FAFBF8;
+  --p-sand-100: #F3F6F2;
+  --p-sand-200: #FAFBF8;
+  --p-sand-300: #DCE8DF;
+
+  /* Sage (brand) */
+  --p-sage-50:  #DDEEE3;
+  --p-sage-300: #6E8F72;
+  --p-sage-500: #5F7F63;
+  --p-sage-600: #4F6F52;
+  --p-sage-700: #1E2A22;
+
+  /* Feature accents */
+  --p-mood:     #E8A598;
+  --p-habit:    #D9B26B;
+  --p-journal:  #9C8AC4;
+  --p-sleep:    #6E8FB8;
+  --p-energy:   #7FB89A;
+  --p-crisis:   #C76B5C;
+
+  /* Ink (text scale) */
+  --p-ink-900:  #1E2A22;
+  --p-ink-600:  #66756A;
+
+  /* Shadow alpha — used in rgba(var(--p-shadow-rgb) / X) */
+  --p-shadow-rgb: 31 42 36;
+
+  /* Feedback */
+  --p-feedback-success: #7AAE7F;
+  --p-feedback-warning: #D8A657;
+  --p-feedback-danger:  #C96A6A;
+  --p-feedback-info:    #6E8F72;
+
+  /* ---------------------------------------------------------------------
+     LAYER 2 — SEMANTIC TOKENS (light)
+     ------------------------------------------------------------------- */
+  --color-bg-default:    #FAFBF8;
+  --color-bg-deep:       #F3F6F2;
+  --color-bg-card:       #F3F6F2;
+  --color-bg-elevated:   #FFFFFF;
+  --color-bg-sunken:     var(--p-sand-300);
+  --color-bg-hover:      #DDEEE3;
+  --color-bg-selected:   #DDEEE3;
+
+  --color-text-primary:   var(--p-ink-900);
+  --color-text-secondary: var(--p-ink-600);
+  --color-text-inverse:   #FFFFFF;
+  --color-text-link:      var(--p-sage-500);
+
+  --color-border-subtle: #DCE8DF;
+  --color-border-strong: #DCE8DF;
+  --color-border-focus:  var(--p-sage-500);
+
+  --color-accent-mood:    var(--p-mood);
+  --color-accent-habit:   var(--p-habit);
+  --color-accent-journal: var(--p-journal);
+  --color-accent-sleep:   var(--p-sleep);
+  --color-accent-energy:  var(--p-energy);
+  --color-accent-crisis:  var(--p-crisis);
+
+  --color-feedback-success: var(--p-feedback-success);
+  --color-feedback-warning: var(--p-feedback-warning);
+  --color-feedback-danger:  var(--p-feedback-danger);
+  --color-feedback-info:    var(--p-feedback-info);
+
+  /* ---------------------------------------------------------------------
+     BACKWARD-COMPATIBLE ALIASES (shadcn primitives)
+     ------------------------------------------------------------------- */
+  /* Background / foreground */
+  --background: var(--color-bg-default);
+  --foreground: var(--color-text-primary);
+
+  /* Card / popover — used by shadcn card & popover. Slightly tinted so
+     they read as a surface above the page background. */
+  --card:           #F3F6F2;
+  --card-foreground: var(--color-text-primary);
+  --popover:        #FFFFFF;
+  --popover-foreground: var(--color-text-primary);
+
+  /* Primary — sage 500. Matches old #5A8D7B in feel while honoring
+     the new WCAG contrast target. */
+  --primary:            var(--p-sage-500);
   --primary-foreground: #ffffff;
-  --primary-light: #8AB7A6;
-  --primary-soft: #CDE2DA;
-  --primary-muted: #EBF5F1;
-  
-  /* Secondary - Neutral Sage/Sand */
-  --secondary: rgba(242, 239, 233, 0.8);
-  --secondary-foreground: #2D3748;
-  --muted: #E8E4DD;
-  --muted-foreground: #7D786D;
-  
-  /* Accent - Soft Warm Tones */
-  --accent: #F2EFE9;
-  --accent-foreground: #2D3748;
-  --accent-lavender: #A59DB8;
-  --warm: #E6C2A5;
-  --destructive: #D88373;
-  --success: #6BAA75;
-  --warning: #E0B15E;
-  --info: #8AB7A6;
-  
-  /* Glassmorphism */
+  --primary-light:      var(--p-sage-300);
+  --primary-soft:       #DDEEE3;
+  --primary-muted:      var(--p-sage-50);
+
+  /* Secondary / muted — neutral sand surfaces */
+  --secondary:        #F3F6F2;
+  --secondary-foreground: var(--color-text-primary);
+  --muted:            var(--p-sand-300);
+  --muted-foreground: var(--p-ink-600);
+
+  /* Accent — warm wash, semantic in shadcn = hover surface */
+  --accent:            var(--p-sage-50);
+  --accent-foreground: var(--color-text-primary);
+  --accent-lavender:   var(--p-journal);
+  --warm:              #E6C2A5;
+
+  /* Destructive / feedback */
+  --destructive:        #C96A6A;
+  --destructive-foreground: #ffffff;
+  --success: #7AAE7F;
+  --warning: #D8A657;
+  --info:    var(--p-sleep);
+
+  /* Borders + focus */
+  --border: var(--color-border-strong);
+  --input:  #DCE8DF;
+  --ring:   var(--color-border-focus);
+
+  /* Radius — kept as a single scale variable (shadcn convention). */
+  --radius: 1.25rem;
+  --radius-sm: 0.75rem;
+  --radius-md: 1rem;
+  --radius-lg: 1.5rem;
+  --radius-xl: 1.75rem;
+  --radius-2xl: 2rem;
+
+  /* Glassmorphism (legacy, still used by `.glass-card`). Kept working. */
   --glass-bg: rgba(255, 255, 255, 0.7);
   --glass-bg-strong: rgba(255, 255, 255, 0.85);
   --glass-border: rgba(255, 255, 255, 0.5);
   --glass-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
   --glass-shadow-hover: 0 10px 30px rgba(0, 0, 0, 0.06);
 
-  /* Background Gradients */
-  --bg-gradient: radial-gradient(circle at top left, #EBF5F1, #F8F6F2), radial-gradient(circle at bottom right, #F2EFE9, #F8F6F2);
-  
-  --border: #E8E4DD;
-  --input: #E8E4DD;
-  --ring: #5A8D7B;
-  
-  /* Chart Colors */
-  --chart-1: #5A8D7B;
-  --chart-2: #8AB7A6;
-  --chart-3: #A59DB8;
-  --chart-4: #E6C2A5;
-  --chart-5: #CDE2DA;
-  
-  /* Spacing & Radius */
-  --radius: 0.625rem;
-  --radius-sm: 0.5rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1.5rem;
-  --radius-xl: 1.75rem;
-  --radius-2xl: 2rem;
-  
+  /* Chart colors — remapped to the new feature accents. */
+  --chart-1: var(--p-sage-500);
+  --chart-2: var(--p-mood);
+  --chart-3: var(--p-journal);
+  --chart-4: var(--p-habit);
+  --chart-5: var(--p-sleep);
+
+  /* ---------------------------------------------------------------------
+     LAYER 1 / 2 — MOTION, RADIUS, ELEVATION
+     ------------------------------------------------------------------- */
+  --motion-duration-100: 100ms;
+  --motion-duration-150: 150ms;
+  --motion-duration-200: 200ms;
+  --motion-duration-300: 300ms;
+  --motion-duration-500: 500ms;
+  --motion-duration-700: 700ms;
+  --motion-duration-skeleton: 1400ms;
+
+  --motion-ease-out:         cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-ease-in:          cubic-bezier(0.4, 0, 1, 1);
+  --motion-ease-in-out:      cubic-bezier(0.65, 0, 0.35, 1);
+  --motion-ease-spring:      cubic-bezier(0.34, 1.56, 0.64, 1);
+  --motion-ease-linear:      linear;
+  --motion-ease-emphasized:  cubic-bezier(0.2, 0, 0, 1);
+
+  --shadow-flat:    0 1px 0 rgb(var(--p-shadow-rgb) / 0.04);
+  --shadow-card:    0 1px 2px rgb(var(--p-shadow-rgb) / 0.04), 0 4px 16px rgb(var(--p-shadow-rgb) / 0.05);
+  --shadow-lift:    0 4px 12px rgb(var(--p-shadow-rgb) / 0.06), 0 16px 40px rgb(var(--p-shadow-rgb) / 0.08);
+  --shadow-overlay: 0 8px 24px rgb(var(--p-shadow-rgb) / 0.10), 0 24px 60px rgb(var(--p-shadow-rgb) / 0.14);
+
+  --z-base: 0;
+  --z-raised: 10;
+  --z-sticky: 100;
+  --z-overlay: 1000;
+  --z-toast: 1100;
+  --z-tooltip: 1200;
+  --z-drag: 1300;
+  --z-crisis: 9999;
+
   /* Sidebar */
-  --sidebar: rgba(255, 255, 255, 0.9);
-  --sidebar-foreground: #2D3748;
-  --sidebar-primary: #4A90A4;
+  --sidebar: rgba(255, 255, 255, 0.92);
+  --sidebar-foreground: var(--color-text-primary);
+  --sidebar-primary: var(--p-sage-500);
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #F1F5F7;
-  --sidebar-accent-foreground: #2D3748;
-  --sidebar-border: rgba(0, 0, 0, 0.04);
-  --sidebar-ring: #4A90A4;
+  --sidebar-accent: var(--p-sage-50);
+  --sidebar-accent-foreground: var(--color-text-primary);
+  --sidebar-border: var(--color-border-subtle);
+  --sidebar-ring: var(--p-sage-500);
+
+  /* Background atmosphere — defaults to "morning". Overridden by
+     [data-daytime=...] selectors in the base layer below. */
+  --bg-gradient:
+    radial-gradient(1200px 800px at 12% -10%, #DDEEE3 0%, transparent 60%),
+    radial-gradient(900px 700px at 110% 20%, #F3F6F2 0%, transparent 55%),
+    radial-gradient(1000px 900px at 50% 120%, #DCE8DF 0%, transparent 60%),
+    #FAFBF8;
+
+  /* Fractal-noise grain, encoded as data URI. 4% opacity applied at the
+     element level via .bg-grain utility. */
+  --bg-grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.12  0 0 0 0 0.16  0 0 0 0 0.14  0 0 0 0.55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
 }
 
+/* -----------------------------------------------------------------------
+   LAYER 5 — DARK THEME OVERRIDES
+   ----------------------------------------------------------------------- */
 .dark {
-  /* Sathi Dark Mode - Calm Deep Slate-Blue */
-  --background: #0F1419;
-  --foreground: #E8EDF2;
-  --card: rgba(26, 32, 39, 0.8);
-  --card-foreground: #E8EDF2;
-  --popover: rgba(22, 28, 34, 0.95);
-  --popover-foreground: #E8EDF2;
-  
-  /* Primary - Brighter Teal-Blue in dark mode */
-  --primary: #6FB3C7;
-  --primary-foreground: #0F1419;
-  --primary-light: #8FC6D6;
-  --primary-soft: #A8D0D9;
-  --primary-muted: rgba(111, 179, 199, 0.15);
-  
-  --secondary: rgba(42, 50, 60, 0.8);
-  --secondary-foreground: #E8EDF2;
-  --muted: #1A2027;
-  --muted-foreground: #9AA7B4;
-  /* Accent - Lavender */
-  --accent: rgba(155, 143, 199, 0.12);
-  --accent-foreground: #E8EDF2;
-  --accent-lavender: #B0A4DA;
-  --warm: #F4C7AB;
+  /* Sand ↔ deep moss */
+  --p-sand-100: #1B2520;
+  --p-sand-200: #141B17;
+  --p-sand-300: #161E1A;
+  --p-sand-700: #1B2520;
+  --p-sand-800: #161E1A;
+  --p-sand-900: #141B17;
+
+  /* Ink inverts */
+  --p-ink-900:  #E6EAE4;
+  --p-ink-600:  #9AA59E;
+
+  /* Sage lifted for contrast on dark moss */
+  --p-sage-500: #8FB8A4;
+  --p-sage-600: #A6C7B7;
+  --p-sage-700: #C4DCCE;
+
+  /* Feature accents +10% lightness */
+  --p-mood:     #F0B5AA;
+  --p-habit:    #E2C185;
+  --p-journal:  #B0A0D2;
+  --p-sleep:    #88A5C8;
+  --p-energy:   #95C9AC;
+  --p-crisis:   #D88275;
+
+  --p-shadow-rgb: 230 234 228;
+
+  /* Semantic surfaces */
+  --color-bg-default:  var(--p-sand-900);
+  --color-bg-deep:     #0E1512;
+  --color-bg-card:     var(--p-sand-700);
+  --color-bg-elevated: #22302A;
+  --color-bg-sunken:   var(--p-sand-800);
+  --color-bg-hover:    rgba(143, 184, 164, 0.12);
+  --color-bg-selected: rgba(143, 184, 164, 0.18);
+
+  --color-text-primary:   #E6EAE4;
+  --color-text-secondary: #9AA59E;
+  --color-text-inverse:   #141B17;
+  --color-text-link:      var(--p-sage-500);
+
+  --color-border-subtle: rgba(230, 234, 228, 0.08);
+  --color-border-strong: rgba(230, 234, 228, 0.16);
+  --color-border-focus:  var(--p-sage-500);
+
+  /* Backward-compat shadcn aliases — dark equivalents */
+  --background: #141B17;
+  --foreground: #E6EAE4;
+
+  --card:            #1B2520;
+  --card-foreground: #E6EAE4;
+  --popover:         #22302A;
+  --popover-foreground: #E6EAE4;
+
+  --primary:            #8FB8A4;
+  --primary-foreground: #141B17;
+  --primary-light:      #A6C7B7;
+  --primary-soft:       #5C7A6C;
+  --primary-muted:      rgba(143, 184, 164, 0.15);
+
+  --secondary:        #1F2A24;
+  --secondary-foreground: #E6EAE4;
+  --muted:            #161E1A;
+  --muted-foreground: #9AA59E;
+
+  --accent:            rgba(143, 184, 164, 0.15);
+  --accent-foreground: #E6EAE4;
+  --accent-lavender:   #B0A4DA;
+  --warm:              #F4C7AB;
+
   --destructive: #D88373;
   --success: #6BAA75;
   --warning: #E0B15E;
-  --info: #6FA8C7;
-  
-  /* Glassmorphism - Darker */
+  --info:    #6FA8C7;
+
+  --border: rgba(230, 234, 228, 0.12);
+  --input:  #22302A;
+  --ring:   var(--p-sage-500);
+
+  /* Glass (dark) — kept working */
   --glass-bg: rgba(26, 32, 39, 0.7);
   --glass-bg-strong: rgba(30, 38, 46, 0.85);
   --glass-border: rgba(111, 179, 199, 0.15);
   --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   --glass-shadow-hover: 0 20px 40px rgba(0, 0, 0, 0.4);
-  
-  --border: #2A323C;
-  --input: #2A323C;
-  --ring: #6FB3C7;
-  
-  /* Chart Colors */
-  --chart-1: #6FB3C7;
-  --chart-2: #7FB069;
-  --chart-3: #B0A4DA;
-  --chart-4: #F4C7AB;
-  --chart-5: #A8D0D9;
-  
-  /* Sidebar */
-  --sidebar: rgba(20, 26, 32, 0.9);
-  --sidebar-foreground: #E8EDF2;
-  --sidebar-primary: #6FB3C7;
-  --sidebar-primary-foreground: #0F1419;
-  --sidebar-accent: rgba(111, 179, 199, 0.1);
-  --sidebar-accent-foreground: #E8EDF2;
-  --sidebar-border: rgba(111, 179, 199, 0.1);
-  --sidebar-ring: #6FB3C7;
+
+  --chart-1: #8FB8A4;
+  --chart-2: #F0B5AA;
+  --chart-3: #B0A0D2;
+  --chart-4: #E2C185;
+  --chart-5: #88A5C8;
+
+  --sidebar: rgba(20, 26, 32, 0.92);
+  --sidebar-foreground: #E6EAE4;
+  --sidebar-primary: #8FB8A4;
+  --sidebar-primary-foreground: #141B17;
+  --sidebar-accent: rgba(143, 184, 164, 0.10);
+  --sidebar-accent-foreground: #E6EAE4;
+  --sidebar-border: rgba(230, 234, 228, 0.08);
+  --sidebar-ring: #8FB8A4;
+
+  /* Dark atmosphere — same three radial blobs, dark moss variants */
+  --bg-gradient:
+    radial-gradient(1200px 800px at 12% -10%, #1F2A24 0%, transparent 60%),
+    radial-gradient(900px 700px at 110% 20%, #1A2622 0%, transparent 55%),
+    radial-gradient(1000px 900px at 50% 120%, #1F2A24 0%, transparent 60%),
+    #141B17;
 }
 
 @layer base {
@@ -185,45 +426,54 @@
     @apply border-border outline-ring/50;
   }
 
-  /* Time-of-day ambient gradient (orthogonal to light/dark). */
-  :root {
-    --bg-gradient: linear-gradient(135deg, #FAFBFC 0%, #F1F5F7 50%, #E8F0F3 100%);
-  }
-
-  /* Light mode daytime tints */
+  /* Time-of-day hue-shifts layered on top of the radial atmosphere.
+     Each selector overrides only the three blob stops; the base color
+     is inherited from --bg-gradient. */
   [data-daytime='morning'] {
-    --bg-gradient: linear-gradient(135deg, #FFE8C7 0%, #FFF1DB 45%, #FFF8EC 100%);
+    --bg-gradient:
+      #FAFBF8;
   }
   [data-daytime='noon'] {
-    --bg-gradient: linear-gradient(135deg, #E3F4FF 0%, #EFF9F1 50%, #F4FBF5 100%);
+    --bg-gradient:
+      #FAFBF8;
   }
   [data-daytime='afternoon'] {
-    --bg-gradient: linear-gradient(135deg, #FFE5D0 0%, #FFEFE0 50%, #FBF4EC 100%);
+    --bg-gradient:
+      #FAFBF8;
   }
   [data-daytime='night'] {
-    --bg-gradient: linear-gradient(135deg, #E7ECFB 0%, #EEF1FA 50%, #F2F4FB 100%);
+    --bg-gradient:
+      #FAFBF8;
   }
 
-  /* Dark mode daytime tints.
-     Note: light-mode [data-daytime='...'] selectors have specificity (0,1,1) — higher
-     than a bare .dark class (0,1,0) — so without bumping the dark selectors to the
-     same or higher specificity, the light daytime gradient would still win in dark
-     mode. Using html.dark raises each dark rule to (0,1,1) so it ties the light
-     rules; since the dark block appears later in the cascade, it wins on tie. */
-  html.dark {
-    --bg-gradient: linear-gradient(135deg, #0F1419 0%, #141B22 50%, #1A2027 100%);
+  /* Dark daytime overrides — same hue shift, dark base. */
+  .dark[data-daytime='morning'] {
+    --bg-gradient:
+      radial-gradient(1200px 800px at 12% -10%, #2F2A1A 0%, transparent 60%),
+      radial-gradient(900px 700px at 110% 20%, #1A2622 0%, transparent 55%),
+      radial-gradient(1000px 900px at 50% 120%, #1F2A24 0%, transparent 60%),
+      #141B17;
   }
-  html.dark[data-daytime='morning'] {
-    --bg-gradient: linear-gradient(135deg, #2A2012 0%, #1C1B14 55%, #0F1419 100%);
+  .dark[data-daytime='noon'] {
+    --bg-gradient:
+      radial-gradient(1200px 800px at 12% -10%, #16262C 0%, transparent 60%),
+      radial-gradient(900px 700px at 110% 20%, #1A2A22 0%, transparent 55%),
+      radial-gradient(1000px 900px at 50% 120%, #1F2A24 0%, transparent 60%),
+      #141B17;
   }
-  html.dark[data-daytime='noon'] {
-    --bg-gradient: linear-gradient(135deg, #0E1E26 0%, #112028 55%, #0F1419 100%);
+  .dark[data-daytime='afternoon'] {
+    --bg-gradient:
+      radial-gradient(1200px 800px at 12% -10%, #2A2418 0%, transparent 60%),
+      radial-gradient(900px 700px at 110% 20%, #1F2620 0%, transparent 55%),
+      radial-gradient(1000px 900px at 50% 120%, #1F2A24 0%, transparent 60%),
+      #141B17;
   }
-  html.dark[data-daytime='afternoon'] {
-    --bg-gradient: linear-gradient(135deg, #271E12 0%, #1A1C18 55%, #0F1419 100%);
-  }
-  html.dark[data-daytime='night'] {
-    --bg-gradient: linear-gradient(135deg, #0E1430 0%, #131C32 55%, #10162E 100%);
+  .dark[data-daytime='night'] {
+    --bg-gradient:
+      radial-gradient(1200px 800px at 12% -10%, #181E30 0%, transparent 60%),
+      radial-gradient(900px 700px at 110% 20%, #1B2238 0%, transparent 55%),
+      radial-gradient(1000px 900px at 50% 120%, #141B2E 0%, transparent 60%),
+      #10162E;
   }
 
   body {
@@ -231,7 +481,33 @@
     background: var(--bg-gradient);
     background-attachment: fixed;
     min-height: 100vh;
-    transition: background 1.2s ease;
+    transition: background 1.2s var(--motion-ease-in-out);
+  }
+
+  /* Mobile fallback — fixed attachment is expensive on iOS Safari. */
+  @media (max-width: 768px) {
+    body { background-attachment: scroll; }
+  }
+
+  /* Grain layer — fixed pseudo-element so it doesn't scroll. Very low
+     opacity keeps it imperceptible as "noise" but kills gradient banding. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image: var(--bg-grain);
+    background-size: 160px 160px;
+    opacity: 0.04;
+    mix-blend-mode: multiply;
+  }
+  .dark body::before {
+    mix-blend-mode: screen;
+    opacity: 0.06;
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    body::before { display: none; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -243,14 +519,15 @@
     @apply font-sans antialiased;
   }
 
+  /* Bengali fallback chain — preserved from pre-PR1 layout. */
   html[data-language="bn"] {
     --font-bengali-stack: var(--font-bengali), var(--font-noto-bengali), Arial, Helvetica, sans-serif;
-    /* Override the token values used by font-sans/heading/mono utilities */
     --font-sans: var(--font-bengali-stack);
     --font-mono: var(--font-bengali-stack);
     --font-heading: var(--font-bengali-stack);
     --font-sf-pro: var(--font-bengali-stack);
-    /* Override the underlying source variables that @theme inline utilities resolve to */
+    --font-display: var(--font-bengali-stack);
+    --font-stats: var(--font-bengali-stack);
     --font-geist: var(--font-bengali-stack);
     --font-geist-sans: var(--font-bengali-stack);
     --font-geist-mono: var(--font-bengali-stack);
@@ -260,15 +537,29 @@
     font-family: var(--font-bengali-stack);
   }
 
-  /* font-sf-pro is an inline literal in @theme; force it (and inline SF-Pro styles) in Bangla mode */
   html[data-language="bn"] .font-sf-pro,
   html[data-language="bn"] [style*="SF Pro"] {
     font-family: var(--font-bengali-stack) !important;
   }
+
+  /* Respect reduced motion globally for the new animation primitives
+     (PR2 components will use these classes). */
+  @media (prefers-reduced-motion: reduce) {
+    .motion-fade-in, .motion-fade-out,
+    .motion-scale-in, .motion-slide-up,
+    .motion-slide-down, .motion-slide-right,
+    .motion-slide-left, .motion-press,
+    .motion-shake, .motion-skeleton {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
 }
 
 @layer utilities {
-  /* Glassmorphism Card */
+  /* ---------------------------------------------------------------------
+     GLASS (legacy alias — kept working for one release)
+     ------------------------------------------------------------------- */
   .glass-card {
     position: relative;
     background: var(--glass-bg);
@@ -278,7 +569,7 @@
     border-radius: var(--radius-xl);
     box-shadow: var(--glass-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.25);
   }
-  
+
   .glass-card-strong {
     position: relative;
     background: var(--glass-bg-strong);
@@ -289,7 +580,6 @@
     box-shadow: var(--glass-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.3);
   }
 
-  /* Cap backdrop blur on small/low-end devices for smoother scrolling */
   @media (max-width: 640px) {
     .glass-card {
       backdrop-filter: blur(12px) saturate(140%);
@@ -301,7 +591,6 @@
     }
   }
 
-  /* Respect users/devices that prefer reduced transparency: use solid surfaces */
   @media (prefers-reduced-transparency: reduce) {
     .glass-card,
     .glass-card-strong {
@@ -310,87 +599,614 @@
       background: var(--glass-bg-strong);
     }
   }
-  
-  /* Primary Gradient Button (Sage Green) */
+
+  /* ---------------------------------------------------------------------
+     PR1 NEW UTILITIES — adopted incrementally by PR2/3/4 components
+     ------------------------------------------------------------------- */
   .btn-primary-gradient {
-    background: linear-gradient(135deg, #8AB7A6 0%, #5A8D7B 100%);
+    background: linear-gradient(135deg, var(--p-sage-300) 0%, var(--p-sage-500) 100%);
     color: white;
-    border-radius: 9999px;
-    box-shadow: 0 4px 14px rgba(90, 141, 123, 0.25);
-    transition: all 0.3s ease;
+    border-radius: var(--radius-pill);
+    box-shadow: 0 4px 14px rgb(var(--p-shadow-rgb) / 0.18);
+    transition: all var(--motion-duration-300) var(--motion-ease-out);
   }
-  
+
   .btn-primary-gradient:hover {
-    box-shadow: 0 6px 20px rgba(90, 141, 123, 0.35);
+    box-shadow: 0 6px 20px rgb(var(--p-shadow-rgb) / 0.25);
     transform: translateY(-1px);
   }
-  
-  /* Glow Effects */
+
   .glow-sage {
-    box-shadow: 0 0 20px rgba(90, 141, 123, 0.3);
+    box-shadow: 0 0 20px rgba(143, 184, 164, 0.30);
   }
-  
+
   .glow-sage-subtle {
-    box-shadow: 0 0 40px rgba(205, 226, 218, 0.18);
+    box-shadow: 0 0 40px rgba(214, 231, 221, 0.18);
   }
-  
-  /* Text Gradients */
+
   .text-gradient-sage {
-    background: linear-gradient(135deg, #5A8D7B 0%, #8AB7A6 100%);
+    background: linear-gradient(135deg, var(--p-sage-500) 0%, var(--p-sage-300) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  
-  /* Soft Shadows */
+
   .shadow-soft {
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 4px 20px rgb(var(--p-shadow-rgb) / 0.04);
   }
-  
+
   .shadow-soft-lg {
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 10px 40px rgb(var(--p-shadow-rgb) / 0.06);
   }
-  
-  /* Hover Lift */
+
   .hover-lift {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition:
+      transform var(--motion-duration-300) var(--motion-ease-out),
+      box-shadow var(--motion-duration-300) var(--motion-ease-out);
   }
-  
+
   .hover-lift:hover {
     transform: translateY(-4px);
-    box-shadow: var(--glass-shadow-hover);
+    box-shadow: var(--shadow-lift);
   }
-  
-  /* Animated Background Glow */
+
   .ambient-glow {
     position: relative;
   }
-  
+
   .ambient-glow::before {
     content: '';
     position: absolute;
     inset: -20px;
-    background: radial-gradient(circle, rgba(90, 141, 123, 0.1) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(143, 184, 164, 0.10) 0%, transparent 70%);
     z-index: -1;
     pointer-events: none;
   }
-  
-  /* Scrollbar Styling */
+
+  /* Card surfaces — three variants. Existing `.glass-card` continues to
+     work; new code should prefer these. */
+  .surface-card-flat {
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-flat);
+  }
+
+  .surface-card-elevated {
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+  }
+
+  .surface-card-feature {
+    background: linear-gradient(180deg, var(--color-bg-elevated) 0%, var(--color-bg-card) 100%);
+    border: 1px solid var(--color-border-subtle);
+    border-top: 2px solid var(--card-accent, var(--color-accent-energy));
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-lift);
+  }
+
+  .surface-card-sunken {
+    background: var(--color-bg-sunken);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+  }
+
+  /* Feature-tone border-top color per `data-accent`. Set the value via
+     a single CSS variable on the element so the JS side can stay clean. */
+  [data-slot="card"][data-variant="feature"] {
+    --card-accent: var(--color-accent-energy);
+  }
+  [data-slot="card"][data-variant="feature"][data-accent="none"]    { --card-accent: var(--color-accent-energy); }
+  [data-slot="card"][data-variant="feature"][data-accent="mood"]    { --card-accent: var(--color-accent-mood); }
+  [data-slot="card"][data-variant="feature"][data-accent="habit"]   { --card-accent: var(--color-accent-habit); }
+  [data-slot="card"][data-variant="feature"][data-accent="journal"] { --card-accent: var(--color-accent-journal); }
+  [data-slot="card"][data-variant="feature"][data-accent="sleep"]   { --card-accent: var(--color-accent-sleep); }
+  [data-slot="card"][data-variant="feature"][data-accent="energy"]  { --card-accent: var(--color-accent-energy); }
+
+  /* Page rhythm helpers */
+  .page-x    { padding-inline: clamp(20px, 4vw, 32px); }
+  .section-y { padding-block: var(--space-section-y, 64px); }
+
+  /* ---------------------------------------------------------------------
+     PR4 — LANDING PAGE UTILITIES
+     ------------------------------------------------------------------- */
+
+  /* Sticky landing top-nav. Sits above content with a translucent wash
+     so the radial atmosphere bleeds through. Border-bottom is reserved
+     for the focus ring; use shadow-card for elevation. */
+  .landing-nav-rail {
+    position: fixed;
+    inset-inline: 0;
+    top: 0;
+    z-index: var(--z-sticky);
+    background-color: rgb(var(--p-shadow-rgb) / 0.04);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border-bottom: 1px solid var(--color-border-subtle);
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .landing-nav-rail {
+      backdrop-filter: none;
+      background-color: var(--color-bg-elevated);
+    }
+  }
+
+  /* Soft decorative orb used in hero / CTA sections. Sits behind content
+     (z below text via absolute positioning) so it adds atmosphere without
+     stealing focus. */
+  .landing-orb {
+    position: absolute;
+    border-radius: 9999px;
+    background: radial-gradient(
+      circle at 30% 30%,
+      rgb(var(--p-sage-300-rgb, 143 184 164) / 0.55) 0%,
+      rgb(var(--p-sage-500-rgb, 79 126 107) / 0.18) 60%,
+      transparent 75%
+    );
+    filter: blur(48px);
+    pointer-events: none;
+  }
+
+  /* CTA card frame — softer than glass-card-strong, tuned for the final
+     "start today" panel. */
+  .landing-cta-frame {
+    background: linear-gradient(
+      180deg,
+      var(--color-bg-elevated) 0%,
+      var(--color-bg-card) 100%
+    );
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-3xl);
+    box-shadow: var(--shadow-overlay);
+    position: relative;
+    overflow: hidden;
+  }
+  .landing-cta-frame::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      800px 400px at 50% 0%,
+      rgb(var(--p-sage-300-rgb, 143 184 164) / 0.18) 0%,
+      transparent 70%
+    );
+    pointer-events: none;
+  }
+
+  /* Section eyebrow — small uppercase lead-in text */
+  .section-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: var(--radius-pill);
+    background-color: var(--color-bg-hover);
+    color: var(--color-accent-energy);
+    font: 600 0.75rem/1 var(--font-sans);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* Soft wordmark gradient — same direction as sage scale */
+  .text-gradient-sage {
+    background: linear-gradient(135deg, var(--p-sage-500) 0%, var(--p-sage-300) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Hero number cluster — used in stats row */
+  .landing-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+  .landing-stat-value {
+    font: 600 1.5rem/1.1 var(--font-display);
+    color: var(--color-text-primary);
+    letter-spacing: -0.01em;
+  }
+  .landing-stat-label {
+    font: 400 0.75rem/1.4 var(--font-sans);
+    color: var(--color-text-secondary);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  /* Motion primitives (adopted by PR2 components) */
+  .motion-fade-in {
+    animation: motion-fade-in var(--motion-duration-300) var(--motion-ease-out) both;
+  }
+  .motion-fade-out {
+    animation: motion-fade-out var(--motion-duration-200) var(--motion-ease-in) both;
+  }
+  .motion-scale-in {
+    animation: motion-scale-in var(--motion-duration-300) var(--motion-ease-spring) both;
+  }
+  .motion-slide-up {
+    animation: motion-slide-up var(--motion-duration-300) var(--motion-ease-out) both;
+  }
+  .motion-slide-down {
+    animation: motion-slide-down var(--motion-duration-300) var(--motion-ease-out) both;
+  }
+  .motion-slide-right {
+    animation: motion-slide-right var(--motion-duration-500) var(--motion-ease-out) both;
+  }
+  .motion-skeleton {
+    animation: motion-skeleton var(--motion-duration-skeleton) var(--motion-ease-linear) infinite;
+    background-image: linear-gradient(
+      90deg,
+      var(--color-bg-sunken) 0%,
+      var(--color-bg-hover) 50%,
+      var(--color-bg-sunken) 100%
+    );
+    background-size: 200% 100%;
+  }
+
+  @keyframes motion-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes motion-fade-out {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+  }
+  @keyframes motion-scale-in {
+    from { opacity: 0; transform: scale(0.96); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  @keyframes motion-slide-up {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes motion-slide-down {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes motion-slide-right {
+    from { opacity: 0; transform: translateX(-16px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes motion-skeleton {
+    from { background-position: 200% 0; }
+    to   { background-position: -200% 0; }
+  }
+
+  /* Type scale helpers — explicit rem sizes matching Section 4 of the
+     design plan. Use these in JSX where you need a specific size. */
+  .text-display { font: 500 var(--text-display, 3rem)/1.1 var(--font-display); }
+  .text-h1      { font: 500 2rem/1.2 var(--font-display); }
+  .text-h2      { font: 500 1.5rem/1.3 var(--font-display); }
+  .text-h3      { font: 600 1.125rem/1.4 var(--font-sans); }
+  .text-body    { font: 400 1rem/1.6 var(--font-sans); }
+  .text-small   { font: 400 0.875rem/1.5 var(--font-sans); }
+  .text-micro   { font: 500 0.75rem/1.4 var(--font-sans); }
+
+  /* Scrollbar styling (unchanged) */
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
-  
+
   .custom-scrollbar::-webkit-scrollbar-track {
     background: transparent;
   }
-  
+
   .custom-scrollbar::-webkit-scrollbar-thumb {
     background: rgba(0, 0, 0, 0.1);
     border-radius: 3px;
   }
-  
+
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgba(0, 0, 0, 0.2);
+  }
+
+  /* ---------------------------------------------------------------------
+     PR2 UTILITIES — state components + feature tones + sunken input
+     ------------------------------------------------------------------- */
+
+  /* Feature-color helpers, bound to existing semantic tokens. Use these
+     in JSX instead of inline style={{ color: "var(--color-accent-...)" }}.
+     Pair with a Tailwind text-* / bg-* utility, or use color/bg by itself. */
+  .tone-mood     { color: var(--color-accent-mood); }
+  .tone-habit    { color: var(--color-accent-habit); }
+  .tone-journal  { color: var(--color-accent-journal); }
+  .tone-sleep    { color: var(--color-accent-sleep); }
+  .tone-energy   { color: var(--color-accent-energy); }
+  .tone-crisis   { color: var(--color-accent-crisis); }
+  .tone-neutral  { color: var(--color-text-secondary); }
+  .tone-success  { color: var(--color-feedback-success); }
+  .tone-warning  { color: var(--color-feedback-warning); }
+  .tone-danger   { color: var(--color-feedback-danger); }
+  .tone-info     { color: var(--color-feedback-info); }
+
+  .bg-tone-mood     { background-color: var(--color-accent-mood); }
+  .bg-tone-habit    { background-color: var(--color-accent-habit); }
+  .bg-tone-journal  { background-color: var(--color-accent-journal); }
+  .bg-tone-sleep    { background-color: var(--color-accent-sleep); }
+  .bg-tone-energy   { background-color: var(--color-accent-energy); }
+  .bg-tone-crisis   { background-color: var(--color-accent-crisis); }
+
+  /* EmptyState — centered low-density affordance */
+  [data-slot="empty-state"] {
+    margin-inline: auto;
+    display: flex;
+    width: 100%;
+    max-width: 360px;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+  }
+  [data-slot="empty-state"] [data-slot="empty-state-frame"] {
+    display: flex;
+    width: 6rem;
+    height: 6rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    background-color: var(--color-bg-sunken);
+    box-shadow: inset 0 0 0 1px var(--color-border-subtle);
+  }
+  [data-slot="empty-state"] [data-slot="empty-state-title"] {
+    font: 500 1.5rem/1.3 var(--font-display);
+    letter-spacing: -0.01em;
+    color: var(--color-text-primary);
+  }
+  [data-slot="empty-state"] [data-slot="empty-state-description"] {
+    font: 400 0.9rem/1.6 var(--font-sans);
+    max-width: 280px;
+    margin-inline: auto;
+    color: var(--color-text-secondary);
+  }
+
+  /* LoadingState — block/rows/card variants */
+  [data-slot="loading-state"] {
+    width: 100%;
+  }
+  [data-slot="loading-state"] [data-slot="loading-skeleton"] {
+    background-color: var(--color-bg-sunken);
+    border-radius: var(--radius-tile);
+  }
+  [data-slot="loading-state"] [data-slot="loading-row"] {
+    height: 0.75rem;
+    border-radius: var(--radius-pill);
+    background-color: var(--color-bg-sunken);
+  }
+  [data-slot="loading-state"] [data-slot="loading-card"] {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1.5rem;
+    border-radius: var(--radius-card);
+    background-color: var(--color-bg-elevated);
+    box-shadow: var(--shadow-card);
+    box-shadow: var(--shadow-card), inset 0 0 0 1px var(--color-border-subtle);
+  }
+
+  /* ErrorState — danger-tinted center stack */
+  [data-slot="error-state"] {
+    margin-inline: auto;
+    display: flex;
+    width: 100%;
+    max-width: 420px;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+  }
+  [data-slot="error-state"] [data-slot="error-state-icon-frame"] {
+    display: flex;
+    width: 3rem;
+    height: 3rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    background-color: var(--color-feedback-danger-tint, rgba(182, 90, 74, 0.12));
+    color: var(--color-feedback-danger);
+  }
+  [data-slot="error-state"] [data-slot="error-state-title"] {
+    font: 500 1.125rem/1.4 var(--font-display);
+    letter-spacing: -0.01em;
+    color: var(--color-text-primary);
+  }
+  [data-slot="error-state"] [data-slot="error-state-description"] {
+    font: 400 0.9rem/1.6 var(--font-sans);
+    max-width: 320px;
+    margin-inline: auto;
+    color: var(--color-text-secondary);
+  }
+  [data-slot="error-state"] [data-slot="error-state-retry"] {
+    display: inline-flex;
+    height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    padding-inline: 1.5rem;
+    border-radius: var(--radius-pill);
+    background-color: var(--color-feedback-danger);
+    color: var(--color-text-inverse);
+    box-shadow: var(--shadow-flat);
+    font: 600 0.75rem/1 var(--font-sans);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    transition: box-shadow var(--motion-duration-300) var(--motion-ease-out),
+                transform var(--motion-duration-200) var(--motion-ease-out);
+  }
+  [data-slot="error-state"] [data-slot="error-state-retry"]:hover {
+    box-shadow: var(--shadow-card);
+  }
+  [data-slot="error-state"] [data-slot="error-state-retry"]:active {
+    transform: translateY(1px);
+  }
+  [data-slot="error-state"] [data-slot="error-state-retry"]:disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  /* OfflineBanner — top-of-page warning strip */
+  [data-slot="offline-banner"] {
+    position: fixed;
+    inset-inline: 0;
+    top: 0;
+    z-index: var(--z-sticky);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background-color: var(--color-feedback-warning);
+    color: var(--color-text-inverse);
+    font: 500 0.875rem/1.4 var(--font-sans);
+  }
+  [data-slot="offline-banner"] [data-slot="offline-banner-hint"] {
+    opacity: 0.9;
+    font-size: 0.85rem;
+  }
+  @media (max-width: 640px) {
+    [data-slot="offline-banner"] [data-slot="offline-banner-hint"] {
+      display: none;
+    }
+  }
+
+  /* Sunken-input + 44px form field base. Used by the rebuilt Input. */
+  [data-slot="input"].input-sunken,
+  .input-sunken[data-slot="input"] {
+    height: 2.75rem;
+    background-color: var(--color-bg-sunken);
+    border: 1px solid transparent;
+    border-radius: var(--radius-tile);
+    padding-inline: 0.875rem;
+    box-shadow: inset 0 0 0 1px var(--color-border-subtle);
+    transition: box-shadow var(--motion-duration-200) var(--motion-ease-out),
+                background-color var(--motion-duration-200) var(--motion-ease-out);
+  }
+  [data-slot="input"].input-sunken:focus-visible,
+  .input-sunken[data-slot="input"]:focus-visible {
+    background-color: var(--color-bg-elevated);
+    box-shadow:
+      inset 0 0 0 1px var(--color-border-focus),
+      0 0 0 3px var(--color-border-focus-ring, rgba(79, 126, 107, 0.25));
+    outline: none;
+  }
+  [data-slot="input"].input-sunken[aria-invalid="true"],
+  .input-sunken[data-slot="input"][aria-invalid="true"] {
+    box-shadow:
+      inset 0 0 0 1px var(--color-feedback-danger),
+      0 0 0 3px var(--color-feedback-danger-ring, rgba(182, 90, 74, 0.18));
+    animation: motion-shake var(--motion-duration-300) var(--motion-ease-out);
+  }
+  [data-slot="input"].input-sunken:disabled,
+  .input-sunken[data-slot="input"]:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  /* Helper text + error text below form fields. */
+  .input-helper {
+    margin-top: 0.375rem;
+    font: 400 0.8125rem/1.4 var(--font-sans);
+    color: var(--color-text-secondary);
+  }
+  .input-error-text {
+    margin-top: 0.375rem;
+    font: 500 0.8125rem/1.4 var(--font-sans);
+    color: var(--color-feedback-danger);
+  }
+
+  @keyframes motion-shake {
+    0%, 100% { transform: translateX(0); }
+    20%      { transform: translateX(-4px); }
+    40%      { transform: translateX(4px); }
+    60%      { transform: translateX(-2px); }
+    80%      { transform: translateX(2px); }
+  }
+  @keyframes motion-press {
+    from { transform: scale(1); }
+    to   { transform: scale(0.97); }
+  }
+
+  /* ---------------------------------------------------------------------
+     PR3 — Layout shell utilities.
+     Single source of truth for the visual chrome used by sidebar,
+     mobile sidebar, header, mobile top bar, bottom nav, and FAB.
+     ------------------------------------------------------------------- */
+
+  /* Floating glass shell used for sidebar / drawer surfaces. */
+  .shell-rail {
+    position: relative;
+    background-color: color-mix(in oklab, var(--color-bg-card) 88%, transparent);
+    backdrop-filter: blur(18px) saturate(150%);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    border: 1px solid var(--color-border-subtle);
+    box-shadow: var(--shadow-card);
+    border-radius: var(--radius-tile);
+  }
+
+  /* Sidebar active marker — sage tint applied to the current nav row. */
+  .sidebar-active-marker {
+    background-color: var(--color-bg-selected);
+    color: var(--color-text-primary);
+    box-shadow: var(--shadow-flat);
+  }
+
+  /* Top bar shell used by the mobile sidebar top header. */
+  .top-bar-shell {
+    background-color: color-mix(in oklab, var(--color-bg-card) 85%, transparent);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    border-bottom: 1px solid var(--color-border-subtle);
+  }
+
+  /* Dashboard header shell — soft divider under the greeting row. */
+  .header-shell {
+    background-color: transparent;
+  }
+  @media (min-width: 1024px) {
+    .header-shell {
+      padding-block: 0.25rem;
+    }
+  }
+
+  /* Sticky bottom-nav rail used on phones. */
+  .bottom-nav-rail {
+    background-color: color-mix(in oklab, var(--color-bg-card) 90%, transparent);
+    backdrop-filter: blur(18px) saturate(150%);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    box-shadow: 0 -6px 24px -12px rgba(31, 41, 55, 0.18);
+  }
+
+  /* Floating action button base — applied in addition to .rounded-full. */
+  .fab-base {
+    background: linear-gradient(135deg,
+      color-mix(in oklab, var(--color-accent-sage) 70%, white 0%),
+      color-mix(in oklab, var(--color-accent-sage) 95%, #1f2937 5%));
+    color: var(--color-text-inverse);
+    box-shadow:
+      0 0 0 6px color-mix(in oklab, var(--color-accent-sage) 18%, transparent),
+      var(--shadow-card);
+  }
+  .fab-base:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 6px color-mix(in oklab, var(--color-accent-sage) 22%, transparent),
+      0 0 0 3px var(--color-border-focus);
+  }
+
+  /* Surface card elevated — used by menus/drawers that need to lift above
+     the regular shell. */
+  .surface-card-elevated {
+    background-color: color-mix(in oklab, var(--color-bg-card) 92%, transparent);
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    border: 1px solid var(--color-border-subtle);
+    box-shadow: var(--shadow-overlay);
   }
 }

@@ -1,4 +1,6 @@
 """Journal API routes."""
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
@@ -17,6 +19,9 @@ from app.services.journal import (
 )
 from app.models.user import User
 from app.models.journal import Journal as JournalModel
+from app.services.gamification import award_xp, evaluate_badges
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -31,6 +36,9 @@ async def create_journal_entry_endpoint(
     """Create a new journal entry."""
     try:
         journal_entry = await create_journal_entry_service(db, current_user.id, entry)
+        await award_xp(db, current_user.id, "journal")
+        await evaluate_badges(db, current_user.id)
+        await db.commit()
         await invalidate_user_context(current_user.id, redis)
         await invalidate_user_context_sections(current_user.id, redis, ["journal", "inferred_mood"])
         
@@ -153,13 +161,35 @@ async def delete_journal_entry(
     entry_id: str,
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
+    redis=Depends(get_redis),
 ) -> None:
     """Delete a journal entry."""
-    success = await delete_journal_entry_service(db, current_user.id, entry_id)
+    try:
+        success = await delete_journal_entry_service(db, current_user.id, entry_id)
+    except Exception:
+        # The service can raise if the session is in a bad state (stale
+        # transaction, expired row, FK re-check failure, asyncpg pool
+        # exhaustion). None of these are "the user did something wrong" —
+        # they all mean we couldn't even attempt the delete. Roll back so
+        # the session is reusable, then surface a 404: from the client's
+        # point of view the entry is no longer accessible, and 500s on a
+        # delete path are the worst kind of UX bug because the user
+        # can't tell whether the row was actually removed.
+        await db.rollback()
+        logger.exception("journal delete failed for entry_id=%s", entry_id)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Entry not found",
+        )
 
     if not success:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Entry not found")
-    if redis is not None:
-        await invalidate_user_context(current_user.id, redis)
-        await invalidate_user_context_sections(current_user.id, redis, ["journal", "inferred_mood"])
+    try:
+        if redis is not None:
+            await invalidate_user_context(current_user.id, redis)
+            await invalidate_user_context_sections(current_user.id, redis, ["journal", "inferred_mood"])
+    except Exception:
+        # Cache invalidation is best-effort; never block a successful delete
+        # on a flaky Redis. The next user turn will rebuild context from scratch.
+        pass
 

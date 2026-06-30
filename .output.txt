@@ -1,0 +1,437 @@
+Command finished with exit code 0.
+Command output:
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+	new file:   .claude/skills/brand/SKILL.md
+	new file:   .claude/skills/brand/references/approval-checklist.md
+	new file:   .claude/skills/brand/references/asset-organization.md
+	new file:   .claude/skills/brand/references/brand-guideline-template.md
+	new file:   .claude/skills/brand/references/color-palette-management.md
+	new file:   .claude/skills/brand/references/consistency-checklist.md
+	new file:   .claude/skills/brand/references/logo-usage-rules.md
+	new file:   .claude/skills/brand/references/messaging-framework.md
+	new file:   .claude/skills/brand/references/typography-specifications.md
+	new file:   .claude/skills/brand/references/update.md
+	new file:   .claude/skills/brand/references/visual-identity.md
+	new file:   .claude/skills/brand/references/voice-framework.md
+	new file:   .claude/skills/brand/scripts/extract-colors.cjs
+	new file:   .claude/skills/brand/scripts/inject-brand-context.cjs
+	new file:   .claude/skills/brand/scripts/sync-brand-to-tokens.cjs
+	new file:   .claude/skills/brand/scripts/tests/test_sync_brand_to_tokens.py
+	new file:   .claude/skills/brand/scripts/validate-asset.cjs
+	new file:   .claude/skills/brand/templates/brand-guidelines-starter.md
+	new file:   .claude/skills/design-system/SKILL.md
+	new file:   .claude/skills/design-system/data/slide-backgrounds.csv
+	new file:   .claude/skills/design-system/data/slide-charts.csv
+	new file:   .claude/skills/design-system/data/slide-color-logic.csv
+	new file:   .claude/skills/design-system/data/slide-copy.csv
+	new file:   .claude/skills/design-system/data/slide-layout-logic.csv
+	new file:   .claude/skills/design-system/data/slide-layouts.csv
+	new file:   .claude/skills/design-system/data/slide-strategies.csv
+	new file:   .claude/skills/design-system/data/slide-typography.csv
+	new file:   .claude/skills/design-system/references/component-specs.md
+	new file:   .claude/skills/design-system/references/component-tokens.md
+	new file:   .claude/skills/design-system/references/primitive-tokens.md
+	new file:   .claude/skills/design-system/references/semantic-tokens.md
+	new file:   .claude/skills/design-system/references/states-and-variants.md
+	new file:   .claude/skills/design-system/references/tailwind-integration.md
+	new file:   .claude/skills/design-system/references/token-architecture.md
+	new file:   .claude/skills/design-system/scripts/embed-tokens.cjs
+	new file:   .claude/skills/design-system/scripts/fetch-background.py
+	new file:   .claude/skills/design-system/scripts/generate-slide.py
+	new file:   .claude/skills/design-system/scripts/generate-tokens.cjs
+	new file:   .claude/skills/design-system/scripts/html-token-validator.py
+	new file:   .claude/skills/design-system/scripts/search-slides.py
+	new file:   .claude/skills/design-system/scripts/slide-token-validator.py
+	new file:   .claude/skills/design-system/scripts/slide_search_core.py
+	new file:   .claude/skills/design-system/scripts/tests/test_validate_tokens.py
+	new file:   .claude/skills/design-system/scripts/validate-tokens.cjs
+	new file:   .claude/skills/design-system/templates/design-tokens-starter.json
+	new file:   .claude/skills/design/SKILL.md
+	new file:   .claude/skills/design/data/cip/deliverables.csv
+	new file:   .claude/skills/design/data/cip/industries.csv
+	new file:   .claude/skills/design/data/cip/mockup-contexts.csv
+	new file:   .claude/skills/design/data/cip/styles.csv
+	new file:   .claude/skills/design/data/icon/styles.csv
+	new file:   .claude/skills/design/data/logo/colors.csv
+	new file:   .claude/skills/design/data/logo/industries.csv
+	new file:   .claude/skills/design/data/logo/styles.csv
+	new file:   .claude/skills/design/references/banner-sizes-and-styles.md
+	new file:   .claude/skills/design/references/cip-deliverable-guide.md
+	new file:   .claude/skills/design/references/cip-design.md
+	new file:   .claude/skills/design/references/cip-prompt-engineering.md
+	new file:   .claude/skills/design/references/cip-style-guide.md
+	new file:   .claude/skills/design/references/design-routing.md
+	new file:   .claude/skills/design/references/icon-design.md
+	new file:   .claude/skills/design/references/logo-color-psychology.md
+	new file:   .claude/skills/design/references/logo-design.md
+	new file:   .claude/skills/design/references/logo-prompt-engineering.md
+	new file:   .claude/skills/design/references/logo-style-guide.md
+	new file:   .claude/skills/design/references/slides-copywriting-formulas.md
+	new file:   .claude/skills/design/references/slides-create.md
+	new file:   .claude/skills/design/references/slides-html-template.md
+	new file:   .claude/skills/design/references/slides-layout-patterns.md
+	new file:   .claude/skills/design/references/slides-strategies.md
+	new file:   .claude/skills/design/references/slides.md
+	new file:   .claude/skills/design/references/social-photos-design.md
+	new file:   .claude/skills/design/scripts/cip/core.py
+	new file:   .claude/skills/design/scripts/cip/generate.py
+	new file:   .claude/skills/design/scripts/cip/render-html.py
+	new file:   .claude/skills/design/scripts/cip/search.py
+	new file:   .claude/skills/design/scripts/icon/generate.py
+	new file:   .claude/skills/design/scripts/logo/core.py
+	new file:   .claude/skills/design/scripts/logo/generate.py
+	new file:   .claude/skills/design/scripts/logo/search.py
+	new file:   .claude/skills/slides/SKILL.md
+	new file:   .claude/skills/slides/references/copywriting-formulas.md
+	new file:   .claude/skills/slides/references/create.md
+	new file:   .claude/skills/slides/references/html-template.md
+	new file:   .claude/skills/slides/references/layout-patterns.md
+	new file:   .claude/skills/slides/references/slide-strategies.md
+	new file:   .claude/skills/ui-styling/LICENSE.txt
+	new file:   .claude/skills/ui-styling/SKILL.md
+	new file:   .claude/skills/ui-styling/references/canvas-design-system.md
+	new file:   .claude/skills/ui-styling/references/shadcn-accessibility.md
+	new file:   .claude/skills/ui-styling/references/shadcn-components.md
+	new file:   .claude/skills/ui-styling/references/shadcn-theming.md
+	new file:   .claude/skills/ui-styling/references/tailwind-customization.md
+	new file:   .claude/skills/ui-styling/references/tailwind-responsive.md
+	new file:   .claude/skills/ui-styling/references/tailwind-utilities.md
+	new file:   .claude/skills/ui-styling/scripts/requirements.txt
+	new file:   .claude/skills/ui-styling/scripts/shadcn_add.py
+	new file:   .claude/skills/ui-styling/scripts/tailwind_config_gen.py
+	new file:   .claude/skills/ui-styling/scripts/tests/coverage-ui.json
+	new file:   .claude/skills/ui-styling/scripts/tests/requirements.txt
+	new file:   .claude/skills/ui-styling/scripts/tests/test_shadcn_add.py
+	new file:   .claude/skills/ui-styling/scripts/tests/test_tailwind_config_gen.py
+	new file:   .claude/skills/ui-ux-pro-max/SKILL.md
+	new file:   .claude/skills/ui-ux-pro-max/data/_sync_all.py
+	new file:   .claude/skills/ui-ux-pro-max/data/app-interface.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/charts.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/colors.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/design.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/draft.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/google-fonts.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/icons.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/landing.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/products.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/react-performance.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/stacks/angular.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/stacks/astro.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/stacks/avalonia.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/stacks/flutter.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/stacks/html-tailwind.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/stacks/javafx.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/stacks/jetpack-compose.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/stacks/laravel.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/stacks/nextjs.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/stacks/nuxt-ui.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/stacks/nuxtjs.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/stacks/react-native.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/stacks/react.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/stacks/shadcn.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/stacks/svelte.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/stacks/swiftui.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/stacks/threejs.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/stacks/uno.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/stacks/uwp.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/stacks/vue.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/stacks/winui.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/stacks/wpf.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/styles.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/typography.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/ui-reasoning.csv
+	new file:   .claude/skills/ui-ux-pro-max/data/ux-guidelines.csv
+	new file:   .claude/skills/ui-ux-pro-max/scripts/core.py
+	new file:   .claude/skills/ui-ux-pro-max/scripts/design_system.py
+	new file:   .claude/skills/ui-ux-pro-max/scripts/search.py
+	new file:   .env.example
+	modified:   .gitignore
+	deleted:    .junie/plans/bento-glass-daytime-android.md
+	new file:   .junie/plans/gamification-system.md
+	deleted:    .junie/plans/shathi-mobile-production.md
+	modified:   AGENTS.md
+	deleted:    android/.gitignore
+	deleted:    android/app/.gitignore
+	deleted:    android/app/build.gradle
+	deleted:    android/app/capacitor.build.gradle
+	deleted:    android/app/proguard-rules.pro
+	deleted:    android/app/src/androidTest/java/com/getcapacitor/myapp/ExampleInstrumentedTest.java
+	deleted:    android/app/src/main/AndroidManifest.xml
+	deleted:    android/app/src/main/java/com/shathi/app/MainActivity.java
+	deleted:    android/app/src/main/res/drawable-land-hdpi/splash.png
+	deleted:    android/app/src/main/res/drawable-land-ldpi/splash.png
+	deleted:    android/app/src/main/res/drawable-land-mdpi/splash.png
+	deleted:    android/app/src/main/res/drawable-land-night-hdpi/splash.png
+	deleted:    android/app/src/main/res/drawable-land-night-ldpi/splash.png
+	deleted:    android/app/src/main/res/drawable-land-night-mdpi/splash.png
+	deleted:    android/app/src/main/res/drawable-land-night-xhdpi/splash.png
+	deleted:    android/app/src/main/res/drawable-land-night-xxhdpi/splash.png
+	deleted:    android/app/src/main/res/drawable-land-night-xxxhdpi/splash.png
+	deleted:    android/app/src/main/res/drawable-land-xhdpi/splash.png
+	deleted:    android/app/src/main/res/drawable-land-xxhdpi/splash.png
+	deleted:    android/app/src/main/res/drawable-land-xxxhdpi/splash.png
+	deleted:    android/app/src/main/res/drawable-night/splash.png
+	deleted:    android/app/src/main/res/drawable-port-hdpi/splash.png
+	deleted:    android/app/src/main/res/drawable-port-ldpi/splash.png
+	deleted:    android/app/src/main/res/drawable-port-mdpi/splash.png
+	deleted:    android/app/src/main/res/drawable-port-night-hdpi/splash.png
+	deleted:    android/app/src/main/res/drawable-port-night-ldpi/splash.png
+	deleted:    android/app/src/main/res/drawable-port-night-mdpi/splash.png
+	deleted:    android/app/src/main/res/drawable-port-night-xhdpi/splash.png
+	deleted:    android/app/src/main/res/drawable-port-night-xxhdpi/splash.png
+	deleted:    android/app/src/main/res/drawable-port-night-xxxhdpi/splash.png
+	deleted:    android/app/src/main/res/drawable-port-xhdpi/splash.png
+	deleted:    android/app/src/main/res/drawable-port-xxhdpi/splash.png
+	deleted:    android/app/src/main/res/drawable-port-xxxhdpi/splash.png
+	deleted:    android/app/src/main/res/drawable-v24/ic_launcher_foreground.xml
+	deleted:    android/app/src/main/res/drawable/ic_launcher_background.xml
+	deleted:    android/app/src/main/res/drawable/splash.png
+	deleted:    android/app/src/main/res/layout/activity_main.xml
+	deleted:    android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+	deleted:    android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+	deleted:    android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+	deleted:    android/app/src/main/res/mipmap-hdpi/ic_launcher_background.png
+	deleted:    android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png
+	deleted:    android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
+	deleted:    android/app/src/main/res/mipmap-ldpi/ic_launcher.png
+	deleted:    android/app/src/main/res/mipmap-ldpi/ic_launcher_background.png
+	deleted:    android/app/src/main/res/mipmap-ldpi/ic_launcher_foreground.png
+	deleted:    android/app/src/main/res/mipmap-ldpi/ic_launcher_round.png
+	deleted:    android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+	deleted:    android/app/src/main/res/mipmap-mdpi/ic_launcher_background.png
+	deleted:    android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png
+	deleted:    android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
+	deleted:    android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+	deleted:    android/app/src/main/res/mipmap-xhdpi/ic_launcher_background.png
+	deleted:    android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png
+	deleted:    android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
+	deleted:    android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+	deleted:    android/app/src/main/res/mipmap-xxhdpi/ic_launcher_background.png
+	deleted:    android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png
+	deleted:    android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
+	deleted:    android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+	deleted:    android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_background.png
+	deleted:    android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png
+	deleted:    android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+	deleted:    android/app/src/main/res/values/ic_launcher_background.xml
+	deleted:    android/app/src/main/res/values/strings.xml
+	deleted:    android/app/src/main/res/values/styles.xml
+	deleted:    android/app/src/main/res/xml/file_paths.xml
+	deleted:    android/app/src/test/java/com/getcapacitor/myapp/ExampleUnitTest.java
+	deleted:    android/build.gradle
+	deleted:    android/capacitor.settings.gradle
+	deleted:    android/gradle.properties
+	deleted:    android/gradle/wrapper/gradle-wrapper.jar
+	deleted:    android/gradle/wrapper/gradle-wrapper.properties
+	deleted:    android/gradlew
+	deleted:    android/gradlew.bat
+	deleted:    android/settings.gradle
+	deleted:    android/variables.gradle
+	deleted:    assets/icon.svg
+	deleted:    assets/splash.svg
+	new file:   backend/.aws-rds-ca-bundle.pem
+	modified:   backend/.env.example
+	new file:   backend/.junie/plans/fix-admin-panel-data-loading.md
+	new file:   backend/.junie/plans/verify-and-fix-admin-panel.md
+	new file:   backend/_auth.py
+	new file:   backend/_err.py
+	new file:   backend/_t.py
+	modified:   backend/alembic/versions/014_chat_streaming_indexes.py
+	new file:   backend/alembic/versions/015_user_token_version.py
+	new file:   backend/alembic/versions/016_gamification.py
+	modified:   backend/app/api/admin/routes.py
+	modified:   backend/app/api/auth/routes.py
+	modified:   backend/app/api/chat/routes.py
+	new file:   backend/app/api/gamification/__init__.py
+	new file:   backend/app/api/gamification/routes.py
+	modified:   backend/app/api/habits/routes.py
+	modified:   backend/app/api/journal/routes.py
+	modified:   backend/app/api/mood/routes.py
+	modified:   backend/app/api/router.py
+	modified:   backend/app/core/config.py
+	modified:   backend/app/core/database.py
+	modified:   backend/app/core/dependencies.py
+	modified:   backend/app/core/security.py
+	modified:   backend/app/core/supabase.py
+	modified:   backend/app/main.py
+	modified:   backend/app/models/__init__.py
+	new file:   backend/app/models/gamification.py
+	modified:   backend/app/models/user.py
+	modified:   backend/app/schemas/admin.py
+	new file:   backend/app/schemas/gamification.py
+	modified:   backend/app/services/auth.py
+	new file:   backend/app/services/gamification.py
+	modified:   backend/app/services/mood_inference.py
+	modified:   backend/app/services/user.py
+	modified:   backend/requirements-py314.txt
+	modified:   backend/requirements.txt
+	modified:   backend/scripts/__init__.py
+	new file:   backend/scripts/apply_migrations.py
+	modified:   backend/scripts/check_dependencies.py
+	new file:   backend/scripts/check_supabase.py
+	new file:   backend/scripts/create_admin_user.py
+	new file:   backend/scripts/make_user_admin.py
+	new file:   backend/scripts/run_migrations.ps1
+	new file:   backend/scripts/run_migrations.sh
+	new file:   backend/smoke.py
+	new file:   backend/supabase-root-2021-ca.pem
+	new file:   backend/test_admin_api.py
+	new file:   backend/test_admin_api_output.txt
+	new file:   backend/test_config.py
+	new file:   backend/test_db.py
+	new file:   backend/test_dir.py
+	new file:   backend/test_path.py
+	new file:   backend/test_url.py
+	modified:   backend/tests/test_admin_routes.py
+	modified:   backend/tests/test_auth_dependencies.py
+	modified:   backend/tests/test_config_validation.py
+	new file:   backend/tests/test_cors.py
+	new file:   backend/tests/test_p0_fixes.py
+	new file:   backend/tests/test_p1_fixes.py
+	modified:   backend/tests/test_rag_optimizations.py
+	modified:   backend/tests/test_rate_limit.py
+	modified:   backend/tests/test_response_cache.py
+	new file:   backend/tests/test_token_version.py
+	new file:   backend/users.txt
+	deleted:    capacitor.config.ts
+	new file:   design-system/sereni/MASTER.md
+	new file:   design-system/sereni/README.md
+	new file:   design-system/sereni/pages/auth.md
+	new file:   design-system/sereni/pages/dashboard.md
+	new file:   design-system/sereni/pages/habits.md
+	new file:   design-system/sereni/pages/journal.md
+	new file:   design-system/sereni/pages/mood.md
+	new file:   design-system/sereni/pages/settings-profile.md
+	new file:   design-system/sereni/pages/sleep.md
+	deleted:    docs/ANDROID_RELEASE.md
+	new file:   docs/AUDIT_2026-06-29.md
+	new file:   docs/AUDIT_FRONTEND_AI_2026-07-19.md
+	modified:   docs/CHATBOT_STYLE_FIX_PLAN.md
+	new file:   docs/CONVERSATION_STYLE.md
+	modified:   docs/PERFORMANCE_BASELINE.md
+	new file:   docs/RUNBOOK_SECURITY_INCIDENT.md
+	new file:   docs/figma-mobile-optimization-prompt.md
+	deleted:    docs/figma-modern-mobile-ui-prompt.md
+	new file:   docs/image.png
+	new file:   docs/lighthouse/summary.md
+	modified:   eslint.config.mjs
+	modified:   next.config.ts
+	new file:   out.txt
+	modified:   package-lock.json
+	modified:   package.json
+	new file:   probe.err
+	new file:   probe.mjs
+	new file:   probe.out
+	new file:   public/Authimag.png
+	new file:   public/favicon.ico
+	new file:   public/heroimage.png
+	new file:   r.mjs
+	modified:   render.yaml
+	new file:   research_notes_ai.txt
+	new file:   research_notes_chat.txt
+	new file:   research_notes_crisis.txt
+	new file:   research_notes_moodinf.txt
+	new file:   scripts/check-i18n-keys.mjs
+	modified:   src/app/admin/page.tsx
+	modified:   src/app/ai-companion/page.tsx
+	new file:   src/app/api/backend-auth/google/route.ts
+	modified:   src/app/api/backend-auth/login/route.ts
+	modified:   src/app/api/backend-auth/logout/route.ts
+	new file:   src/app/api/backend-auth/refresh/route.ts
+	modified:   src/app/api/backend-auth/register/route.ts
+	new file:   src/app/api/backend/proxy/[...path]/route.ts
+	modified:   src/app/dashboard/page.tsx
+	modified:   src/app/globals.css
+	modified:   src/app/habits/page.tsx
+	modified:   src/app/insights/InsightsContent.tsx
+	modified:   src/app/journal/page.tsx
+	modified:   src/app/landing/page.tsx
+	modified:   src/app/layout.tsx
+	modified:   src/app/mood/page.tsx
+	modified:   src/app/page.tsx
+	modified:   src/app/profile/page.tsx
+	modified:   src/app/resources/page.tsx
+	modified:   src/app/sleep/page.tsx
+	modified:   src/app/subscription/page.tsx
+	modified:   src/auth.ts
+	modified:   src/components/auth/AuthProvider.tsx
+	new file:   src/components/auth/HeroIllustration.tsx
+	modified:   src/components/auth/LoginForm.tsx
+	modified:   src/components/auth/LoginLayout.tsx
+	modified:   src/components/auth/SignupForm.tsx
+	new file:   src/components/auth/SocialIcons.tsx
+	new file:   src/components/charts/ChartTheme.tsx
+	modified:   src/components/illustrations/OrbIllustration.tsx
+	modified:   src/components/landing/cta-section.tsx
+	modified:   src/components/landing/feature-grid.tsx
+	modified:   src/components/landing/footer.tsx
+	modified:   src/components/landing/hero-section.tsx
+	modified:   src/components/landing/journal-section.tsx
+	new file:   src/components/landing/landing-content.ts
+	new file:   src/components/landing/landing-lang-context.tsx
+	new file:   src/components/landing/moments-section.tsx
+	modified:   src/components/landing/navbar.tsx
+	modified:   src/components/landing/preview-widgets.tsx
+	new file:   src/components/landing/promise-section.tsx
+	modified:   src/components/landing/secondary-grid.tsx
+	new file:   src/components/layout/Fab.tsx
+	new file:   src/components/layout/Sheet.tsx
+	modified:   src/components/layout/dashboard-shell.tsx
+	modified:   src/components/layout/header.tsx
+	modified:   src/components/layout/mobile-bottom-nav.tsx
+	modified:   src/components/layout/mobile-sidebar.tsx
+	new file:   src/components/layout/nav-config.ts
+	modified:   src/components/layout/safety-banner.tsx
+	modified:   src/components/layout/sidebar-plan-card.tsx
+	modified:   src/components/layout/sidebar.tsx
+	modified:   src/components/ui/button.tsx
+	modified:   src/components/ui/card.tsx
+	new file:   src/components/ui/icon.tsx
+	modified:   src/components/ui/input.tsx
+	modified:   src/components/ui/slider.tsx
+	new file:   src/components/ui/states/EmptyState.tsx
+	new file:   src/components/ui/states/ErrorState.tsx
+	new file:   src/components/ui/states/LoadingState.tsx
+	new file:   src/components/ui/states/OfflineBanner.tsx
+	new file:   src/components/ui/toggle.tsx
+	new file:   src/components/widgets/achievements-gallery.tsx
+	new file:   src/components/widgets/companion-tile.tsx
+	new file:   src/components/widgets/crisis-tile.tsx
+	new file:   src/components/widgets/greeting-strip.tsx
+	new file:   src/components/widgets/habit-tile.tsx
+	deleted:    src/components/widgets/habits-tracker.tsx
+	new file:   src/components/widgets/insight-strip.tsx
+	deleted:    src/components/widgets/journal-preview.tsx
+	new file:   src/components/widgets/journal-tile.tsx
+	deleted:    src/components/widgets/mood-overview.tsx
+	new file:   src/components/widgets/mood-tile.tsx
+	new file:   src/components/widgets/quick-actions-strip.tsx
+	deleted:    src/components/widgets/quick-actions.tsx
+	new file:   src/components/widgets/sleep-tile.tsx
+	deleted:    src/components/widgets/summary-strip.tsx
+	new file:   src/components/widgets/wellness-score-card.tsx
+	new file:   src/components/widgets/xp-progress-bar.tsx
+	modified:   src/i18n/locales/bn.json
+	modified:   src/i18n/locales/en.json
+	modified:   src/lib/api.ts
+	new file:   src/lib/api/gamification.ts
+	new file:   src/lib/server/auth-cookies.ts
+	modified:   src/lib/server/backend-auth.ts
+	new file:   src/lib/server/backend-proxy.ts
+	new file:   src/lib/server/edge-jwt.ts
+	modified:   src/lib/store.ts
+	modified:   src/lib/stores/settingsStore.ts
+	modified:   src/proxy.ts
+	modified:   src/types/next-auth.d.ts
+	modified:   tailwind.config.cjs
+	new file:   tsc-new.txt
+	new file:   tsc-out.txt
+	modified:   vercel.json
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	.claude/skills/banner-design/

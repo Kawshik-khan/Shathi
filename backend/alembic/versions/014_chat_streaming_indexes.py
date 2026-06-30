@@ -11,6 +11,14 @@ Revision ID: 014
 Revises: 013
 Create Date: 2026-06-25 00:00:00.000000
 
+Note: this migration deliberately omits the ``CONCURRENTLY`` keyword.
+Alembic wraps each migration in a transaction by default, and Postgres
+forbids ``CREATE INDEX CONCURRENTLY`` inside a transaction block. The
+tables are empty on first apply, so the ``AccessExclusiveLock`` taken
+by the plain ``CREATE INDEX`` is instantaneous and harmless; re-apply
+semantics are preserved via ``IF NOT EXISTS``.
+
+Revision ID: 014
 """
 from typing import Sequence, Union
 
@@ -24,40 +32,34 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    with op.get_context().autocommit_block():
-        op.execute(
-            """
-            CREATE INDEX CONCURRENTLY IF NOT EXISTS
-            idx_sleep_user_slept_desc
-            ON sleep_timing_entries (user_id, slept_at DESC)
-            """
-        )
-        op.execute(
-            """
-            CREATE INDEX CONCURRENTLY IF NOT EXISTS
-            idx_mood_reflections_user_created_desc
-            ON mood_reflections (user_id, created_at DESC)
-            """
-        )
-        op.execute(
-            """
-            CREATE INDEX CONCURRENTLY IF NOT EXISTS
-            idx_app_activity_user_occurred_desc
-            ON app_activity_events (user_id, occurred_at DESC)
-            """
-        )
-        op.execute(
-            """
-            CREATE INDEX CONCURRENTLY IF NOT EXISTS
-            idx_habit_completions_habit_completed_desc
-            ON habit_completions (habit_id, completed_at DESC)
-            """
-        )
+    op.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_sleep_user_slept_desc
+        ON sleep_timing_entries (user_id, slept_at DESC)
+        """
+    )
+    op.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_mood_reflections_user_created_desc
+        ON mood_reflections (user_id, created_at DESC)
+        """
+    )
+    op.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_app_activity_user_occurred_desc
+        ON app_activity_events (user_id, occurred_at DESC)
+        """
+    )
+    op.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_habit_completions_habit_completed_desc
+        ON habit_completions (habit_id, completed_at DESC)
+        """
+    )
 
 
 def downgrade() -> None:
-    with op.get_context().autocommit_block():
-        op.execute("DROP INDEX CONCURRENTLY IF EXISTS idx_habit_completions_habit_completed_desc")
-        op.execute("DROP INDEX CONCURRENTLY IF EXISTS idx_app_activity_user_occurred_desc")
-        op.execute("DROP INDEX CONCURRENTLY IF EXISTS idx_mood_reflections_user_created_desc")
-        op.execute("DROP INDEX CONCURRENTLY IF EXISTS idx_sleep_user_slept_desc")
+    op.execute("DROP INDEX IF EXISTS idx_habit_completions_habit_completed_desc")
+    op.execute("DROP INDEX IF EXISTS idx_app_activity_user_occurred_desc")
+    op.execute("DROP INDEX IF EXISTS idx_mood_reflections_user_created_desc")
+    op.execute("DROP INDEX IF EXISTS idx_sleep_user_slept_desc")

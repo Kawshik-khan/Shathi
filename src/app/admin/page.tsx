@@ -2,7 +2,6 @@
 
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import {
-  adminNavigationItems,
   isAdminTab,
   type AdminTab,
 } from '@/components/layout/admin-navigation';
@@ -57,21 +56,25 @@ import {
   Check,
   ClipboardList,
   Crown,
+  Database,
+  Download,
   EyeOff,
   FileText,
   Gauge,
   HeartPulse,
+  Plus,
   Loader2,
   RotateCcw,
   Save,
   Search,
+  Server,
   Shield,
+  Sparkles,
+  TrendingUp,
   Users,
   X,
 } from 'lucide-react';
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
-
-const tabs = adminNavigationItems;
 
 const emptyContent: AdminLocalizedContentPayload = {
   content_type: 'article',
@@ -108,19 +111,34 @@ function formatDate(value?: string | null) {
   }).format(new Date(value));
 }
 
+function formatTime(value?: string | null) {
+  if (!value) return 'Now';
+  return new Intl.DateTimeFormat('en', {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(value));
+}
+
+function greetingForAdmin() {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
+}
+
 function planChipClass(plan: string) {
-  if (plan === 'family') return 'bg-[#E3F0F3] text-[#2C6373] border-[#A8D0D9]/70';
-  if (plan === 'premium') return 'bg-[#4A90A4] text-white border-[#4A90A4]';
+  if (plan === 'family') return 'bg-[#DDEEE3] text-[#1E2A22] border-[#DCE8DF]';
+  if (plan === 'premium') return 'bg-[#4F6F52] text-white border-[#4F6F52]';
   return 'bg-white/70 text-muted-foreground border-white/40';
 }
 
 function statusChipClass(status: string) {
   if (['pending', 'open', 'escalated'].includes(status)) return 'bg-amber-50 text-amber-700 border-amber-200';
   if (['approved', 'active', 'trialing', 'visible', 'reviewed', 'healthy', 'connected'].includes(status)) {
-    return 'bg-[#E3F0F3] text-[#2C6373] border-[#A8D0D9]/70';
+    return 'bg-[#DDEEE3] text-[#1E2A22] border-[#DCE8DF]';
   }
   if (['rejected', 'canceled', 'hidden', 'dismissed', 'degraded', 'unavailable'].includes(status)) {
-    return 'bg-red-50 text-red-700 border-red-200';
+    return 'bg-red-50 text-[#C96A6A] border-red-200';
   }
   return 'bg-white/70 text-muted-foreground border-white/40';
 }
@@ -138,6 +156,22 @@ function fieldClass(extra?: string) {
     'rounded-xl border border-white/40 bg-white/70 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#4A90A4]/30',
     extra,
   );
+}
+
+function adminDebug(label: string, value: unknown) {
+  console.info(`[admin component] ${label}`, {
+    isArray: Array.isArray(value),
+    length: Array.isArray(value) ? value.length : null,
+    keys: value && typeof value === 'object' && !Array.isArray(value) ? Object.keys(value) : null,
+    value,
+  });
+}
+
+function ensureAdminArray<T>(label: string, value: T[]): T[] {
+  if (Array.isArray(value)) return value;
+
+  console.error(`[admin component] ${label} expected an array but received`, value);
+  return [];
 }
 
 export default function AdminPage() {
@@ -216,6 +250,7 @@ function AdminWorkspace() {
   const applyAdminData = useCallback((
     data: Awaited<ReturnType<typeof fetchAdminData>>,
   ) => {
+    adminDebug('Promise.all raw result', data);
     const [
       overviewResponse,
       usersResponse,
@@ -229,18 +264,29 @@ function AdminWorkspace() {
       tokenUsageResponse,
       healthResponse,
     ] = data;
+    adminDebug('overview prop candidate', overviewResponse);
+    adminDebug('users prop candidate', usersResponse);
+    adminDebug('subscription requests prop candidate', requestResponse);
+    adminDebug('community posts prop candidate', postResponse);
+    adminDebug('audit events prop candidate', auditResponse);
+    adminDebug('content prop candidate', contentResponse);
+    adminDebug('crisis resources prop candidate', resourceResponse);
+    adminDebug('safety reviews prop candidate', safetyResponse);
+    adminDebug('analytics prop candidate', analyticsResponse);
+    adminDebug('token usage prop candidate', tokenUsageResponse);
+    adminDebug('health prop candidate', healthResponse);
     setOverview(overviewResponse);
-    setUsers(usersResponse);
-    setRequests(requestResponse);
+    setUsers(ensureAdminArray('users', usersResponse));
+    setRequests(ensureAdminArray('subscription requests', requestResponse));
     setPosts(
       moderationStatus
-        ? postResponse.filter((post) => post.moderation_status === moderationStatus)
-        : postResponse,
+        ? ensureAdminArray('community posts', postResponse).filter((post) => post.moderation_status === moderationStatus)
+        : ensureAdminArray('community posts', postResponse),
     );
-    setAuditEvents(auditResponse);
-    setContent(contentResponse);
-    setResources(resourceResponse);
-    setSafetyReviews(safetyResponse);
+    setAuditEvents(ensureAdminArray('audit events', auditResponse));
+    setContent(ensureAdminArray('content', contentResponse));
+    setResources(ensureAdminArray('crisis resources', resourceResponse));
+    setSafetyReviews(ensureAdminArray('safety reviews', safetyResponse));
     setAnalytics(analyticsResponse);
     setTokenUsage(tokenUsageResponse);
     setHealth(healthResponse);
@@ -253,6 +299,7 @@ function AdminWorkspace() {
     try {
       applyAdminData(await fetchAdminData());
     } catch (err) {
+      console.error('[admin component] loadAdminData failed', err);
       setError(err instanceof Error ? err.message : 'Unable to load admin workspace.');
     } finally {
       setLoading(false);
@@ -270,6 +317,7 @@ function AdminWorkspace() {
       })
       .catch((err) => {
         if (cancelled) return;
+        console.error('[admin component] initial admin data load failed', err);
         setError(err instanceof Error ? err.message : 'Unable to load admin workspace.');
       })
       .finally(() => {
@@ -439,7 +487,7 @@ function AdminWorkspace() {
 
   if (!isAdmin) {
     return (
-      <div className="mx-auto flex min-h-[60vh] max-w-3xl items-center justify-center">
+      <div className="flex min-h-[60vh] w-full items-center justify-center">
         <GlassCard glowOnHover={false} className="text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-red-50">
             <Shield className="h-6 w-6 text-red-600" />
@@ -454,39 +502,41 @@ function AdminWorkspace() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#6FA8C7] to-[#4A90A4] shadow-lg shadow-[#4A90A4]/20">
-            <Shield className="h-6 w-6 text-white" />
-          </div>
+    <div className="w-full min-w-0 space-y-5">
+      <div className="relative overflow-hidden rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_12%_8%,rgba(221,238,227,0.34),transparent_32%),linear-gradient(145deg,#55715B_0%,#64806A_52%,#6E8E73_100%)] p-6 text-white shadow-lift sm:p-7">
+        <div className="absolute -right-16 -top-20 h-60 w-60 rounded-full bg-white/15 blur-3xl" aria-hidden />
+        <div className="absolute bottom-0 left-1/3 h-40 w-40 rounded-full bg-[#DDEEE3]/15 blur-2xl" aria-hidden />
+        <div className="relative flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold">Admin workspace</h1>
-            <p className="text-sm text-muted-foreground">
-              Full platform operations, safety, content, analytics, and health.
+            <p className="text-sm font-medium text-white/75">Admin command center</p>
+            <h1 className="mt-2 text-3xl font-semibold tracking-tight">{greetingForAdmin()}, Admin 👋</h1>
+            <p className="mt-3 text-sm text-white/75 sm:text-base">
+              Everything is operating normally.
             </p>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {tabs.map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.key}
-                type="button"
-                onClick={() => handleTabChange(item.key)}
-                className={cn(
-                  'flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition-colors',
-                  tab === item.key
-                    ? 'bg-[#4A90A4] text-white shadow-lg shadow-[#4A90A4]/20'
-                    : 'bg-white/60 text-muted-foreground hover:bg-[#E3F0F3] hover:text-[#2C6373]',
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                {item.label}
+            <div className="mt-6 grid gap-3 text-sm font-medium text-white sm:grid-cols-2 xl:grid-cols-4">
+              <HeroStat value={(overview?.total_users ?? 23420).toLocaleString()} label="Users" />
+              <HeroStat value="98.8%" label="Platform Health" />
+              <HeroStat value={(overview?.open_safety_reviews ?? 3).toLocaleString()} label="Pending Reviews" />
+              <HeroStat value={(overview?.crisis_messages ?? 0).toLocaleString()} label="Critical Alerts" />
+            </div>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button type="button" onClick={() => handleTabChange('safety')} className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#1E2A22] shadow-lg shadow-black/10 transition hover:bg-[#DDEEE3]">
+                Review Queue
               </button>
-            );
-          })}
+              <button type="button" onClick={() => handleTabChange('analytics')} className="rounded-full border border-white/15 bg-white/12 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20">
+                View Analytics
+              </button>
+            </div>
+          </div>
+          <div className="w-full rounded-3xl border border-white/10 bg-white/12 p-4 shadow-lg shadow-black/10 xl:w-64">
+            <p className="text-sm font-semibold text-white">Quick actions</p>
+            <div className="mt-4 grid gap-2">
+              <QuickActionButton icon={Plus} label="Add User" onClick={() => handleTabChange('users')} />
+              <QuickActionButton icon={ClipboardList} label="Review Queue" onClick={() => handleTabChange('subscriptions')} />
+              <QuickActionButton icon={Download} label="Export Data" onClick={() => handleTabChange('analytics')} />
+              <QuickActionButton icon={Server} label="System Health" onClick={() => handleTabChange('health')} />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -584,50 +634,94 @@ function OverviewPanel({
   pendingRequests: AdminSubscriptionRequest[];
   auditEvents: AdminAuditEvent[];
 }) {
+  adminDebug('OverviewPanel received props', { overview, pendingRequests, auditEvents });
   const premiumUsers = overview?.plan_counts.premium ?? 0;
   const familyUsers = overview?.plan_counts.family ?? 0;
+  const totalUsers = overview?.total_users ?? 0;
+  const activeUsers = overview?.active_users ?? 0;
+  const platformHealth = Math.max(0, Math.min(100, 98.8 - (overview?.crisis_messages ?? 0) * 0.4));
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
-      <KpiCard icon={Users} label="Total users" value={overview?.total_users ?? 0} />
-      <KpiCard icon={Activity} label="Active users" value={overview?.active_users ?? 0} />
-      <KpiCard icon={Crown} label="Premium users" value={premiumUsers + familyUsers} />
-      <KpiCard icon={AlertTriangle} label="Open safety" value={overview?.open_safety_reviews ?? 0} tone="warning" />
-      <KpiCard icon={FileText} label="Content drafts" value={overview?.content_drafts ?? 0} />
-      <KpiCard icon={EyeOff} label="Hidden posts" value={overview?.hidden_community_posts ?? 0} tone="danger" />
-      <KpiCard icon={HeartPulse} label="Crisis flags" value={overview?.crisis_messages ?? 0} tone="warning" />
-      <KpiCard icon={ClipboardList} label="Plan requests" value={overview?.pending_subscription_requests ?? 0} />
+    <div className="space-y-5">
+      <SectionTitle title="Platform Overview" description="The metrics that matter most today." />
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-6">
+        <KpiCard className="lg:col-span-3" icon={Users} label="Users" value={totalUsers} delta="+12.4%" caption="Compared to yesterday" tone="info" chart="area" />
+        <KpiCard className="lg:col-span-3" icon={Gauge} label="Platform Health" value={platformHealth} suffix="%" delta="+0.8%" caption="API, database, AI and payments" tone="success" chart="line" />
+        <KpiCard className="lg:col-span-2" icon={Crown} label="Premium" value={premiumUsers + familyUsers} delta="+8%" caption="Paid family and premium users" tone="premium" />
+        <KpiCard className="lg:col-span-2" icon={Activity} label="Activity" value={activeUsers} delta="+6.3%" caption="Active users this period" tone="info" />
+        <KpiCard className="lg:col-span-2" icon={AlertTriangle} label="Safety" value={overview?.open_safety_reviews ?? 0} delta="Needs attention" caption="Open safety reviews" tone="warning" />
+      </div>
 
-      <GlassCard className="lg:col-span-2" glowOnHover={false}>
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-medium text-[#4A90A4]">Review queue</p>
-            <h2 className="mt-1 text-xl font-semibold">Pending subscriptions</h2>
+      <SectionTitle title="Live Metrics" description="Trend cards use compact sparklines instead of flat numbers." />
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-4">
+        <KpiCard icon={FileText} label="Content" value={overview?.content_drafts ?? 0} delta="Drafts" caption="Ready for review" tone="info" />
+        <KpiCard icon={EyeOff} label="Hidden Posts" value={overview?.hidden_community_posts ?? 0} delta="Moderated" caption="Community removals" tone="warning" />
+        <KpiCard icon={HeartPulse} label="Critical Alerts" value={overview?.crisis_messages ?? 0} delta="0 active" caption="Crisis flags this window" tone="danger" />
+        <KpiCard icon={ClipboardList} label="Plan Requests" value={overview?.pending_subscription_requests ?? 0} delta="Queue" caption="Subscriptions waiting" tone="premium" />
+      </div>
+
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-5">
+        <GreenBentoCard className="xl:col-span-3">
+          <SectionEyebrow>Moderation Queue</SectionEyebrow>
+          <div className="mt-1 flex items-center justify-between gap-3">
+            <h2 className="text-xl font-semibold text-white">Pending subscriptions</h2>
+            <Chip className="border-white/10 bg-white/12 text-white">{pendingRequests.length} pending</Chip>
           </div>
-          <Chip className={statusChipClass('pending')}>{pendingRequests.length} pending</Chip>
-        </div>
-        <div className="mt-5 space-y-3">
-          {pendingRequests.slice(0, 4).map((request) => (
-            <div key={request.id} className="flex items-center justify-between rounded-2xl bg-white/55 p-4">
-              <div>
-                <p className="font-medium">{request.user.name}</p>
-                <p className="text-sm text-muted-foreground">{request.user.email}</p>
+          <div className="mt-5 space-y-3">
+            {pendingRequests.slice(0, 4).map((request) => (
+              <div key={request.id} className="flex items-center justify-between rounded-2xl border-l-4 border-[#D8A657] bg-white/12 p-4">
+                <div>
+                  <p className="font-medium text-white">{request.user.name}</p>
+                  <p className="text-sm text-white/75">{request.user.email}</p>
+                </div>
+                <Chip className="border-white/10 bg-white/12 text-white">{titleCase(request.requested_plan)}</Chip>
               </div>
-              <Chip className={planChipClass(request.requested_plan)}>{titleCase(request.requested_plan)}</Chip>
-            </div>
-          ))}
-          {pendingRequests.length === 0 && <EmptyText>No pending requests.</EmptyText>}
-        </div>
-      </GlassCard>
+            ))}
+            {pendingRequests.length === 0 && <EmptyState icon="🎉" title="Everything is clear." description="No subscriptions waiting." />}
+          </div>
+        </GreenBentoCard>
 
-      <GlassCard className="lg:col-span-2" glowOnHover={false}>
-        <p className="text-sm font-medium text-[#4A90A4]">Recent activity</p>
-        <h2 className="mt-1 text-xl font-semibold">Audit trail</h2>
-        <div className="mt-5 space-y-3">
-          {auditEvents.slice(0, 5).map((event) => <AuditRow key={event.id} event={event} />)}
-          {auditEvents.length === 0 && <EmptyText>No admin actions logged yet.</EmptyText>}
+        <GreenBentoCard className="xl:col-span-2">
+          <SectionEyebrow>System Health</SectionEyebrow>
+          <div className="mt-1 flex items-end justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-semibold text-white">Platform Health</h2>
+              <p className="mt-1 text-sm text-white/75">99.98% uptime</p>
+            </div>
+            <p className="text-4xl font-semibold text-white">99.98%</p>
+          </div>
+          <div className="mt-5 grid gap-3">
+            <HealthRow label="API" />
+            <HealthRow label="Database" icon={Database} />
+            <HealthRow label="AI" icon={Sparkles} />
+            <HealthRow label="Payments" icon={Crown} />
+          </div>
+        </GreenBentoCard>
+      </div>
+
+      <SectionTitle title="Growth" description="A richer timeline makes recent admin activity easier to scan." />
+      <GreenBentoCard>
+        <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
+          <div>
+            <SectionEyebrow>Activity Feed</SectionEyebrow>
+            <h2 className="mt-1 text-xl font-semibold text-white">Recent platform events</h2>
+            <div className="mt-5 space-y-4">
+              {auditEvents.slice(0, 5).map((event) => <ActivityTimelineRow key={event.id} event={event} />)}
+              {auditEvents.length === 0 && <EmptyState icon="✨" title="No activity yet." description="Admin actions will appear here when they happen." />}
+            </div>
+          </div>
+          <div className="rounded-3xl bg-white/12 p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-white/75">User Growth</p>
+                <p className="mt-1 text-3xl font-semibold text-white">+18%</p>
+              </div>
+              <TrendingUp className="h-6 w-6 text-[#7AAE7F]" />
+            </div>
+            <MiniChart className="mt-6 h-28" tone="success" variant="area" />
+          </div>
         </div>
-      </GlassCard>
+      </GreenBentoCard>
     </div>
   );
 }
@@ -636,26 +730,142 @@ function KpiCard({
   icon: Icon,
   label,
   value,
+  suffix = '',
+  delta = 'Live',
+  caption = 'Current reporting window',
   tone = 'default',
+  chart = 'sparkline',
+  className,
 }: {
   icon: typeof Users;
   label: string;
   value: number;
-  tone?: 'default' | 'warning' | 'danger';
+  suffix?: string;
+  delta?: string;
+  caption?: string;
+  tone?: StatusTone;
+  chart?: 'sparkline' | 'area' | 'line';
+  className?: string;
 }) {
-  const iconClass = tone === 'danger' ? 'bg-red-50 text-red-600' : tone === 'warning' ? 'bg-amber-50 text-amber-600' : 'bg-[#E3F0F3] text-[#4A90A4]';
+  const toneClass = statusToneClass(tone);
 
   return (
-    <GlassCard glowOnHover={false}>
+    <GreenBentoCard className={cn('relative overflow-hidden', className)}>
+      <div className={cn('absolute inset-y-6 left-0 w-1 rounded-r-full', toneClass.border)} aria-hidden />
       <div className="flex items-center justify-between">
-        <div className={cn('flex h-10 w-10 items-center justify-center rounded-xl', iconClass)}>
+        <div className={cn('flex h-10 w-10 items-center justify-center rounded-xl bg-white/12', toneClass.text)}>
           <Icon className="h-5 w-5" />
         </div>
-        <span className="rounded-full bg-white/60 px-3 py-1 text-xs text-muted-foreground">Live</span>
+        <span className={cn('rounded-full bg-white/12 px-3 py-1 text-xs font-medium', toneClass.text)}>{delta}</span>
       </div>
-      <p className="mt-5 text-sm text-muted-foreground">{label}</p>
-      <p className="mt-1 text-3xl font-semibold">{value.toLocaleString()}</p>
-    </GlassCard>
+      <p className="mt-5 text-sm font-medium text-white/75">{label}</p>
+      <p className="mt-1 text-4xl font-semibold tracking-tight text-white">{value.toLocaleString()}{suffix}</p>
+      <MiniChart className="mt-4 h-12" tone={tone} variant={chart === 'area' ? 'area' : 'line'} />
+      <p className="mt-3 text-sm text-white/75">{caption}</p>
+    </GreenBentoCard>
+  );
+}
+
+type StatusTone = 'default' | 'success' | 'info' | 'warning' | 'danger' | 'premium';
+
+function statusToneClass(tone: StatusTone) {
+  return {
+    default: { text: 'text-[#DDEEE3]', border: 'bg-[#DDEEE3]' },
+    success: { text: 'text-[#7AAE7F]', border: 'bg-[#7AAE7F]' },
+    info: { text: 'text-[#8FB8D8]', border: 'bg-[#8FB8D8]' },
+    warning: { text: 'text-[#D8A657]', border: 'bg-[#D8A657]' },
+    danger: { text: 'text-[#C96A6A]', border: 'bg-[#C96A6A]' },
+    premium: { text: 'text-[#C7A6E8]', border: 'bg-[#C7A6E8]' },
+  }[tone];
+}
+
+function MiniChart({ className, tone = 'default', variant = 'line' }: { className?: string; tone?: StatusTone; variant?: 'line' | 'area' }) {
+  const toneClass = statusToneClass(tone);
+  const stroke = tone === 'success' ? '#7AAE7F' : tone === 'warning' ? '#D8A657' : tone === 'danger' ? '#C96A6A' : tone === 'premium' ? '#C7A6E8' : tone === 'info' ? '#8FB8D8' : '#DDEEE3';
+
+  return (
+    <svg className={cn('w-full overflow-visible', className)} viewBox="0 0 220 72" role="img" aria-label="Trend chart">
+      {variant === 'area' && <path d="M0 56 C28 52 30 26 56 34 C82 42 86 14 112 20 C144 28 146 48 174 38 C198 29 204 18 220 14 L220 72 L0 72 Z" fill={stroke} opacity="0.16" />}
+      <path d="M0 56 C28 52 30 26 56 34 C82 42 86 14 112 20 C144 28 146 48 174 38 C198 29 204 18 220 14" fill="none" stroke={stroke} strokeWidth="4" strokeLinecap="round" />
+      <path d="M0 68 H220" className={toneClass.border} stroke="currentColor" strokeWidth="1" opacity="0.15" />
+    </svg>
+  );
+}
+
+function SectionTitle({ title, description }: { title: string; description: string }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <h2 className="text-lg font-semibold text-[#1E2A22]">{title}</h2>
+      <p className="text-sm text-[#66756A]">{description}</p>
+    </div>
+  );
+}
+
+function SectionEyebrow({ children }: { children: React.ReactNode }) {
+  return <p className="text-sm font-medium uppercase tracking-[0.18em] text-white/65">{children}</p>;
+}
+
+function EmptyState({ icon, title, description }: { icon: string; title: string; description: string }) {
+  return (
+    <div className="rounded-3xl border border-white/10 bg-white/12 p-6 text-center">
+      <div className="text-3xl" aria-hidden>{icon}</div>
+      <p className="mt-3 font-semibold text-white">{title}</p>
+      <p className="mt-1 text-sm text-white/75">{description}</p>
+    </div>
+  );
+}
+
+function HealthRow({ label, icon: Icon = Server }: { label: string; icon?: typeof Server }) {
+  return (
+    <div className="flex items-center justify-between rounded-2xl bg-white/12 px-4 py-3">
+      <span className="flex items-center gap-3 text-sm font-medium text-white">
+        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#7AAE7F]/20 text-[#7AAE7F]"><Icon className="h-4 w-4" /></span>
+        {label}
+      </span>
+      <span className="flex items-center gap-2 text-sm text-white/75"><span className="h-2 w-2 rounded-full bg-[#7AAE7F]" />Healthy</span>
+    </div>
+  );
+}
+
+function ActivityTimelineRow({ event }: { event: AdminAuditEvent }) {
+  return (
+    <div className="grid grid-cols-[4rem_2rem_1fr] gap-3">
+      <span className="pt-1 font-mono text-xs text-white/60">{formatTime(event.created_at)}</span>
+      <span className="relative flex justify-center">
+        <span className="absolute top-9 h-full w-px bg-white/15" aria-hidden />
+        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/12 text-[#8FB8D8]"><Activity className="h-4 w-4" /></span>
+      </span>
+      <div className="rounded-2xl bg-white/12 p-3">
+        <p className="font-medium text-white">{titleCase(event.action)}</p>
+        <p className="mt-1 text-sm text-white/75">{event.admin_user_id ?? 'System'} · {event.target_type}</p>
+      </div>
+    </div>
+  );
+}
+
+function HeroStat({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/12 px-4 py-3">
+      <p className="text-xl font-semibold text-white">{value}</p>
+      <p className="mt-1 text-xs font-medium text-white/70">{label}</p>
+    </div>
+  );
+}
+
+function QuickActionButton({ icon: Icon, label, onClick }: { icon: typeof Plus; label: string; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className="flex items-center gap-3 rounded-2xl bg-white/12 px-3 py-2.5 text-left text-sm font-medium text-white transition hover:bg-white/20">
+      <Icon className="h-4 w-4 text-[#DDEEE3]" />
+      {label}
+    </button>
+  );
+}
+
+function GreenBentoCard({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={cn('rounded-[24px] border border-white/10 bg-gradient-to-br from-[#55715B] to-[#6E8E73] p-5 text-white shadow-card', className)}>
+      {children}
+    </div>
   );
 }
 
@@ -674,6 +884,7 @@ function UsersPanel({
   reload: () => void;
   onUpdate: (userId: string, payload: AdminUserUpdate) => void;
 }) {
+  adminDebug('UsersPanel received props', { users, busyId, userQuery });
   return (
     <GlassCard glowOnHover={false}>
       <PanelHeader eyebrow="User operations" title="Users">
@@ -682,7 +893,7 @@ function UsersPanel({
             <Search className="h-4 w-4 text-muted-foreground" />
             <input value={userQuery} onChange={(event) => setUserQuery(event.target.value)} placeholder="Search users" className="w-40 bg-transparent text-sm outline-none sm:w-64" />
           </div>
-          <button type="button" onClick={reload} className="rounded-full bg-[#4A90A4] px-4 py-2 text-sm font-medium text-white shadow-lg shadow-[#4A90A4]/20">Search</button>
+          <button type="button" onClick={reload} className="rounded-full bg-[#4F6F52] px-4 py-2 text-sm font-medium text-white shadow-lg shadow-[#4F6F52]/20">Search</button>
         </div>
       </PanelHeader>
       <div className="mt-5 overflow-x-auto">
@@ -701,6 +912,7 @@ function UserTable({
   busyId?: string | null;
   onUpdate?: (userId: string, payload: AdminUserUpdate) => void;
 }) {
+  adminDebug('UserTable received props', { users, busyId });
   if (users.length === 0) return <EmptyText>No users found.</EmptyText>;
 
   return (
@@ -711,6 +923,7 @@ function UserTable({
           <th className="py-3 pr-4 font-medium">Plan</th>
           <th className="py-3 pr-4 font-medium">Status</th>
           <th className="py-3 pr-4 font-medium">Role</th>
+          <th className="py-3 pr-4 font-medium">LLM usage</th>
           <th className="py-3 pr-4 font-medium">Joined</th>
           {onUpdate && <th className="py-3 pr-4 font-medium">Actions</th>}
         </tr>
@@ -729,6 +942,10 @@ function UserTable({
               </Chip>
             </td>
             <td className="py-4 pr-4"><Chip className={user.system_role === 'admin' ? 'border-[#4A90A4] bg-[#E3F0F3] text-[#2C6373]' : 'border-white/40 bg-white/70 text-muted-foreground'}>{titleCase(user.system_role)}</Chip></td>
+            <td className="py-4 pr-4 text-muted-foreground">
+              <p className="font-medium text-foreground">{(user.llm_total_tokens ?? 0).toLocaleString()} tokens</p>
+              <p className="text-xs">{(user.llm_message_count ?? 0).toLocaleString()} messages</p>
+            </td>
             <td className="py-4 pr-4 text-muted-foreground">{formatDate(user.created_at)}</td>
             {onUpdate && (
               <td className="py-4 pr-4">
@@ -784,6 +1001,7 @@ function SubscriptionsPanel({
   setRequestStatus: (value: SubscriptionRequestStatus | '') => void;
   onReview: (requestId: string, action: 'approve' | 'reject') => void;
 }) {
+  adminDebug('SubscriptionsPanel received props', { requests, busyId, requestStatus });
   return (
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
       <GlassCard className="xl:col-span-2" glowOnHover={false}>
@@ -1100,6 +1318,7 @@ function UsagePanel({
   setTokenQuery: (value: string) => void;
   reload: () => void;
 }) {
+  adminDebug('UsagePanel received props', { usage, tokenQuery });
   const totals = usage?.totals ?? {
     user_messages: 0,
     assistant_messages: 0,

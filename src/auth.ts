@@ -2,13 +2,13 @@ import NextAuth, { type NextAuthConfig } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { apiFetch } from "@/lib/api";
-import { exchangeGoogleTokenForBackendTokens } from "@/lib/server/backend-auth";
+import {
+  exchangeGoogleTokenForBackendTokens,
+  persistBackendTokensAsCookies,
+} from "@/lib/server/backend-auth";
 import { AuthUser, TokenResponse } from "@/types";
 
 type BackendAuthUser = {
-  backendToken?: string;
-  backendRefreshToken?: string;
-  backendExpiresIn?: number;
   backendUser?: AuthUser;
 };
 
@@ -33,6 +33,17 @@ function getAuthSecret(): string | string[] {
   return primarySecret ?? fallbackSecret ?? "development-auth-secret";
 }
 
+function getRequestOrigin(): string {
+  return (
+    process.env.NEXTAUTH_URL ??
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : "http://localhost:3000")
+  );
+}
+
 const config = {
   secret: getAuthSecret(),
   trustHost: true,
@@ -53,7 +64,7 @@ const config = {
         }
 
         try {
-          const tokens = await apiFetch<TokenResponse>("/api/v1/auth/login", {
+          const tokens = await apiFetch<TokenResponse>("/api/backend-auth/login", {
             method: "POST",
             body: JSON.stringify({
               email: credentials.email,
@@ -70,9 +81,6 @@ const config = {
             email: tokens.user.email,
             name: tokens.user.name,
             image: tokens.user.avatar_url,
-            backendToken: tokens.access_token,
-            backendRefreshToken: tokens.refresh_token,
-            backendExpiresIn: tokens.expires_in,
             backendUser: tokens.user,
           };
         } catch {
@@ -96,9 +104,6 @@ const config = {
         token.email = user.email;
         token.name = user.name;
         token.picture = user.image;
-        token.backendToken = (user as BackendAuthUser).backendToken;
-        token.backendRefreshToken = (user as BackendAuthUser).backendRefreshToken;
-        token.backendExpiresIn = (user as BackendAuthUser).backendExpiresIn;
         token.backendUser = (user as BackendAuthUser).backendUser;
       }
 
@@ -117,10 +122,11 @@ const config = {
           token.email = response.user.email;
           token.name = response.user.name;
           token.picture = response.user.avatar_url;
-          token.backendToken = response.access_token;
-          token.backendRefreshToken = response.refresh_token;
-          token.backendExpiresIn = response.expires_in;
           token.backendUser = response.user;
+          await persistBackendTokensAsCookies(
+            getRequestOrigin(),
+            response as TokenResponse,
+          );
         }
       }
 
@@ -129,11 +135,7 @@ const config = {
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
-        session.user.backendToken = token.backendToken as string;
       }
-      session.backendToken = token.backendToken;
-      session.backendRefreshToken = token.backendRefreshToken;
-      session.backendExpiresIn = token.backendExpiresIn;
       session.backendUser = token.backendUser;
       return session;
     },

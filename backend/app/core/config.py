@@ -22,10 +22,19 @@ class Settings(BaseSettings):
     APP_ENV: str = "development"
     DEBUG: bool = False
     AUTO_CREATE_TABLES: bool = False
-    SECRET_KEY: str = "change-me-in-production"
+    # NOTE: There is intentionally NO default for SECRET_KEY. A misconfigured
+    # deploy that forgot to inject the secret must crash at startup, not sign
+    # tokens with a value an attacker can read from the public repo.
+    SECRET_KEY: str
     
     # Database - Supabase is required (no local SQLite fallback)
     DATABASE_URL: str = ""
+    # Set false for local dev when the pinned Supabase CA cannot satisfy
+    # the platform's strict verifier (e.g. Windows + Python 3.14 with a
+    # stale copy of ``Supabase Root 2021 CA``). Production MUST leave
+    # this True so the TLS handshake still authenticates the database
+    # host. Defaults to True.
+    DATABASE_SSL_VERIFY: bool = True
     
     # Supabase Configuration
     SUPABASE_URL: str = ""
@@ -146,7 +155,12 @@ class Settings(BaseSettings):
     CLOUDFLARE_KV_NAMESPACE_ID: Optional[str] = None
     CLOUDFLARE_API_TOKEN: Optional[str] = None
     
-    # CORS
+    # CORS — comma-separated list of exact origins. Production deploys MUST
+    # pin this to the real frontend host (e.g. ``https://shathi.vercel.app``);
+    # localhost and wildcards are explicitly rejected at validation time.
+    # Default is dev-friendly but the validator still forbids credentials +
+    # wildcard combinations, so the worst a misconfigured prod can do is
+    # reject cross-site cookies (fail-closed).
     CORS_ORIGINS: str = "http://localhost:3000,https://localhost:3000"
     
     # Logging
@@ -154,7 +168,7 @@ class Settings(BaseSettings):
 
     # Rate limiting
     RATE_LIMIT_WINDOW_SECONDS: int = 60
-    AUTH_RATE_LIMIT_MAX: int = 20
+    AUTH_RATE_LIMIT_MAX: int = 10
     CHAT_RATE_LIMIT_MAX: int = 60
 
     # Avatar uploads. AVATAR_STORAGE_DIR controls where avatars land when
@@ -168,10 +182,40 @@ class Settings(BaseSettings):
     # Monitoring
     SENTRY_DSN: Optional[str] = None
     
+    # Methods + headers CORS exposes. Pinning these (instead of ``["*"]``) is
+    # required when ``allow_credentials=True`` per the CORS spec — a wildcard
+    # with credentials is the classic exfil channel.
+    CORS_ALLOW_METHODS: str = "GET,POST,PUT,PATCH,DELETE,OPTIONS"
+    CORS_ALLOW_HEADERS: str = (
+        "Authorization,Content-Type,Accept,Origin,Referer,User-Agent,"
+        "X-Requested-With,X-CSRF-Protection"
+    )
+    CORS_EXPOSE_HEADERS: str = (
+        "X-Request-ID,X-RateLimit-Remaining,X-RateLimit-Reset"
+    )
+    CORS_MAX_AGE_SECONDS: int = 600
+
     @property
     def cors_origins_list(self) -> List[str]:
-        """Parse CORS origins from comma-separated string."""
-        return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
+        """Parse CORS origins from comma-separated string.
+
+        Empty entries are dropped. The list is NOT validated here — that's
+        the job of :meth:`validate_production`, which applies stricter
+        rules in production.
+        """
+        return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
+
+    @property
+    def cors_allow_methods_list(self) -> List[str]:
+        return [m.strip().upper() for m in self.CORS_ALLOW_METHODS.split(",") if m.strip()]
+
+    @property
+    def cors_allow_headers_list(self) -> List[str]:
+        return [h.strip() for h in self.CORS_ALLOW_HEADERS.split(",") if h.strip()]
+
+    @property
+    def cors_expose_headers_list(self) -> List[str]:
+        return [h.strip() for h in self.CORS_EXPOSE_HEADERS.split(",") if h.strip()]
 
     @property
     def is_production(self) -> bool:
@@ -192,34 +236,66 @@ class Settings(BaseSettings):
         silently serve traffic with the wrong posture. The checks are
         intentionally noisy: the goal is to break the deploy, not to
         degrade gracefully into a less-secure mode.
+
+        SECURITY: ``SECRET_KEY`` is checked in *every* environment, not just
+        production. A dev box that boots without the secret would otherwise
+        sign tokens with ``""`` and let anyone forge admin sessions.
         """
-        if not self.is_production:
-            return
         issues: list[str] = []
-        if not self.SECRET_KEY or self.SECRET_KEY == "change-me-in-production":
-            issues.append("SECRET_KEY must be set to a strong random value")
-        if not self.effective_database_url:
-            issues.append("DATABASE_URL or SUPABASE_DB_URL is required")
-        bad_origins = [
-            o
-            for o in self.cors_origins_list
-            if o
-            and (
-                o.startswith("http://localhost")
-                or o.startswith("http://127.")
-                or "*" in o
-            )
-        ]
-        if bad_origins:
+        # Treat short or obviously-placeholder secrets as missing. 64 hex
+        # characters ≈ 32 bytes of entropy, which is the floor we want.
+        weak_secret_markers = {
+            "",
+            "change-me-in-production",
+            "your-secret-key-here",
+            "secret",
+            "changeme",
+        }
+        if (
+            not self.SECRET_KEY
+            or self.SECRET_KEY in weak_secret_markers
+            or len(self.SECRET_KEY) < 32
+        ):
             issues.append(
-                f"CORS_ORIGINS must not contain localhost or wildcards in "
-                f"production (found: {bad_origins})"
+                "SECRET_KEY must be set to a strong random value "
+                "(>= 32 chars; not a placeholder)"
             )
-        if not self.SUPABASE_URL and not self.DATABASE_URL:
-            issues.append("SUPABASE_URL or DATABASE_URL is required")
+        # CORS validation runs in EVERY environment. The rules are the
+        # same shape in dev and prod (what changes is the suggested
+        # default value); surfacing the failure locally lets a bad
+        # ``CORS_ORIGINS`` be caught before it ships.
+        origins = self.cors_origins_list
+        if not origins:
+            issues.append(
+                "CORS_ORIGINS must list at least one origin (got empty)"
+            )
+        else:
+            for o in origins:
+                # Wildcards of any flavor — explicit ``*``, ``*.vercel.app``,
+                # subdomain globs — are forbidden when credentials are
+                # allowed. Per the CORS spec a wildcard origin is incompatible
+                # with ``Access-Control-Allow-Credentials: true`` anyway, but
+                # checking here gives the operator a clear error before they
+                # ship.
+                if o == "*" or "*" in o:
+                    issues.append(
+                        f"CORS_ORIGINS must not contain wildcards (got {o!r}); "
+                        f"with credentials enabled the spec forbids it"
+                    )
+                if self.is_production and not o.startswith("https://"):
+                    issues.append(
+                        f"CORS_ORIGINS origin must be https in production "
+                        f"(got {o!r}); http://localhost is fine only in dev"
+                    )
+        if self.is_production:
+            if not self.effective_database_url:
+                issues.append("DATABASE_URL or SUPABASE_DB_URL is required")
+            if not self.SUPABASE_URL and not self.DATABASE_URL:
+                issues.append("SUPABASE_URL or DATABASE_URL is required")
         if issues:
+            label = "Production" if self.is_production else "Configuration"
             raise RuntimeError(
-                "Production configuration invalid:\n  - " + "\n  - ".join(issues)
+                f"{label} configuration invalid:\n  - " + "\n  - ".join(issues)
             )
 
 

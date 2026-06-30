@@ -1,20 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { BackendAuthError, fetchBackendAuth } from "@/lib/server/backend-auth";
+import { setAuthCookies, tokensToCookieInput } from "@/lib/server/auth-cookies";
 import type { TokenResponse } from "@/types";
-
-const AUTH_COOKIE_NAME = "sathi_auth";
-const AUTH_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
-
-function withAuthCookie(response: NextResponse): NextResponse {
-  response.cookies.set(AUTH_COOKIE_NAME, "1", {
-    path: "/",
-    maxAge: AUTH_COOKIE_MAX_AGE_SECONDS,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    httpOnly: true,
-  });
-  return response;
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,7 +12,7 @@ export async function POST(request: NextRequest) {
       "Credentials backend registration",
     );
 
-    return withAuthCookie(NextResponse.json(tokens));
+    return setAuthCookies(NextResponse.json(tokens), tokensToCookieInput(tokens));
   } catch (error) {
     if (error instanceof BackendAuthError) {
       return NextResponse.json({ detail: error.detail }, { status: error.status });

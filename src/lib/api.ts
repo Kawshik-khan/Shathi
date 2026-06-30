@@ -65,6 +65,12 @@ export interface AdminUserSummary {
   subscription_ends_at?: string | null;
   created_at: string;
   updated_at?: string | null;
+  llm_message_count?: number;
+  llm_input_tokens?: number;
+  llm_output_tokens?: number;
+  llm_cache_tokens?: number;
+  llm_total_tokens?: number;
+  llm_last_message_at?: string | null;
 }
 
 export interface AdminUserUpdate {
@@ -488,42 +494,50 @@ export interface SessionInfo {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
+/**
+ * P1 1.3: every backend call now goes through the Next.js BFF proxy at
+ * ``/api/backend/proxy/[...path]``. The proxy reads ``sathi_at`` from
+ * the request cookies and attaches it as ``Authorization: Bearer …``
+ * on the server-side fetch to FastAPI. The browser therefore never has
+ * to read the JWT, and the cookie stays HttpOnly.
+ *
+ * If a caller already passes an absolute URL (rare; mostly tests) we
+ * honour it as-is.
+ */
 function resolveApiUrl(url: string): string {
   if (url.startsWith('http')) {
     return url;
   }
 
-  const baseUrl = API_BASE_URL.replace(/\/$/, '');
-  const baseHasVersionedPrefix = /\/api\/v\d+$/.test(baseUrl);
-  const urlHasVersionedPrefix = /^\/api\/v\d+(?:\/|$)/.test(url);
-
-  if (urlHasVersionedPrefix) {
-    return baseHasVersionedPrefix
-      ? `${baseUrl.replace(/\/api\/v\d+$/, '')}${url}`
-      : `${baseUrl}${url}`;
+  // Already a BFF route — pass through. These are /api/backend-auth/* and
+  // /api/backend/* (the proxy itself).
+  if (url.startsWith('/api/backend')) {
+    return url;
   }
 
+  // Mount the path under the BFF proxy verbatim — keep ``/api`` so the
+  // catch-all at ``/api/backend/proxy/[...path]`` forwards the full
+  // versioned URL to FastAPI. FastAPI mounts every domain router under
+  // ``/api/v1`` (see ``app.include_router(api_router, prefix="/api/v1")``
+  // in ``backend/app/main.py``), so the proxy must keep the ``/api/v1``
+  // prefix in ``targetPath`` or every proxied call 404s.
   if (url.startsWith('/api/')) {
-    return baseHasVersionedPrefix
-      ? `${baseUrl}${url.slice('/api'.length)}`
-      : `${baseUrl}/api/v1${url.slice('/api'.length)}`;
+    return `/api/backend/proxy${url}`;
   }
 
-  return `${baseUrl}${url}`;
+  // Unknown shape — keep the historical behaviour and append the API base.
+  // This branch should be unreachable for any caller using ``/api/...``
+  // paths (which is the entire codebase).
+  return `${API_BASE_URL.replace(/\/$/, '')}${url}`;
 }
 
-export function getAuthToken(): string | null {
-  if (typeof window === 'undefined') return null;
-
-  const authData = localStorage.getItem('auth');
-  if (!authData) return null;
-
-  try {
-    const parsed = JSON.parse(authData);
-    return parsed.accessToken || parsed.access_token || null;
-  } catch {
-    return null;
-  }
+/**
+ * P1 1.3: returns ``true`` so the fetch wrapper sends the HttpOnly
+ * ``sathi_at`` / ``sathi_rt`` cookies on every same-origin request.
+ * Kept as a function (rather than inlined) so tests can stub it.
+ */
+export function shouldIncludeCredentials(): boolean {
+  return true;
 }
 
 export async function apiFetch<T = unknown>(
@@ -532,17 +546,18 @@ export async function apiFetch<T = unknown>(
   maxRetries: number = 3
 ): Promise<T> {
   const fullUrl = resolveApiUrl(url);
-  
-  const token = getAuthToken();
 
   let lastError: Error;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       const response = await fetch(fullUrl, {
+        // P1 1.3: include cookies so ``sathi_at`` rides along. The BFF
+        // proxy at /api/backend/proxy/[...path] reads the cookie and
+        // attaches ``Authorization: Bearer …`` before forwarding.
+        credentials: shouldIncludeCredentials() ? 'include' : 'omit',
         headers: {
           'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
           ...options.headers,
         },
         ...options,
@@ -554,9 +569,21 @@ export async function apiFetch<T = unknown>(
         }
 
         try {
-          return await response.json();
-        } catch {
-          throw new Error('Invalid response format from server');
+          const responseText = await response.text();
+          const json = JSON.parse(responseText);
+          if (url.startsWith('/api/v1/admin/')) {
+            console.info('[admin apiFetch] response JSON', {
+              url,
+              fullUrl,
+              status: response.status,
+              responseLength: responseText.length,
+              json,
+            });
+          }
+          return json;
+        } catch (error) {
+          console.error('[apiFetch] failed to parse JSON response', { url, fullUrl, error });
+          throw new Error(error instanceof Error ? `Invalid response format from server: ${error.message}` : 'Invalid response format from server');
         }
       }
 
@@ -594,11 +621,19 @@ export async function apiFetch<T = unknown>(
         throw error;
       }
 
-      // Network error or other fetch error
+      // Network error or other fetch/rendering-adjacent error
       lastError = error instanceof Error ? error : new Error('Network error');
 
       if (attempt === maxRetries) {
-        const apiError: ApiError = new Error('Network error - please check your connection');
+        console.error('[apiFetch] request failed after retries', {
+          url,
+          fullUrl,
+          attempts: maxRetries + 1,
+          error: lastError,
+        });
+        const apiError: ApiError = new Error(
+          lastError.message || 'Network request failed without an error message'
+        );
         apiError.code = 'NETWORK_ERROR';
         throw apiError;
       }
@@ -700,14 +735,24 @@ function queryString(params: Record<string, string | number | boolean | undefine
   return value ? `?${value}` : '';
 }
 
+function logAdminApiShape<T>(label: string, value: T): T {
+  console.info(`[admin api] ${label}`, {
+    isArray: Array.isArray(value),
+    keys: value && typeof value === 'object' && !Array.isArray(value) ? Object.keys(value) : null,
+    length: Array.isArray(value) ? value.length : null,
+    value,
+  });
+  return value;
+}
+
 export function getAdminOverview() {
-  return apiFetch<AdminOverview>('/api/v1/admin/overview');
+  return apiFetch<AdminOverview>('/api/v1/admin/overview').then((value) => logAdminApiShape('overview', value));
 }
 
 export function getAdminUsers(filters: AdminUserListFilters = {}) {
   return apiFetch<AdminUserSummary[]>(
     `/api/v1/admin/users${queryString({ ...filters })}`
-  );
+  ).then((value) => logAdminApiShape('users', value));
 }
 
 export function updateAdminUser(userId: string, payload: AdminUserUpdate) {
@@ -720,7 +765,7 @@ export function updateAdminUser(userId: string, payload: AdminUserUpdate) {
 export function getAdminSubscriptionRequests(status?: SubscriptionRequestStatus | '') {
   return apiFetch<AdminSubscriptionRequest[]>(
     `/api/v1/admin/subscription-requests${queryString({ status })}`
-  );
+  ).then((value) => logAdminApiShape('subscription-requests', value));
 }
 
 export function approveAdminSubscriptionRequest(requestId: string, adminNote?: string) {
@@ -744,11 +789,11 @@ export function rejectAdminSubscriptionRequest(requestId: string, adminNote?: st
 }
 
 export function getAdminCommunityPosts() {
-  return apiFetch<AdminCommunityPost[]>('/api/v1/admin/moderation/community-posts');
+  return apiFetch<AdminCommunityPost[]>('/api/v1/admin/moderation/community-posts').then((value) => logAdminApiShape('community-posts', value));
 }
 
 export function getAdminAuditEvents() {
-  return apiFetch<AdminAuditEvent[]>('/api/v1/admin/audit-events');
+  return apiFetch<AdminAuditEvent[]>('/api/v1/admin/audit-events').then((value) => logAdminApiShape('audit-events', value));
 }
 
 export function getAdminContent(filters: {
@@ -759,7 +804,7 @@ export function getAdminContent(filters: {
 } = {}) {
   return apiFetch<AdminLocalizedContent[]>(
     `/api/v1/admin/content${queryString(filters)}`
-  );
+  ).then((value) => logAdminApiShape('content', value));
 }
 
 export function createAdminContent(payload: AdminLocalizedContentPayload) {
@@ -785,7 +830,7 @@ export function deleteAdminContent(contentId: string) {
 export function getAdminCrisisResources(active?: boolean | '') {
   return apiFetch<AdminCrisisResource[]>(
     `/api/v1/admin/crisis-resources${queryString({ active })}`
-  );
+  ).then((value) => logAdminApiShape('crisis-resources', value));
 }
 
 export function createAdminCrisisResource(payload: AdminCrisisResourcePayload) {
@@ -805,7 +850,7 @@ export function updateAdminCrisisResource(resourceId: string, payload: Partial<A
 export function getAdminSafetyReviews(status?: string | '') {
   return apiFetch<AdminSafetyReview[]>(
     `/api/v1/admin/safety-reviews${queryString({ status })}`
-  );
+  ).then((value) => logAdminApiShape('safety-reviews', value));
 }
 
 export function reviewAdminSafetyMessage(
@@ -833,7 +878,7 @@ export function restoreAdminCommunityPost(postId: string, reason?: string) {
 }
 
 export function getAdminAnalytics(range = 30) {
-  return apiFetch<AdminAnalytics>(`/api/v1/admin/analytics?range=${range}`);
+  return apiFetch<AdminAnalytics>(`/api/v1/admin/analytics?range=${range}`).then((value) => logAdminApiShape('analytics', value));
 }
 
 export function getAdminTokenUsage(filters: {
@@ -849,11 +894,11 @@ export function getAdminTokenUsage(filters: {
       limit: filters.limit,
       offset: filters.offset,
     })}`
-  );
+  ).then((value) => logAdminApiShape('token-usage', value));
 }
 
 export function getAdminSystemHealth() {
-  return apiFetch<AdminSystemHealth>('/api/v1/admin/system-health');
+  return apiFetch<AdminSystemHealth>('/api/v1/admin/system-health').then((value) => logAdminApiShape('system-health', value));
 }
 
 export function getUserProfile() {
@@ -879,11 +924,10 @@ export function updateUserSettings(settings: Record<string, unknown>) {
 }
 
 export async function exportUserData() {
-  const token = getAuthToken();
+  // P1 1.3: the ``sathi_at`` cookie is sent automatically on this
+  // same-origin BFF request; no Authorization header is required.
   const response = await fetch(resolveApiUrl('/api/v1/users/me/export'), {
-    headers: {
-      ...(token && { Authorization: `Bearer ${token}` }),
-    },
+    credentials: 'include',
   });
 
   if (!response.ok) {
@@ -908,13 +952,12 @@ export function getSessions() {
 }
 
 export async function uploadAvatar(file: Blob): Promise<{ avatar_url: string } & Record<string, unknown>> {
-  const token = getAuthToken();
   const formData = new FormData();
   formData.append('file', file);
   const response = await fetch(resolveApiUrl('/api/v1/users/me/avatar'), {
     method: 'POST',
+    credentials: 'include',
     headers: {
-      ...(token && { Authorization: `Bearer ${token}` }),
       // Do NOT set Content-Type here; the browser will fill in the
       // correct multipart boundary when given a FormData body.
     },
@@ -929,12 +972,9 @@ export async function uploadAvatar(file: Blob): Promise<{ avatar_url: string } &
 }
 
 export async function deleteAvatar(): Promise<void> {
-  const token = getAuthToken();
   const response = await fetch(resolveApiUrl('/api/v1/users/me/avatar'), {
     method: 'DELETE',
-    headers: {
-      ...(token && { Authorization: `Bearer ${token}` }),
-    },
+    credentials: 'include',
   });
 
   if (!response.ok) {
@@ -1145,16 +1185,13 @@ export async function streamChatMessage(
   onEvent: (event: ChatStreamEvent) => void,
   options: { signal?: AbortSignal } = {}
 ) {
-  const token = getAuthToken();
-  if (!token) {
-    throw new Error('Please log in again to use chat.');
-  }
-
+  // P1 1.3: the ``sathi_at`` cookie rides on the BFF request;
+  // no client-side token needed.
   const response = await fetch(resolveApiUrl('/api/v1/chat/stream'), {
     method: 'POST',
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(payload),
     signal: options.signal,

@@ -50,6 +50,16 @@ async def lifespan(app: FastAPI):
 
             pc = Pinecone(api_key=settings.PINECONE_API_KEY)
             app.state.pinecone_index = pc.Index(settings.PINECONE_INDEX_NAME)
+            # Warm the index connection so the first /health check and the first
+            # chat retrieval don't pay the cold-call cost (DNS + TCP + TLS +
+            # initial REST round-trip; on this host that can be ~2-5s, well over
+            # the 1s budget the health probe gives itself). Mirror the warmup
+            # pattern from the Pinecone MCP server. Failure here is non-fatal —
+            # the index still works, the first request just pays the cost once.
+            try:
+                await asyncio.to_thread(app.state.pinecone_index.describe_index_stats)
+            except Exception as warm_exc:
+                logger.warning("Pinecone warmup failed (non-fatal): %s", warm_exc)
         except Exception as exc:
             logger.warning("Pinecone init failed: %s; vector context disabled", exc)
 
@@ -98,12 +108,21 @@ def create_application() -> FastAPI:
     )
     
     # Middleware
+    #
+    # CORS is pinned to explicit methods/headers/expose_headers (rather
+    # than ``["*"]``) because FastAPI's CORSMiddleware will refuse wildcards
+    # when ``allow_credentials=True`` per the CORS spec — and credentialed
+    # CORS is exactly what 1.3's HttpOnly cookie flow needs. Validate
+    # at startup via ``Settings.validate_production`` to keep the two
+    # in sync.
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins_list,
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=settings.cors_allow_methods_list,
+        allow_headers=settings.cors_allow_headers_list,
+        expose_headers=settings.cors_expose_headers_list,
+        max_age=settings.CORS_MAX_AGE_SECONDS,
     )
     app.add_middleware(GZipMiddleware, minimum_size=1000)
     app.add_middleware(RateLimitMiddleware)
@@ -165,7 +184,12 @@ def create_application() -> FastAPI:
             if not pinecone_index:
                 return "unavailable"
             try:
-                async with asyncio.timeout(1.0):
+                # Cold calls to Pinecone's REST endpoint can take 2-5s on the
+                # first hit (DNS + TCP + TLS + initial round-trip). We warm the
+                # connection at startup so steady-state calls are fast, but
+                # keep the probe budget generous enough that a transient
+                # re-cold (after a long idle) doesn't make /health flap.
+                async with asyncio.timeout(5.0):
                     await asyncio.to_thread(pinecone_index.describe_index_stats)
                 return "connected"
             except Exception:

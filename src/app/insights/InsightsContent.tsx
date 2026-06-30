@@ -4,9 +4,6 @@ import dynamic from 'next/dynamic';
 import { useMemo } from 'react';
 import { useInsightsData, type InsightsSlice } from '@/hooks/useInsightsData';
 import Header from '@/components/insights/Header';
-import OverviewGrid from '@/components/insights/OverviewGrid';
-import AdvancedGrid from '@/components/insights/AdvancedGrid';
-import Recommendations from '@/components/insights/Recommendations';
 
 // Recharts surfaces SSR sizing warnings during prerender — render the grid on
 // the client only. The shells inside each grid keep paint fast.
@@ -67,7 +64,7 @@ export function InsightsContent() {
   );
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="w-full min-w-0 space-y-8">
       <Header
         range={range}
         onRangeChange={setRange}

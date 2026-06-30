@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { Navbar } from "@/components/landing/navbar";
 import { HeroSection } from "@/components/landing/hero-section";
-import { FeatureGrid } from "@/components/landing/feature-grid";
-import { SecondaryGrid } from "@/components/landing/secondary-grid";
-import { JournalSection } from "@/components/landing/journal-section";
+import { MomentsSection } from "@/components/landing/moments-section";
+import { PromiseSection } from "@/components/landing/promise-section";
 import { CTASection } from "@/components/landing/cta-section";
 import { Footer } from "@/components/landing/footer";
+import { LandingLangProvider } from "@/components/landing/landing-lang-context";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -24,16 +24,20 @@ export const metadata: Metadata = {
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted to-accent">
-      <Navbar />
-      <main>
-        <HeroSection />
-        <FeatureGrid />
-        <SecondaryGrid />
-        <JournalSection />
-        <CTASection />
-      </main>
-      <Footer />
-    </div>
+    <LandingLangProvider>
+      <div
+        className="relative isolate min-h-screen text-text-primary"
+        style={{ background: "var(--bg-gradient)" }}
+      >
+        <Navbar />
+        <main>
+          <HeroSection />
+          <MomentsSection />
+          <PromiseSection />
+          <CTASection />
+        </main>
+        <Footer />
+      </div>
+    </LandingLangProvider>
   );
 }

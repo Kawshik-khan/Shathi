@@ -1,22 +1,26 @@
 'use client';
 
 import { DashboardShell } from '@/components/layout/dashboard-shell';
-import { GlassCard } from '@/components/shared/glass-card';
 import {
+  BookOpen,
+  ChevronDown,
   Loader2,
+  Leaf,
   Menu,
   MessageSquare,
   PanelLeftClose,
+  PenLine,
   Plus,
   Send,
-  Sparkles,
-  Target,
   Trash2,
-  User,
   Wind,
   X,
-  Quote,
   MessageCircle,
+  HeartHandshake,
+  Sparkles,
+  Sun,
+  Search,
+  Star,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -43,10 +47,10 @@ interface Message {
 }
 
 const quickActions = [
-  { label: 'শ্বাস', icon: Wind, prompt: 'আমাকে একটি শ্বাস-প্রশ্বাসের ব্যায়াম করাও' },
-  { label: 'অনুপ্রেরণা', icon: Quote, prompt: 'আজ আমার একটু অনুপ্রেরণা দরকার' },
-  { label: 'মনের কথা', icon: MessageCircle, prompt: 'আমি কিছু কথা বলতে চাই' },
-  { label: 'ফোকাস', icon: Target, prompt: 'আমাকে মনোযোগ ধরে রাখতে সাহায্য করো' },
+  { label: 'শ্বাস', icon: Wind, prompt: 'Guide me through a calming breathing exercise' },
+  { label: 'অনুপ্রেরণা', icon: Sparkles, prompt: 'Give me a gentle motivation for today' },
+  { label: 'মনের কথা', icon: MessageCircle, prompt: 'I need someone supportive to talk to' },
+  { label: 'ফোকাস', icon: PenLine, prompt: 'Help me focus and clear my thoughts' },
 ];
 
 function welcomeMessage(language: 'en' | 'bn' = 'bn'): Message {
@@ -84,6 +88,24 @@ function formatHistoryTime(value?: string | null) {
     month: 'short',
     day: 'numeric',
   });
+}
+
+function getConversationDate(value?: string | null) {
+  const date = value ? new Date(value) : new Date();
+  return Number.isNaN(date.getTime()) ? new Date() : date;
+}
+
+function getConversationGroup(value?: string | null) {
+  const date = getConversationDate(value);
+  const today = new Date();
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const startOfConversationDate = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  const diffDays = Math.floor((startOfToday - startOfConversationDate) / 86400000);
+
+  if (diffDays <= 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays <= 7) return 'Last 7 Days';
+  return 'Older conversations';
 }
 
 function inferOrbEmotion(text: string): OrbEmotion {
@@ -147,6 +169,8 @@ function AICompanionContent() {
   const [isHistoryLoading, setIsHistoryLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [historySearch, setHistorySearch] = useState('');
+  const [pinnedConversationIds, setPinnedConversationIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [voiceState, setVoiceState] = useState<VoiceState>('idle');
   const [, setOrbEmotion] = useState<OrbEmotion>('neutral');
@@ -481,246 +505,267 @@ function AICompanionContent() {
   };
 
   const activeConversation = conversations.find((conversation) => conversation.id === activeConversationId);
-
-  const sidebar = (
-    <aside className="h-full flex flex-col bg-white/70 dark:bg-white/5 border-r border-black/5 dark:border-white/10">
-      <div className="p-3 flex items-center gap-2 border-b border-black/5 dark:border-white/10">
-        <button
-          onClick={handleNewChat}
-          className="flex-1 inline-flex items-center justify-center gap-2 h-10 rounded-lg bg-[#4A90A4] text-white text-sm font-medium hover:bg-[#3F7E90] transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          New Chat
-        </button>
-        <button
-          onClick={() => setIsSidebarOpen(false)}
-          className="lg:hidden h-10 w-10 inline-flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-          aria-label="Close chat history"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      </div>
-
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
-        {isHistoryLoading && conversations.length === 0 ? (
-          <div className="flex items-center justify-center py-8 text-muted-foreground">
-            <Loader2 className="w-5 h-5 animate-spin" />
-          </div>
-        ) : conversations.length === 0 ? (
-          <div className="px-3 py-8 text-center text-sm text-muted-foreground">
-            No saved chats yet.
-          </div>
-        ) : (
-          conversations.map((conversation) => {
-            const isActive = conversation.id === activeConversationId;
-            return (
-              <div
-                key={conversation.id}
-                className={cn(
-                  'group flex items-center gap-1 rounded-lg transition-colors',
-                  isActive
-                    ? 'bg-[#E3F0F3] text-[#2C6373]'
-                    : 'text-muted-foreground hover:bg-[#F1F5F7] hover:text-foreground dark:hover:bg-white/10'
-                )}
-              >
-                <button
-                  onClick={() => loadConversation(conversation.id)}
-                  className="min-w-0 flex-1 flex items-center gap-2 px-3 py-2 text-left"
-                >
-                  <MessageSquare className="w-4 h-4 flex-shrink-0" />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium">
-                      {conversation.title || 'New Chat'}
-                    </span>
-                    <span className="block text-[11px] opacity-70">
-                      {conversation.language === 'en' ? 'English' : 'বাংলা'} · {formatHistoryTime(conversation.updated_at)}
-                    </span>
-                  </span>
-                </button>
-                <button
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    void handleDeleteConversation(conversation.id);
-                  }}
-                  className="mr-2 opacity-0 group-hover:opacity-100 h-7 w-7 inline-flex items-center justify-center rounded-md hover:bg-red-100 hover:text-red-600 transition-all"
-                  aria-label="Delete chat"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            );
-          })
-        )}
-      </div>
-    </aside>
+  const isEmptyConversation = messages.length === 0 || (messages.length === 1 && messages[0].id === 'welcome');
+  const filteredConversations = conversations.filter((conversation) =>
+    (conversation.title || 'New Chat').toLowerCase().includes(historySearch.trim().toLowerCase())
   );
+  const groupedConversations = ['Today', 'Yesterday', 'Last 7 Days', 'Older conversations'].map((group) => ({
+    group,
+    items: filteredConversations.filter((conversation) => getConversationGroup(conversation.updated_at) === group),
+  }));
+  const togglePinnedConversation = (conversationId: string) => {
+    setPinnedConversationIds((prev) =>
+      prev.includes(conversationId)
+        ? prev.filter((id) => id !== conversationId)
+        : [...prev, conversationId]
+    );
+  };
 
   return (
-    <DashboardShell>
-      <div className="max-w-[1400px] mx-auto h-[calc(100vh-140px)] min-h-[620px] flex flex-col">
-        <div className="flex items-center gap-3 mb-4">
-          <button
-            onClick={() => setIsSidebarOpen(true)}
-            className="lg:hidden h-10 w-10 inline-flex items-center justify-center rounded-lg bg-white/70 dark:bg-white/10 border border-black/5 dark:border-white/10"
-            aria-label="Open chat history"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6FA8C7] to-[#4A90A4] flex items-center justify-center shadow-lg shadow-[#4A90A4]/20">
-            <Sparkles className="w-5 h-5 text-white" />
-          </div>
-          <div className="min-w-0">
-            <h1 className="text-2xl font-semibold text-foreground truncate">
-              {activeConversation?.title || 'AI Companion'}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {activeLanguage === 'en' ? 'Continuing in English' : 'বাংলা ডিফল্ট চ্যাট'}
-            </p>
-          </div>
-          <div className="ml-auto hidden lg:flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#4A90A4] animate-pulse" />
-            <span className="text-xs text-muted-foreground">Online</span>
-          </div>
-        </div>
+    <DashboardShell fullWidth>
+      <div className="flex h-[calc(100vh-120px)] min-h-[680px] w-full min-w-0 flex-col bg-[#FAFBF8] text-[#25342A]">
+        <div className={cn('grid h-full min-h-0 w-full min-w-0 gap-5', isSidebarCollapsed ? 'lg:grid-cols-[minmax(0,1fr)]' : 'lg:grid-cols-[clamp(280px,22vw,340px)_minmax(0,1fr)]')}>
+          <aside className={cn('hidden h-[calc(100vh-120px)] min-h-[680px] min-w-0 flex-col overflow-hidden rounded-[30px] border border-[rgba(86,113,92,.12)] bg-[#F4F7F2] p-4 shadow-[0_18px_55px_rgba(41,63,48,.10)] transition-all duration-300 lg:flex', isSidebarCollapsed && 'lg:hidden')}>
+            <button
+              onClick={handleNewChat}
+              className="flex h-[52px] min-h-[52px] w-full items-center justify-center gap-2 rounded-[18px] bg-gradient-to-br from-[#56715C] via-[#64806A] to-[#75917A] text-sm font-semibold text-white shadow-[0_14px_30px_rgba(41,63,48,.18)] transition-all hover:-translate-y-1"
+            >
+              <Plus className="h-5 w-5" /> New Chat
+            </button>
 
-        <GlassCard className="flex-1 overflow-hidden" delay={0.1}>
-          <div className="h-full flex">
-            <div className={cn('hidden lg:block transition-all duration-200', isSidebarCollapsed ? 'w-0 overflow-hidden' : 'w-72')}>
-              {sidebar}
-            </div>
+            <label className="mt-4 flex h-12 items-center gap-3 rounded-[16px] border border-[rgba(86,113,92,.12)] bg-white px-4 text-[#66756A] shadow-[0_10px_24px_rgba(41,63,48,.06)]">
+              <Search className="h-4 w-4" />
+              <span className="sr-only">Search conversations</span>
+              <input
+                value={historySearch}
+                onChange={(event) => setHistorySearch(event.target.value)}
+                placeholder="Search conversations"
+                className="min-w-0 flex-1 bg-transparent text-sm text-[#1F2A24] outline-none placeholder:text-[#66756A]/70"
+              />
+            </label>
 
-            <div className="flex-1 min-w-0 flex flex-col">
-              <div className="hidden lg:flex items-center justify-between px-4 py-3 border-b border-black/5 dark:border-white/10">
-                <button
-                  onClick={() => setIsSidebarCollapsed((collapsed) => !collapsed)}
-                  className="inline-flex items-center gap-2 h-9 px-3 rounded-lg text-sm text-muted-foreground hover:bg-[#F1F5F7] dark:hover:bg-white/10 transition-colors"
-                >
-                  <PanelLeftClose className="w-4 h-4" />
-                  History
+            <div className="mt-5 flex-1 overflow-y-auto custom-scrollbar space-y-5 pr-1">
+              {isHistoryLoading && conversations.length === 0 ? (
+                <div className="flex items-center justify-center py-10 text-[#56715C]"><Loader2 className="h-5 w-5 animate-spin" /></div>
+              ) : filteredConversations.length === 0 ? (
+                <button onClick={handleNewChat} className="w-full rounded-[20px] bg-white px-4 py-5 text-left text-sm text-[#66756A] transition-all hover:bg-[#EEF6F0]">
+                  No conversations found. Start a new chat.
                 </button>
-                <button
-                  onClick={handleNewChat}
-                  className="inline-flex items-center gap-2 h-9 px-3 rounded-lg text-sm font-medium bg-[#F1F5F7] dark:bg-white/10 hover:bg-[#E3F0F3] transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  New Chat
-                </button>
-              </div>
+              ) : groupedConversations.map(({ group, items }) => (
+                <div key={group} className={cn(items.length === 0 && 'hidden')}>
+                  <p className="mb-2 px-2 text-xs font-bold uppercase tracking-[0.16em] text-[#66756A]">{group}</p>
+                  <div className="space-y-2">
+                    {items.map((conversation) => {
+                      const isActive = conversation.id === activeConversationId;
+                      const isPinned = pinnedConversationIds.includes(conversation.id);
 
-              <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4">
-                <AnimatePresence initial={false}>
-                  {messages.map((message, index) => (
-                    <motion.div
-                      key={message.id}
-                      initial={{ opacity: 0, y: 16 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.25, delay: index === messages.length - 1 ? 0 : 0 }}
-                      className={cn('flex gap-3', message.role === 'user' ? 'flex-row-reverse' : 'flex-row')}
-                    >
-                      <div
-                        className={cn(
-                          'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
-                          message.role === 'user'
-                            ? 'bg-gradient-to-br from-[#A8D0D9] to-[#6FA8C7]'
-                            : 'bg-gradient-to-br from-[#6FA8C7] to-[#4A90A4]'
-                        )}
-                      >
-                        {message.role === 'user' ? (
-                          <User className="w-4 h-4 text-white" />
-                        ) : (
-                          <Sparkles className="w-4 h-4 text-white" />
-                        )}
-                      </div>
-
-                      <div
-                        className={cn(
-                          'max-w-[82%] px-4 py-3 rounded-2xl',
-                          message.role === 'user'
-                            ? 'bg-[#4A90A4] text-white rounded-br-md'
-                            : 'bg-[#F1F5F7] dark:bg-white/10 text-foreground rounded-bl-md'
-                        )}
-                      >
-                        <MessageBubbleContent
-                          content={message.content}
-                          isStreaming={isSending && index === messages.length - 1 && message.role === 'assistant'}
-                        />
+                      return (
                         <div
+                          key={conversation.id}
                           className={cn(
-                            'text-[10px] mt-1',
-                            message.role === 'user' ? 'text-white/70' : 'text-muted-foreground'
+                            'group flex items-center gap-1 rounded-[18px] border transition-all duration-300',
+                            isActive
+                              ? 'border-white bg-gradient-to-br from-[#56715C] to-[#75917A] text-white shadow-[0_14px_30px_rgba(41,63,48,.18)]'
+                              : 'border-transparent bg-white/65 text-[#25342A] hover:-translate-y-0.5 hover:bg-white'
                           )}
                         >
-                          {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          <button onClick={() => loadConversation(conversation.id)} className="min-w-0 flex flex-1 items-center gap-3 px-3 py-3 text-left">
+                            <MessageSquare className={cn('h-4 w-4 flex-shrink-0', isActive ? 'text-white/90' : 'text-[#56715C]')} />
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-sm font-semibold">{conversation.title || 'New Chat'}</span>
+                              <span className={cn('block truncate text-[11px]', isActive ? 'text-white/70' : 'text-[#66756A]')}>
+                                {conversation.language === 'en' ? 'English' : 'বাংলা'} · {formatHistoryTime(conversation.updated_at) || 'Just now'}
+                              </span>
+                            </span>
+                          </button>
+                          <button
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              togglePinnedConversation(conversation.id);
+                            }}
+                            className={cn('grid h-9 w-9 place-items-center rounded-full transition-all hover:bg-[#DDEEE3]', isPinned ? 'text-[#E3B341]' : isActive ? 'text-white/60 hover:text-white' : 'text-[#66756A]/60 group-hover:text-[#56715C]')}
+                            aria-label={isPinned ? 'Unpin conversation' : 'Pin conversation'}
+                          >
+                            <Star className={cn('h-4 w-4', isPinned && 'fill-current')} />
+                          </button>
+                          <button
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              void handleDeleteConversation(conversation.id);
+                            }}
+                            className={cn('mr-2 grid h-9 w-9 place-items-center rounded-full transition-all hover:bg-red-50 hover:text-red-600', isActive ? 'text-white/60' : 'text-[#66756A]/60 group-hover:text-[#56715C]')}
+                            aria-label="Delete conversation"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-                <div ref={messagesEndRef} />
-              </div>
-
-              {error && (
-                <div className="px-4 py-2 border-t border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800">
-                  <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                      );
+                    })}
+                  </div>
                 </div>
-              )}
-
-              <div className="px-4 py-3 border-t border-black/5 dark:border-white/5 overflow-x-auto scrollbar-none snap-x snap-mandatory">
-                <div className="flex flex-row gap-2 whitespace-nowrap">
-                  {quickActions.map((action) => (
-                    <button
-                      key={action.label}
-                      onClick={() => handleSend(action.prompt)}
-                      disabled={isSending}
-                      className="flex-shrink-0 snap-start flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F1F5F7] dark:bg-white/10 text-xs font-medium text-muted-foreground hover:bg-[#EAF2F4] dark:hover:bg-white/20 hover:text-[#4A90A4] transition-colors disabled:opacity-50 btn-haptic touch-target"
-                    >
-                      <action.icon className="w-3.5 h-3.5" />
-                      {action.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="p-3 sm:p-4 border-t border-black/5 dark:border-white/5">
-                <div className="flex items-end gap-2 rounded-[1.6rem] border border-black/5 bg-white/75 p-2 shadow-[0_16px_45px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-white/8">
-                  <button
-                    type="button"
-                    onClick={() => setIsCrisisOverlayOpen(true)}
-                    className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#F1F5F7] hover:bg-[#EAF2F4] dark:bg-white/10 transition-colors btn-haptic touch-target"
-                    aria-label="Get emergency help"
-                  >
-                    <Plus className="w-5 h-5 text-muted-foreground" />
-                  </button>
-                  <textarea
-                    value={input}
-                    onChange={(event) => setInput(event.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder={activeLanguage === 'en' ? 'Type your message...' : 'আপনার মেসেজ লিখুন...'}
-                    disabled={isSending}
-                    rows={1}
-                    aria-label={voiceState === 'listening' && interimTranscript ? interimTranscript : 'Message'}
-                    className="min-w-0 flex-1 resize-none rounded-[1.25rem] border border-transparent bg-[#F1F5F7]/70 px-4 py-3 text-sm transition-all placeholder:text-muted-foreground/60 focus:border-[#A8D0D9] focus:outline-none focus:ring-2 focus:ring-[#4A90A4]/10 dark:bg-white/10"
-                    style={{ minHeight: '44px', maxHeight: '120px' }}
-                  />
-                  <VoiceMicButton
-                    state={voiceState}
-                    level={audioLevel}
-                    isSupported={voiceRecognition.isSupported}
-                    onClick={handleToggleVoice}
-                  />
-                  <button
-                    onClick={() => handleSend()}
-                    disabled={isSending || !input.trim()}
-                    className="grid h-11 w-11 shrink-0 place-items-center rounded-full btn-primary-gradient shadow-sm transition-all hover:shadow-[0_10px_26px_rgba(34,197,94,0.24)] disabled:cursor-not-allowed disabled:opacity-50"
-                    aria-label="Send message"
-                  >
-                    {isSending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-                  </button>
-                </div>
-              </div>
+              ))}
             </div>
+          </aside>
+
+          <div className="flex min-h-0 min-w-0 flex-col gap-5">
+            <header className="flex flex-shrink-0 flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setIsSidebarOpen(true)}
+                  className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#F3F6F2] text-[#36513C] shadow-[0_12px_30px_rgba(41,63,48,.10)] transition-all hover:-translate-y-1 hover:bg-[#E8F2EA] lg:hidden"
+                  aria-label="Open navigation"
+                >
+                  <Menu className="h-5 w-5" />
+                </button>
+                <div className="grid h-14 w-14 place-items-center rounded-full bg-gradient-to-br from-[#6D916E] to-[#3E5E44] text-white shadow-[0_16px_34px_rgba(41,63,48,.18)]">
+                  <Sparkles className="h-6 w-6" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold tracking-tight text-[#2B4431] sm:text-4xl">{activeConversation?.title || 'New Chat'}</h1>
+                  <p className="mt-1 text-sm font-medium text-[#425F48]">বাংলা চেকইন চ্যাট</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 text-[#2E4635]">
+                <span className="hidden items-center gap-2 rounded-full px-3 py-2 text-sm font-medium sm:inline-flex">
+                  <span className="h-2.5 w-2.5 rounded-full bg-[#6E936E]" /> Online
+                </span>
+                <button className="grid h-12 w-12 place-items-center rounded-full border border-[#DCE8DD] bg-white/70 shadow-[0_10px_28px_rgba(41,63,48,.08)] transition-all hover:-translate-y-1" aria-label="Theme settings">
+                  <Sun className="h-5 w-5" />
+                </button>
+                <button className="flex h-12 items-center gap-3 rounded-full border border-[#DCE8DD] bg-white/70 pl-2 pr-4 shadow-[0_10px_28px_rgba(41,63,48,.08)] transition-all hover:-translate-y-1" aria-label="Open profile menu">
+                  <span className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-[#6C936D] to-[#3F5F45] text-white font-semibold">K</span>
+                  <ChevronDown className="h-4 w-4" />
+                </button>
+              </div>
+            </header>
+
+            <section className="relative flex min-h-0 flex-1 overflow-hidden rounded-[34px] bg-[radial-gradient(circle_at_85%_45%,rgba(147,178,143,.34),transparent_30%),linear-gradient(135deg,#5B7B5F_0%,#3F6247_42%,#294833_100%)] text-white shadow-[0_28px_80px_rgba(36,58,42,.28)]">
+              <div className="pointer-events-none absolute -right-20 bottom-0 h-72 w-[34rem] rounded-tl-full bg-white/5 blur-sm" />
+              <Leaf className="pointer-events-none absolute bottom-24 right-24 h-28 w-28 rotate-12 text-white/7" />
+              <Leaf className="pointer-events-none absolute bottom-12 right-6 h-48 w-48 -rotate-45 text-white/6" />
+              <div className="relative flex min-h-0 w-full flex-col">
+                <div className="flex flex-shrink-0 items-center justify-between border-b border-white/12 px-5 py-5 sm:px-7">
+                    <div className="flex items-center gap-3 text-white/80">
+                      <BookOpen className="h-5 w-5" />
+                      <span className="text-base font-medium">Conversation</span>
+                    </div>
+                    <button
+                      onClick={() => setIsSidebarCollapsed((collapsed) => !collapsed)}
+                      className="hidden h-12 items-center gap-2 rounded-full border border-white/10 bg-white/10 px-5 text-sm font-semibold text-white transition-all hover:-translate-y-1 hover:bg-white/16 lg:inline-flex"
+                    >
+                      <PanelLeftClose className="h-4 w-4" /> {isSidebarCollapsed ? 'Show History' : 'Hide History'}
+                    </button>
+                  </div>
+                  <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar p-6 sm:p-7">
+                    <AnimatePresence initial={false}>
+                      {isEmptyConversation ? (
+                        <motion.div className="flex min-h-full flex-col items-center justify-center text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                          <div className="grid h-20 w-20 place-items-center rounded-full bg-white/12 text-white shadow-[inset_0_1px_0_rgba(255,255,255,.14)]"><Leaf className="h-10 w-10" /></div>
+                          <h3 className="mt-5 text-2xl font-semibold">What&apos;s on your mind today?</h3>
+                          <p className="mt-2 max-w-sm text-sm leading-relaxed text-white/65">I&apos;m here to listen without judgment.</p>
+                          <button onClick={handleNewChat} className="mt-5 rounded-full bg-white/14 px-5 py-3 text-sm font-semibold text-white transition-all hover:bg-white/20">Start Conversation</button>
+                        </motion.div>
+                      ) : messages.map((message, index) => (
+                        <motion.div
+                          key={message.id}
+                          initial={{ opacity: 0, y: 16 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.25, delay: index === messages.length - 1 ? 0 : 0 }}
+                          className={cn('mb-5 flex items-start gap-3', message.role === 'user' ? 'flex-row-reverse' : 'flex-row')}
+                        >
+                          <div
+                            className={cn(
+                              'grid h-11 w-11 flex-shrink-0 place-items-center rounded-full shadow-[0_14px_28px_rgba(16,32,21,.16)]',
+                              message.role === 'user' ? 'bg-white text-[#38553E]' : 'bg-[#7FA17E] text-white'
+                            )}
+                          >
+                            {message.role === 'user' ? <span className="font-semibold">K</span> : <Sparkles className="h-5 w-5" />}
+                          </div>
+
+                          <div
+                            className={cn(
+                              'max-w-[82%] rounded-[22px] border px-5 py-4 text-sm leading-relaxed shadow-[inset_0_1px_0_rgba(255,255,255,.10)]',
+                              message.role === 'user'
+                                ? 'border-white/14 bg-white/12 text-white'
+                                : 'border-white/10 bg-white/10 text-white/92'
+                            )}
+                          >
+                            <MessageBubbleContent
+                              content={message.content}
+                              isStreaming={isSending && index === messages.length - 1 && message.role === 'assistant'}
+                            />
+                            <div className="mt-2 text-[11px] text-white/62">
+                              {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                    {error && (
+                      <div className="mt-4 rounded-[14px] border border-[#D58A63]/60 bg-[#6D533B]/30 px-5 py-4 text-sm font-medium text-[#FFE1D1]">
+                        {error}
+                      </div>
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
+
+                  <div className="flex-shrink-0 overflow-x-auto border-t border-white/8 px-5 py-4 scrollbar-none snap-x snap-mandatory sm:px-7">
+                    <div className="flex flex-row gap-3 whitespace-nowrap">
+                      {quickActions.map((action) => (
+                        <button
+                          key={action.label}
+                          onClick={() => handleSend(action.prompt)}
+                          disabled={isSending}
+                          className="flex-shrink-0 snap-start flex h-11 items-center gap-2 rounded-full bg-white/12 px-5 text-sm font-semibold text-white/82 transition-all duration-300 hover:-translate-y-1 hover:bg-white/18 disabled:opacity-50 btn-haptic touch-target"
+                        >
+                          <action.icon className="h-4 w-4" />
+                          {action.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="sticky bottom-0 flex-shrink-0 border-t border-white/8 bg-[#2D4C37]/80 px-5 pb-6 pt-5 backdrop-blur-xl sm:px-7">
+                    <div className="flex items-end gap-3 rounded-full border border-white/70 bg-white p-2.5 text-[#25342A] shadow-[0_18px_45px_rgba(10,24,14,.22)]">
+                      <button
+                        type="button"
+                        onClick={() => setIsCrisisOverlayOpen(true)}
+                        className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#EEF6F0] text-[#56715C] transition-colors hover:bg-[#DDEEE3] btn-haptic touch-target"
+                        aria-label="Get emergency help"
+                      >
+                        <HeartHandshake className="h-5 w-5" />
+                      </button>
+                      <textarea
+                        value={input}
+                        onChange={(event) => setInput(event.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder={activeLanguage === 'en' ? 'Type your message...' : 'আপনার মেসেজ লিখুন...'}
+                        disabled={isSending}
+                        rows={1}
+                        aria-label={voiceState === 'listening' && interimTranscript ? interimTranscript : 'Message'}
+                        className="min-w-0 flex-1 resize-none bg-transparent px-2 py-3.5 text-base text-[#1F2A24] outline-none transition-all placeholder:text-[#66756A]/70 focus:placeholder:text-[#66756A]/45"
+                        style={{ minHeight: '52px', maxHeight: '120px' }}
+                      />
+                      <VoiceMicButton
+                        state={voiceState}
+                        level={audioLevel}
+                        isSupported={voiceRecognition.isSupported}
+                        onClick={handleToggleVoice}
+                      />
+                      <button
+                        onClick={() => handleSend()}
+                        disabled={isSending || !input.trim()}
+                        className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[#56715C] to-[#75917A] text-white shadow-[0_12px_28px_rgba(10,24,14,.16)] transition-all hover:-translate-y-1 hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50"
+                        aria-label="Send message"
+                      >
+                        {isSending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+                      </button>
+                    </div>
+                  </div>
+              </div>
+            </section>
           </div>
-        </GlassCard>
+        </div>
 
         {isSidebarOpen && (
           <div className="lg:hidden fixed inset-0 z-[60]">
@@ -729,8 +774,64 @@ function AICompanionContent() {
               onClick={() => setIsSidebarOpen(false)}
               aria-label="Close chat history overlay"
             />
-            <div className="absolute left-0 top-0 bottom-0 w-[min(320px,85vw)] shadow-2xl">
-              {sidebar}
+            <div className="absolute bottom-0 left-0 top-0 flex w-[min(320px,85vw)] flex-col overflow-hidden bg-[#F4F7F2] p-4 text-[#25342A] shadow-2xl">
+              <div className="mb-4 flex items-center justify-between">
+                <p className="text-lg font-bold text-[#2B4431]">Conversation History</p>
+                <button
+                  onClick={() => setIsSidebarOpen(false)}
+                  className="grid h-10 w-10 place-items-center rounded-full bg-white text-[#36513C] transition-colors hover:bg-[#E8F2EA]"
+                  aria-label="Close conversation history"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <button
+                onClick={handleNewChat}
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-[18px] bg-gradient-to-br from-[#56715C] via-[#64806A] to-[#75917A] text-sm font-semibold text-white shadow-[0_14px_30px_rgba(41,63,48,.18)]"
+              >
+                <Plus className="h-5 w-5" /> New Chat
+              </button>
+              <label className="mt-4 flex h-12 items-center gap-3 rounded-[16px] border border-[rgba(86,113,92,.12)] bg-white px-4 text-[#66756A]">
+                <Search className="h-4 w-4" />
+                <span className="sr-only">Search conversations</span>
+                <input
+                  value={historySearch}
+                  onChange={(event) => setHistorySearch(event.target.value)}
+                  placeholder="Search conversations"
+                  className="min-w-0 flex-1 bg-transparent text-sm text-[#1F2A24] outline-none placeholder:text-[#66756A]/70"
+                />
+              </label>
+              <div className="mt-5 flex-1 overflow-y-auto custom-scrollbar space-y-5 pr-1">
+                {groupedConversations.map(({ group, items }) => (
+                  <div key={group} className={cn(items.length === 0 && 'hidden')}>
+                    <p className="mb-2 px-2 text-xs font-bold uppercase tracking-[0.16em] text-[#66756A]">{group}</p>
+                    <div className="space-y-2">
+                      {items.map((conversation) => {
+                        const isActive = conversation.id === activeConversationId;
+                        const isPinned = pinnedConversationIds.includes(conversation.id);
+
+                        return (
+                          <div key={conversation.id} className={cn('group flex items-center gap-1 rounded-[18px] border transition-all', isActive ? 'border-white bg-gradient-to-br from-[#56715C] to-[#75917A] text-white' : 'border-transparent bg-white/65 text-[#25342A]')}>
+                            <button onClick={() => loadConversation(conversation.id)} className="min-w-0 flex flex-1 items-center gap-3 px-3 py-3 text-left">
+                              <MessageSquare className={cn('h-4 w-4 flex-shrink-0', isActive ? 'text-white/90' : 'text-[#56715C]')} />
+                              <span className="min-w-0 flex-1">
+                                <span className="block truncate text-sm font-semibold">{conversation.title || 'New Chat'}</span>
+                                <span className={cn('block truncate text-[11px]', isActive ? 'text-white/70' : 'text-[#66756A]')}>{formatHistoryTime(conversation.updated_at) || 'Just now'}</span>
+                              </span>
+                            </button>
+                            <button onClick={() => togglePinnedConversation(conversation.id)} className={cn('grid h-9 w-9 place-items-center rounded-full', isPinned ? 'text-[#E3B341]' : isActive ? 'text-white/70' : 'text-[#66756A]')} aria-label={isPinned ? 'Unpin conversation' : 'Pin conversation'}>
+                              <Star className={cn('h-4 w-4', isPinned && 'fill-current')} />
+                            </button>
+                            <button onClick={() => void handleDeleteConversation(conversation.id)} className={cn('mr-1 grid h-9 w-9 place-items-center rounded-full hover:bg-red-50 hover:text-red-600', isActive ? 'text-white/70' : 'text-[#66756A]')} aria-label="Delete conversation">
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}

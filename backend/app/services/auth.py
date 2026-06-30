@@ -12,8 +12,7 @@ from app.core.security import (
     verify_password,
     get_password_hash,
     decode_token,
-    create_access_token,
-    create_refresh_token,
+    issue_token_pair,
 )
 from app.models.user import User
 
@@ -183,9 +182,20 @@ async def refresh_access_token(db: AsyncSession, refresh_token: str) -> tuple[st
     if not user:
         return None
 
-    # Create new tokens
-    new_access = create_access_token({"sub": user_id})
-    new_refresh = create_refresh_token({"sub": user_id})
+    # P1 1.2 — gate refresh on token-version match. Without this an
+    # attacker who steals a long-lived refresh token can mint new
+    # access tokens forever, even after the legitimate user changes
+    # their password. We compare against the column (not against the
+    # access token) because the *refresh* is what survives logout in
+    # many browsers (HttpOnly + long max-age).
+    from app.core.security import TOKEN_VERSION_CLAIM
+    token_tv = payload.get(TOKEN_VERSION_CLAIM)
+    expected_tv = int(getattr(user, "token_version", 0) or 0)
+    if token_tv is None or int(token_tv) != expected_tv:
+        return None
+
+    # Create new tokens stamped with the current tv.
+    new_access, new_refresh = issue_token_pair(user_id, expected_tv)
 
     return new_access, new_refresh, user
 

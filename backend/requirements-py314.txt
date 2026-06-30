@@ -1,30 +1,37 @@
 # Python 3.14 Compatible Requirements
-# Uses Pydantic v1 (no Rust core) + SQLite (no C++ needed)
+# App code uses Pydantic v2 (BaseModel + ConfigDict + EmailStr) — pydantic v1 is incompatible.
+# All listed packages have prebuilt wheels for Python 3.14 on Windows (no C/C++ compiler needed).
 
-fastapi==0.104.1
+fastapi==0.115.0
 uvicorn[standard]==0.34.0
-pydantic==1.10.13
-sqlalchemy[asyncio]==2.0.44
-aiosqlite==0.20.0
+pydantic>=2.9,<3
+pydantic-settings>=2.6,<3
+email-validator>=2.2.0
+sqlalchemy[asyncio]>=2.0.40
+asyncpg==0.31.0
 alembic==1.14.0
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
-python-multipart==0.0.9
-httpx==0.28.0
-openai>=1.35.0
+python-multipart>=0.0.9
+httpx>=0.27.0,<0.29
+openai>=1.54.0
 redis[asyncio]>=5.0.0
 structlog==24.4.0
+tenacity>=9.0.0
+sentry-sdk[fastapi]>=2.18.0
+certifi>=2024.7.4
 
-# Optional: Pinecone (pure Python)
-pinecone==5.4.0
-langchain>=0.3.0
-langchain-openai>=0.2.0
+# Optional: Pinecone (pure Python; pin excludes numpy<2 pullers)
+pinecone>=5.0.0
+langchain>=1.0,<2.0
+langchain-openai>=0.3.0,<2.0
 
 # Optional: Supabase (pure Python)
-supabase==2.13.0
+supabase>=2.10.0
 
-# Note: transformers and torch excluded (require compilation)
-# Note: asyncpg excluded (requires C++ build tools)
-# Note: langchain-pinecone excluded on Python 3.14 because it can pull NumPy builds without wheels
-# For AI features, use OpenAI API only
+# Excluded on Python 3.14:
+#   - numpy<2           (no prebuilt wheel for 3.14; needs a C compiler to build from source)
+#   - sentence-transformers / transformers / torch (require compilation)
+#   - langchain-pinecone (every release caps Python <3.14)
+# For AI features, use OpenAI API only via langchain-openai.
 

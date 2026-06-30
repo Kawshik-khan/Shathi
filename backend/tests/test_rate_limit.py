@@ -187,3 +187,48 @@ def test_redis_script_uses_unique_members():
     # All three requests must land as distinct set members; otherwise the
     # sliding window collapses to a single hit and the limit is bypassed.
     assert len(set(members)) == 3
+
+
+# ---------------------------------------------------------------------------
+# P1 1.5 — auth prefix coverage & production default
+# ---------------------------------------------------------------------------
+
+
+def test_login_prefix_is_covered_by_limiter():
+    """The production /api/v1/auth/login route must match the limiter.
+
+    Regression guard for P1 1.5: if someone refactors the prefix check in
+    RateLimitMiddleware and accidentally breaks ``/api/v1/auth/login``,
+    this test catches it before deploy.
+    """
+    app = _build_app()  # local path is fine
+    client = TestClient(app)
+
+    # The limiter's auth-prefix check matches the prefix; hit the exact
+    # production login path and verify it gets capped at AUTH_RATE_LIMIT_MAX.
+    settings = get_settings()
+    settings.AUTH_RATE_LIMIT_MAX = 2
+    try:
+        for _ in range(2):
+            resp = client.get("/api/v1/auth/login")
+            # 404 is fine — we're testing that the limiter ran; we want
+            # to see the 429 on the next request, not the 200.
+            assert resp.status_code in (200, 404)
+        blocked = client.get("/api/v1/auth/login")
+        assert blocked.status_code == 429
+    finally:
+        settings.AUTH_RATE_LIMIT_MAX = 10
+
+
+def test_auth_rate_limit_default_is_ten_per_minute():
+    """Production default must be 10/min — anything looser invites brute force.
+
+    Locked in by P1 1.5. We construct a fresh ``Settings`` (bypassing
+    ``.env``) so the autouse fixture's per-test overrides don't poison
+    the assertion.
+    """
+    from app.core.config import Settings
+
+    settings = Settings(_env_file=None, SECRET_KEY="x" * 32)
+    assert settings.AUTH_RATE_LIMIT_MAX == 10
+    assert settings.RATE_LIMIT_WINDOW_SECONDS == 60

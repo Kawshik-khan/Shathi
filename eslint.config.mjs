@@ -14,7 +14,6 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     "node_modules/**",
     "backend/**",
-    "android/**",
     "venv/**",
     ".puku/**",
     ".vscode/**",

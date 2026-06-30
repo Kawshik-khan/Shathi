@@ -2,17 +2,55 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * Card — PR2 extended variant set.
+ *
+ * Adds two new props:
+ *   - `variant`: "flat" | "elevated" | "feature" | "sunken" (default: "elevated")
+ *   - `accent`:  "none" | "mood" | "habit" | "journal" | "sleep" | "energy"
+ *
+ * Existing call sites that pass `size="default|sm"` continue to work —
+ * the original glass-card surface is now the "elevated" variant.
+ * "sunken" is reserved for non-input recessed surfaces (e.g. greeting strip).
+ */
+type CardVariant = "flat" | "elevated" | "feature" | "sunken"
+type CardAccent =
+  | "none"
+  | "mood"
+  | "habit"
+  | "journal"
+  | "sleep"
+  | "energy"
+
+export type CardProps = React.ComponentProps<"div"> & {
+  size?: "default" | "sm"
+  variant?: CardVariant
+  accent?: CardAccent
+}
+
+const variantClass: Record<CardVariant, string> = {
+  flat: "surface-card-flat",
+  elevated: "surface-card-elevated",
+  feature: "surface-card-feature",
+  sunken: "surface-card-sunken",
+}
+
 function Card({
   className,
   size = "default",
+  variant = "elevated",
+  accent = "none",
   ...props
-}: React.ComponentProps<"div"> & { size?: "default" | "sm" }) {
+}: CardProps) {
   return (
     <div
       data-slot="card"
       data-size={size}
+      data-variant={variant}
+      data-accent={accent}
       className={cn(
-        "group/card flex flex-col gap-8 overflow-hidden bg-glass-bg backdrop-blur-md py-8 text-sm text-card-foreground shadow-sm ring-1 ring-glass-border has-[>img:first-child]:pt-0 data-[size=sm]:gap-5 data-[size=sm]:py-5 *:[img:first-child]:rounded-none *:[img:last-child]:rounded-none",
+        variantClass[variant],
+        "group/card flex flex-col gap-8 overflow-hidden py-8 text-sm text-card-foreground has-[>img:first-child]:pt-0 data-[size=sm]:gap-5 data-[size=sm]:py-5 *:[img:first-child]:rounded-none *:[img:last-child]:rounded-none",
         className
       )}
       {...props}
@@ -100,5 +138,7 @@ export {
   CardAction,
   CardDescription,
   CardContent,
+  type CardVariant,
+  type CardAccent,
 }
 

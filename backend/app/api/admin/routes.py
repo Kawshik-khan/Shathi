@@ -70,17 +70,61 @@ def user_summary(user: User) -> AdminUserSummary:
     return AdminUserSummary(
         id=user.id,
         email=user.email,
-        name=user.name,
+        name=user.name or "",
         avatar_url=user.avatar_url,
         is_active=user.is_active,
-        system_role=user.system_role,
-        plan=user.plan,
-        subscription_status=user.subscription_status,
+        system_role=user.system_role or "user",
+        plan=user.plan or "free",
+        subscription_status=user.subscription_status or "active",
         subscription_started_at=user.subscription_started_at,
         subscription_ends_at=user.subscription_ends_at,
+        llm_message_count=getattr(user, "llm_message_count", 0) or 0,
+        llm_input_tokens=getattr(user, "llm_input_tokens", 0) or 0,
+        llm_output_tokens=getattr(user, "llm_output_tokens", 0) or 0,
+        llm_cache_tokens=getattr(user, "llm_cache_tokens", 0) or 0,
+        llm_total_tokens=getattr(user, "llm_total_tokens", 0) or 0,
+        llm_last_message_at=getattr(user, "llm_last_message_at", None),
         created_at=user.created_at,
         updated_at=user.updated_at,
     )
+
+
+def attach_token_usage_summary(
+    user: User,
+    message_count: int | None,
+    input_tokens: int | None,
+    output_tokens: int | None,
+    cache_tokens: int | None,
+    total_tokens: int | None,
+    last_message_at: datetime | None,
+) -> User:
+    user.llm_message_count = message_count or 0
+    user.llm_input_tokens = input_tokens or 0
+    user.llm_output_tokens = output_tokens or 0
+    user.llm_cache_tokens = cache_tokens or 0
+    user.llm_total_tokens = total_tokens or 0
+    user.llm_last_message_at = last_message_at
+    return user
+
+
+def token_usage_summary_subquery():
+    return (
+        select(
+            ChatTokenUsage.user_id.label("user_id"),
+            func.count(ChatTokenUsage.assistant_message_id).label("llm_message_count"),
+            func.coalesce(func.sum(ChatTokenUsage.input_tokens), 0).label("llm_input_tokens"),
+            func.coalesce(func.sum(ChatTokenUsage.output_tokens), 0).label("llm_output_tokens"),
+            func.coalesce(func.sum(ChatTokenUsage.cache_tokens), 0).label("llm_cache_tokens"),
+            func.coalesce(func.sum(ChatTokenUsage.total_tokens), 0).label("llm_total_tokens"),
+            func.max(ChatTokenUsage.created_at).label("llm_last_message_at"),
+        )
+        .group_by(ChatTokenUsage.user_id)
+        .subquery()
+    )
+
+
+def grouped_counts(rows, *, missing_key: str = "unknown") -> dict[str, int]:
+    return {str(key or missing_key): count or 0 for key, count in rows}
 
 
 def audit_response(event: AdminAuditEventModel) -> AdminAuditEvent:
@@ -249,10 +293,23 @@ async def get_admin_overview(
     )
 
     plan_rows = await db.execute(select(User.plan, func.count(User.id)).group_by(User.plan))
-    plan_counts = {plan: count for plan, count in plan_rows.all()}
+    plan_counts = grouped_counts(plan_rows.all(), missing_key="free")
 
+    token_usage = token_usage_summary_subquery()
     recent_user_rows = await db.execute(
-        select(User).options(raiseload("*")).order_by(User.created_at.desc()).limit(5)
+        select(
+            User,
+            token_usage.c.llm_message_count,
+            token_usage.c.llm_input_tokens,
+            token_usage.c.llm_output_tokens,
+            token_usage.c.llm_cache_tokens,
+            token_usage.c.llm_total_tokens,
+            token_usage.c.llm_last_message_at,
+        )
+        .outerjoin(token_usage, token_usage.c.user_id == User.id)
+        .options(raiseload("*"))
+        .order_by(User.created_at.desc())
+        .limit(5)
     )
     recent_audit_rows = await db.execute(
         select(AdminAuditEventModel).order_by(AdminAuditEventModel.created_at.desc()).limit(8)
@@ -267,7 +324,28 @@ async def get_admin_overview(
         content_drafts=content_drafts or 0,
         hidden_community_posts=hidden_posts or 0,
         plan_counts=plan_counts,
-        recent_users=[user_summary(user) for user in recent_user_rows.scalars().all()],
+        recent_users=[
+            user_summary(
+                attach_token_usage_summary(
+                    user,
+                    message_count,
+                    input_tokens,
+                    output_tokens,
+                    cache_tokens,
+                    total_tokens,
+                    last_message_at,
+                )
+            )
+            for (
+                user,
+                message_count,
+                input_tokens,
+                output_tokens,
+                cache_tokens,
+                total_tokens,
+                last_message_at,
+            ) in recent_user_rows.all()
+        ],
         recent_audit_events=[audit_response(event) for event in recent_audit_rows.scalars().all()],
     )
 
@@ -284,7 +362,20 @@ async def list_admin_users(
     _: User = Depends(ADMIN_ONLY),
     db: AsyncSession = Depends(get_db),
 ) -> list[AdminUserSummary]:
-    statement = select(User).options(raiseload("*"))
+    token_usage = token_usage_summary_subquery()
+    statement = (
+        select(
+            User,
+            token_usage.c.llm_message_count,
+            token_usage.c.llm_input_tokens,
+            token_usage.c.llm_output_tokens,
+            token_usage.c.llm_cache_tokens,
+            token_usage.c.llm_total_tokens,
+            token_usage.c.llm_last_message_at,
+        )
+        .outerjoin(token_usage, token_usage.c.user_id == User.id)
+        .options(raiseload("*"))
+    )
 
     if query:
         search = f"%{query.strip()}%"
@@ -299,7 +390,28 @@ async def list_admin_users(
         statement = statement.where(User.is_active == is_active)
 
     rows = await db.execute(statement.order_by(User.created_at.desc()).offset(offset).limit(limit))
-    return [user_summary(user) for user in rows.scalars().all()]
+    return [
+        user_summary(
+            attach_token_usage_summary(
+                user,
+                message_count,
+                input_tokens,
+                output_tokens,
+                cache_tokens,
+                total_tokens,
+                last_message_at,
+            )
+        )
+        for (
+            user,
+            message_count,
+            input_tokens,
+            output_tokens,
+            cache_tokens,
+            total_tokens,
+            last_message_at,
+        ) in rows.all()
+    ]
 
 
 @router.patch("/users/{user_id}", response_model=AdminUserSummary)

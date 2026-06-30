@@ -28,7 +28,21 @@
     "togglePassword": "Toggle password visibility",
     "togglePasswordConfirm": "Toggle confirm password visibility",
     "welcomeBack": "Welcome back",
-    "welcomeSubtitle": "Log in to continue your wellness journey with Shathi."
+    "welcomeSubtitle": "Log in to continue your wellness journey with Shathi.",
+    "eyebrow": "Your daily check-in",
+    "continueHere": "Continue here.",
+    "loginSubtitle": "Sign in to keep your wellness streak alive — your journal, mood, and AI companion are waiting.",
+    "signInCta": "Continue",
+    "createOne": "Create one",
+    "appleCta": "Continue with Apple",
+    "microsoftCta": "Continue with Microsoft",
+    "appleComingSoon": "Apple sign-in is coming soon.",
+    "microsoftComingSoon": "Microsoft sign-in is coming soon.",
+    "signupEyebrow": "Start your wellness journey",
+    "signupHeadline": "Begin here.",
+    "signupSubtitle": "Create a private Shathi account and we'll set up your daily check-in, AI companion, and progress dashboard — all in under a minute.",
+    "signupCta": "Create account",
+    "agreeToTerms": "I agree to the terms, privacy policy, and wellness data handling notice."
   },
   "errors": {
     "accountCreationFailed": "Account creation failed",
@@ -94,5 +108,91 @@
     "premium": "Premium Plan",
     "unlock": "Unlock personalized insights and more wellness tools.",
     "upgradeToPro": "Upgrade to Pro"
+  },
+  "dashboard": {
+    "greeting": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening",
+      "night": "Good night",
+      "withName": "Good {{greeting}}, {{name}}",
+      "streak": "{{count}}-day streak",
+      "streakLabel": "day streak"
+    },
+    "wellnessScore": {
+      "label": "Wellness score",
+      "loading": "Calculating your score…",
+      "empty": "Log your first mood to unlock your score.",
+      "delta": {
+        "up": "{{count}} up from yesterday",
+        "down": "{{count}} down from yesterday",
+        "flat": "Same as yesterday"
+      },
+      "status": {
+        "great": "Great",
+        "good": "Good",
+        "fair": "Fair",
+        "low": "Low"
+      }
+    },
+    "quickActions": {
+      "sectionLabel": "Quick actions",
+      "mood": "Log mood",
+      "journal": "Journal",
+      "habits": "Habit check-in",
+      "sleep": "Sleep",
+      "insight": "Insight"
+    },
+    "tile": {
+      "mood": {
+        "title": "Mood",
+        "loading": "Reading your latest mood…",
+        "empty": "No mood logged today.",
+        "logged": "Logged at {{time}}",
+        "open": "Open mood"
+      },
+      "sleep": {
+        "title": "Sleep",
+        "loading": "Reading last night's sleep…",
+        "empty": "Log sleep to see a summary.",
+        "logged": "{{hours}}h {{minutes}}m of sleep",
+        "open": "Open sleep"
+      },
+      "habits": {
+        "title": "Habits",
+        "loading": "Reading today's habits…",
+        "empty": "No habits yet. Add one to begin.",
+        "completed": "{{done}} of {{total}} done today",
+        "open": "Open habits"
+      },
+      "journal": {
+        "title": "Journal",
+        "loading": "Reading your latest entry…",
+        "empty": "Write your first entry.",
+        "preview": "Last entry",
+        "open": "Open journal"
+      },
+      "companion": {
+        "title": "AI companion",
+        "loading": "Asking Sathi for today's prompt…",
+        "empty": "Start a conversation whenever you need.",
+        "open": "Talk to Sathi"
+      },
+      "crisis": {
+        "title": "Crisis support",
+        "subtitle": "Always here, 24/7",
+        "open": "Open crisis resources"
+      }
+    },
+    "insights": {
+      "sectionTitle": "Insights",
+      "loading": "Gathering insights…",
+      "empty": "Insights appear after a few days of activity.",
+      "viewAll": "View all insights"
+    },
+    "errors": {
+      "loadFailed": "Couldn't load dashboard data.",
+      "retry": "Try again"
+    }
   }
 }

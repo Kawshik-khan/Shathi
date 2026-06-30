@@ -132,3 +132,40 @@ export function exchangeGoogleTokenForBackendTokens(
     "Google backend token exchange",
   );
 }
+
+/**
+ * P1 1.3: after a successful Google exchange, the FastAPI tokens have to
+ * be persisted as HttpOnly cookies on the user's browser. Because the
+ * Auth.js ``jwt`` callback runs server-side, we can hit our own BFF
+ * endpoint which sets ``sathi_at`` / ``sathi_rt`` via Set-Cookie. The
+ * response cookies are NOT propagated by Auth.js to the browser; only
+ * their HTTP request is what matters, since ``/api/backend-auth/google``
+ * is a same-origin POST issued from the server.
+ *
+ * If the request cannot reach the BFF, we log a warning but do not throw
+ * — the tokens are still valid in memory and the user can resume sign-in
+ * through the credentials flow which DOES set the cookies.
+ */
+export async function persistBackendTokensAsCookies(
+  origin: string,
+  tokens: TokenResponse,
+): Promise<void> {
+  if (!origin) return;
+  try {
+    await fetch(`${origin.replace(/\/$/, "")}/api/backend-auth/google`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        expires_in: tokens.expires_in,
+      }),
+      cache: "no-store",
+    });
+  } catch (error) {
+    console.warn("[auth] failed to persist backend tokens as cookies", {
+      origin,
+      error: error instanceof Error ? error.message : "unknown",
+    });
+  }
+}

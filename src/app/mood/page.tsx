@@ -194,7 +194,7 @@ export default function MoodPage() {
   return (
     <ProtectedRoute>
       <DashboardShell>
-        <div className="max-w-6xl">
+        <div className="w-full min-w-0">
           <MoodCheckIn className="mb-5" />
 
           <div className="mb-6 flex items-center gap-3 lg:mt-0">

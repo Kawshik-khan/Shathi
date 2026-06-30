@@ -6,7 +6,9 @@ from fastapi import HTTPException
 
 from app.api.admin.routes import (
     approve_admin_subscription_request,
+    get_admin_overview,
     get_admin_token_usage,
+    list_admin_users,
     hide_admin_community_post,
     review_admin_safety_message,
     reject_admin_subscription_request,
@@ -80,6 +82,9 @@ class Result:
 
     def all(self):
         return self.value
+
+    def scalars(self):
+        return self
 
 
 class DB:
@@ -281,3 +286,77 @@ async def test_admin_token_usage_returns_totals_user_rows_and_recent_messages():
     assert response.users[0].input_tokens == 240
     assert response.recent_messages[0].assistant_message_id == "message-ai-1"
     assert response.recent_messages[0].usage_source == "estimated"
+
+
+@pytest.mark.anyio
+async def test_list_admin_users_includes_llm_token_summary():
+    admin = make_user(id="admin-1", system_role="admin")
+    user = make_user()
+    db = DB([(user, 3, 300, 120, 30, 450, NOW)])
+
+    response = await list_admin_users(
+        query=None,
+        plan=None,
+        subscription_status=None,
+        system_role=None,
+        is_active=None,
+        limit=25,
+        offset=0,
+        _=admin,
+        db=db,
+    )
+
+    assert response[0].id == "user-1"
+    assert response[0].email == "user@example.com"
+    assert response[0].llm_message_count == 3
+    assert response[0].llm_input_tokens == 300
+    assert response[0].llm_output_tokens == 120
+    assert response[0].llm_cache_tokens == 30
+    assert response[0].llm_total_tokens == 450
+    assert response[0].llm_last_message_at == NOW
+
+
+@pytest.mark.anyio
+async def test_list_admin_users_handles_missing_legacy_user_fields():
+    admin = make_user(id="admin-1", system_role="admin")
+    user = make_user(name=None, system_role=None, plan=None, subscription_status=None)
+    db = DB([(user, None, None, None, None, None, None)])
+
+    response = await list_admin_users(
+        query=None,
+        plan=None,
+        subscription_status=None,
+        system_role=None,
+        is_active=None,
+        limit=25,
+        offset=0,
+        _=admin,
+        db=db,
+    )
+
+    assert response[0].name == ""
+    assert response[0].system_role == "user"
+    assert response[0].plan == "free"
+    assert response[0].subscription_status == "active"
+    assert response[0].llm_total_tokens == 0
+
+
+@pytest.mark.anyio
+async def test_admin_overview_handles_missing_plan_counts():
+    admin = make_user(id="admin-1", system_role="admin")
+    user = make_user()
+    db = SequenceDB([
+        [(None, 2), ("premium", 1)],
+        [(user, None, None, None, None, None, None)],
+        [],
+    ])
+
+    async def scalar(_statement):
+        return 0
+
+    db.scalar = scalar
+
+    response = await get_admin_overview(_=admin, db=db)
+
+    assert response.plan_counts == {"free": 2, "premium": 1}
+    assert response.recent_users[0].llm_total_tokens == 0

@@ -1,15 +1,11 @@
 import { NextResponse } from "next/server";
-
-const AUTH_COOKIE_NAME = "sathi_auth";
+import { clearAuthCookies } from "@/lib/server/auth-cookies";
 
 export async function POST() {
-  const response = NextResponse.json({ ok: true });
-  response.cookies.set(AUTH_COOKIE_NAME, "", {
-    path: "/",
-    maxAge: 0,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    httpOnly: true,
-  });
-  return response;
+  // Clear both auth cookies + the legacy ``sathi_auth`` sentinel so the
+  // browser forgets us on the next page load. We don't call the backend
+  // here — the backend will see the missing cookie and refuse anyway,
+  // and a best-effort logout that fails server-side shouldn't strand
+  // the user on a logged-out client.
+  return clearAuthCookies(NextResponse.json({ ok: true }));
 }

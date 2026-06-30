@@ -132,18 +132,18 @@ export function SidebarPlanCard({ fallbackPlan, onNavigate }: SidebarPlanCardPro
 
   if (isFree) {
     return (
-      <div className="mt-auto mb-4 p-4 rounded-2xl bg-gradient-to-br from-[#E3F0F3] to-[#EAF2F4] border border-[#A8D0D9]/30">
+      <div className="mt-auto mb-4 rounded-2xl border border-white/10 bg-gradient-to-br from-[#55715B] to-[#6E8E73] p-4 text-white shadow-card">
         <div className="flex items-center gap-2 mb-2">
-          <Crown className="w-5 h-5 text-[#4A90A4]" />
-          <span className="font-semibold text-sm text-foreground">{t('plan.upgradeToPro')}</span>
+          <Crown className="w-5 h-5 text-white" />
+          <span className="font-semibold text-sm text-white">{t('plan.upgradeToPro')}</span>
         </div>
-        <p className="text-xs text-muted-foreground mb-3">
+        <p className="mb-3 text-xs text-white/75">
           {t('plan.unlock')}
         </p>
         <Link
           href="/subscription"
           onClick={onNavigate}
-          className="block w-full py-2 px-4 rounded-full bg-[#4A90A4] text-center text-white text-sm font-medium hover:bg-[#3F7E90] transition-colors shadow-lg shadow-[#4A90A4]/20"
+          className="block w-full rounded-full bg-white px-4 py-2 text-center text-sm font-medium text-[#1E2A22] shadow-lg shadow-black/10 transition-colors hover:bg-[#DDEEE3]"
         >
           {t('actions.upgradeNow')}
         </Link>
@@ -152,18 +152,18 @@ export function SidebarPlanCard({ fallbackPlan, onNavigate }: SidebarPlanCardPro
   }
 
   return (
-    <div className="mt-auto mb-4 p-4 rounded-2xl bg-gradient-to-br from-[#E3F0F3] via-[#EAF2F4] to-white border border-[#A8D0D9]/40 shadow-sm shadow-[#4A90A4]/10">
+    <div className="mt-auto mb-4 rounded-2xl border border-white/10 bg-gradient-to-br from-[#55715B] to-[#6E8E73] p-4 text-white shadow-card">
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex min-w-0 items-center gap-2">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#4A90A4] text-white shadow-lg shadow-[#4A90A4]/20">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/12 text-white shadow-lg shadow-black/10">
             <Crown className="w-4 h-4" />
           </div>
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-foreground">{planLabel(effectivePlan)}</p>
-            <p className="text-[11px] text-muted-foreground">Current access</p>
+            <p className="truncate text-sm font-semibold text-white">{planLabel(effectivePlan)}</p>
+            <p className="text-[11px] text-white/75">Current access</p>
           </div>
         </div>
-        <span className="shrink-0 rounded-full border border-[#A8D0D9]/50 bg-white/70 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#2C6373]">
+        <span className="shrink-0 rounded-full border border-white/10 bg-white/12 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-white">
           {summary?.subscription_status ?? 'active'}
         </span>
       </div>
@@ -177,15 +177,15 @@ export function SidebarPlanCard({ fallbackPlan, onNavigate }: SidebarPlanCardPro
               return (
                 <div key={row.label} className="space-y-1.5">
                   <div className="flex items-center justify-between gap-2 text-[11px]">
-                    <span className="flex items-center gap-1.5 font-medium text-foreground">
-                      <Icon className="w-3.5 h-3.5 text-[#4A90A4]" />
+                    <span className="flex items-center gap-1.5 font-medium text-white">
+                      <Icon className="w-3.5 h-3.5 text-white" />
                       {row.label}
                     </span>
-                    <span className="shrink-0 text-muted-foreground">{row.value}</span>
+                    <span className="shrink-0 text-white/75">{row.value}</span>
                   </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-white/80">
+                  <div className="h-1.5 overflow-hidden rounded-full bg-white/15">
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-[#6FA8C7] to-[#4A90A4]"
+                      className="h-full rounded-full bg-white"
                       style={{ width: `${row.percent}%` }}
                     />
                   </div>
@@ -194,13 +194,13 @@ export function SidebarPlanCard({ fallbackPlan, onNavigate }: SidebarPlanCardPro
             })}
           </div>
 
-          <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-muted-foreground">
-            <div className="rounded-xl bg-white/60 px-2 py-2">
-              <p className="font-medium text-foreground">AI limit</p>
+          <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-white/75">
+            <div className="rounded-xl bg-white/12 px-2 py-2">
+              <p className="font-medium text-white">AI limit</p>
               <p>{formatLimit(aiLimit)}</p>
             </div>
-            <div className="rounded-xl bg-white/60 px-2 py-2">
-              <p className="font-medium text-foreground">Habit limit</p>
+            <div className="rounded-xl bg-white/12 px-2 py-2">
+              <p className="font-medium text-white">Habit limit</p>
               <p>{formatLimit(habitLimit)}</p>
             </div>
           </div>
@@ -210,7 +210,7 @@ export function SidebarPlanCard({ fallbackPlan, onNavigate }: SidebarPlanCardPro
       <Link
         href="/subscription"
         onClick={onNavigate}
-        className="mt-3 block w-full py-2 px-4 rounded-full bg-[#4A90A4] text-center text-white text-sm font-medium hover:bg-[#3F7E90] transition-colors shadow-lg shadow-[#4A90A4]/20"
+        className="mt-3 block w-full rounded-full bg-white px-4 py-2 text-center text-sm font-medium text-[#1E2A22] shadow-lg shadow-black/10 transition-colors hover:bg-[#DDEEE3]"
       >
         View plan
       </Link>

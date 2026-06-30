@@ -1,4 +1,5 @@
 """Database models."""
+from app.models.gamification import UserXP, UserBadge
 from app.models.user import User
 from app.models.conversation import Conversation, Message
 from app.models.mood import MoodLog
@@ -48,5 +49,7 @@ __all__ = [
     "Family",
     "FamilyActivity",
     "LocalizedContent",
+    "UserXP",
+    "UserBadge",
 ]
 

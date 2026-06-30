@@ -1,6 +1,9 @@
 """Chat API routes."""
 import asyncio
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.responses import StreamingResponse
@@ -35,6 +38,7 @@ from app.services.subscription import (
 )
 from app.models.user import User
 from app.models.conversation import Conversation as ConversationModel, Message as MessageModel
+from app.services.gamification import award_xp, evaluate_badges
 
 router = APIRouter()
 
@@ -71,6 +75,9 @@ async def send_message(
                 current_user.id,
                 USAGE_FEATURE_AI_MESSAGE,
             )
+        await award_xp(db, current_user.id, "ai_chat")
+        await evaluate_badges(db, current_user.id)
+        await db.commit()
 
         return ChatResponse(
             response=ai_message.content,
@@ -107,6 +114,37 @@ async def stream_message(
 ) -> StreamingResponse:
     """Send a message and stream the AI response as SSE chunks."""
 
+    # ------------------------------------------------------------------
+    # F12 + F13 fix: pre-stream gates.
+    #
+    # ``detect_crisis`` and ``assert_ai_message_quota`` MUST run before
+    # the SSE response starts. If they live inside the inner generator,
+    # FastAPI returns a 200 + ``text/event-stream`` header set first and
+    # only then learns whether the request is safe / within quota. That
+    # is the streaming-bypass bug — a user past their quota gets the
+    # headers, the LLM starts streaming, and the only recourse is to
+    # yield an ``error`` event mid-stream (which the client may already
+    # be appending to the UI). Crisis screening has the same shape: an
+    # unsafe message should never produce even one SSE byte before the
+    # safety response replaces the stream.
+    #
+    # Running these checks here also means we can return a hard 403
+    # (quota) instead of a soft SSE error — easier for the front-end to
+    # react to and impossible for the client to ignore.
+    # ------------------------------------------------------------------
+    crisis_result = await detect_crisis(request.message)
+    if not crisis_result.is_crisis:
+        try:
+            await assert_ai_message_quota(db, current_user)
+        except FeatureLimitExceeded as exc:
+            # Return a hard 403 — never open the SSE stream for a
+            # user who is over quota. The front-end ``streamChatMessage``
+            # already handles non-2xx by surfacing the JSON detail.
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=str(exc),
+            )
+
     async def event_stream():
         # ``done_seen`` makes sure we always close the stream with a
         # terminal event even if the inner generator aborts before
@@ -121,10 +159,6 @@ async def stream_message(
         # parser because lines starting with ``:`` are SSE comments.
         keepalive_seconds = 15.0
         try:
-            crisis_result = await detect_crisis(request.message)
-            if not crisis_result.is_crisis:
-                await assert_ai_message_quota(db, current_user)
-
             iterator = send_chat_message_stream(
                 db=db,
                 user_id=current_user.id,
@@ -159,11 +193,18 @@ async def stream_message(
                         current_user.id,
                         USAGE_FEATURE_AI_MESSAGE,
                     )
+                    try:
+                        await award_xp(db, current_user.id, "ai_chat")
+                        await evaluate_badges(db, current_user.id)
+                        await db.commit()
+                    except Exception as gex:
+                        logger.warning("Gamification award failed (non-fatal): %s", gex)
         except FeatureLimitExceeded as exc:
             yield f"data: {json.dumps({'type': 'error', 'message': str(exc)})}\n\n"
         except ValueError as exc:
             yield f"data: {json.dumps({'type': 'error', 'message': str(exc)})}\n\n"
-        except Exception:
+        except Exception as exc:
+            logger.exception("Stream error: %s", exc)
             yield f"data: {json.dumps({'type': 'error', 'message': 'Failed to stream message'})}\n\n"
         finally:
             if not done_seen:

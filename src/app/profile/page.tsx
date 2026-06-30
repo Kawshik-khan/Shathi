@@ -4,6 +4,8 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { DashboardShell } from '@/components/layout/dashboard-shell';
 import { GlassCard } from '@/components/shared/glass-card';
 import { getUserProfile, updateUserProfile, UserProfileResponse } from '@/lib/api';
+import { getGamificationSummary, type GamificationSummary } from '@/lib/api/gamification';
+import { AchievementsGallery } from '@/components/widgets/achievements-gallery';
 import { useAuthStore } from '@/lib/store';
 import { AuthUser } from '@/types';
 import { Camera, CheckCircle2, HeartHandshake, Library, Loader2, Moon, Save, Settings, Shield, Smile, User } from 'lucide-react';
@@ -99,16 +101,21 @@ function ProfileContent() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
+  const [gamification, setGamification] = useState<GamificationSummary | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadProfile() {
       try {
-        const response = await getUserProfile();
+        const [response, gami] = await Promise.all([
+          getUserProfile(),
+          getGamificationSummary().catch(() => null),
+        ]);
         if (cancelled) return;
         setProfile(response);
         setForm(toFormState(response));
+        setGamification(gami);
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Unable to load profile');
@@ -196,7 +203,7 @@ function ProfileContent() {
   }
 
   return (
-    <form onSubmit={handleSave} className="max-w-5xl mx-auto space-y-6">
+    <form onSubmit={handleSave} className="w-full min-w-0 space-y-6">
       <div className="flex items-center gap-3">
         <div className="w-12 h-12 rounded-xl bg-linear-to-br from-[#6FA8C7] to-[#4A90A4] flex items-center justify-center">
           <User className="w-6 h-6 text-white" />
@@ -430,6 +437,10 @@ function ProfileContent() {
           </div>
         </section>
       </GlassCard>
+
+      {gamification && (
+        <AchievementsGallery badges={gamification.badges} />
+      )}
 
       <div className="flex justify-end">
         <button

@@ -1,62 +1,81 @@
 'use client';
 
+/**
+ * Mobile bottom navigation (PR3 redesign).
+ *
+ * - Five-tab rail with a centered FAB for the daily mood check-in.
+ * - Sources keys + hrefs from `nav-config` (single source of truth).
+ * - Uses the new `Fab` primitive for the center button and the
+ *   redesigned `Icon` facade + `surface-card` tokens for the tabs.
+ * - Crisis resources remain reachable from `/resources` (linked
+ *   from the Profile "Quick Links" card) — no floating SOS on home
+ *   shell to keep the bottom area clean and avoid overlapping the
+ *   sticky check-in CTA.
+ */
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  LayoutDashboard,
-  Sparkles,
-  BookHeart,
-  BarChart3,
-  User,
-  Plus,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 
-const NAV_ITEMS = [
-  { key: 'home', href: '/dashboard', icon: LayoutDashboard },
-  { key: 'companion', href: '/ai-companion', icon: Sparkles },
-  { key: 'journal', href: '/journal', icon: BookHeart },
-  { key: 'insights', href: '/insights', icon: BarChart3 },
-  { key: 'profile', href: '/profile', icon: User },
-] as const;
+import { Icon } from '@/components/ui/icon';
+import { Fab } from '@/components/layout/Fab';
+import {
+  mobileBottomNavOrder,
+  userNavigation,
+  mobileFabHref,
+  mobileFabIcon,
+} from '@/components/layout/nav-config';
+import { cn } from '@/lib/utils';
 
 export function MobileBottomNav() {
   const pathname = usePathname();
   const { t } = useTranslation();
 
+  const items = mobileBottomNavOrder.map((key) => {
+    const item = userNavigation.find((n) => n.key === key);
+    if (!item) {
+      throw new Error(`MobileBottomNav: nav-config missing key "${key}"`);
+    }
+    return item;
+  });
+
+  const left = items.slice(0, 2);
+  const right = items.slice(2);
+
   return (
-    <>
-      {/* Mobile tab bar + center FAB. Crisis resources are still reachable from
-          /resources (linked from the Profile "Quick Links" card and the Resources
-          tab). We intentionally do NOT surface a floating SOS button on the home
-          shell to keep the bottom area clean and avoid overlapping the sticky
-          check-in CTA. */}
-      <nav
-        aria-label={t('mobile.mainNavigation', 'Main navigation')}
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex h-16 items-end justify-between border-t border-black/5 bg-white/95 px-2 pb-safe backdrop-blur-md dark:border-white/10 dark:bg-[#1A202C]/95"
-      >
-        {NAV_ITEMS.slice(0, 2).map((item) => (
+    <nav
+      aria-label={t('mobile.mainNavigation', 'Main navigation')}
+      data-slot="mobile-bottom-nav"
+      className="bottom-nav-rail lg:hidden fixed bottom-0 left-0 right-0 z-50 flex h-16 items-end justify-between border-t border-border-subtle bg-bg-card/90 px-2 pb-safe backdrop-blur-xl"
+    >
+      {/* Left two tabs */}
+      <div className="flex flex-1 items-end justify-around">
+        {left.map((item) => (
           <NavTab key={item.key} item={item} pathname={pathname} />
         ))}
+      </div>
 
-        <div className="w-14 shrink-0" aria-hidden="true" />
+      {/* Spacer so the FAB can sit centered without overlapping */}
+      <div className="w-14 shrink-0" aria-hidden="true" />
 
-        {NAV_ITEMS.slice(2).map((item) => (
+      {/* Right three tabs */}
+      <div className="flex flex-1 items-end justify-around">
+        {right.map((item) => (
           <NavTab key={item.key} item={item} pathname={pathname} />
         ))}
+      </div>
 
-        <div className="absolute left-1/2 top-0 z-50 -translate-x-1/2 -translate-y-3">
-          <Link
-            href="/mood"
-            className="btn-haptic touch-target flex h-13 w-13 items-center justify-center rounded-full bg-linear-to-br from-[#6FA8C7] to-[#4A90A4] text-white shadow-lg shadow-[#4A90A4]/30"
-            aria-label={t('mobile.dailyCheckIn', 'Daily mood check-in')}
-          >
-            <Plus className="h-6 w-6" aria-hidden="true" />
-          </Link>
+      {/* Centered FAB — daily mood check-in */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center">
+        <div className="-translate-y-1/2 pointer-events-auto">
+          <Fab
+            href={mobileFabHref}
+            icon={mobileFabIcon}
+            label={t('mobile.dailyCheckIn', 'Daily mood check-in')}
+            size={56}
+          />
         </div>
-      </nav>
-    </>
+      </div>
+    </nav>
   );
 }
 
@@ -64,24 +83,27 @@ function NavTab({
   item,
   pathname,
 }: {
-  item: (typeof NAV_ITEMS)[number];
+  item: (typeof userNavigation)[number];
   pathname: string;
 }) {
   const { t } = useTranslation();
-  const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
-  const Icon = item.icon;
-
+  const IconCmp = item.icon;
+  const isActive =
+    pathname === item.href || pathname.startsWith(`${item.href}/`);
   return (
     <Link
       href={item.href}
+      aria-current={isActive ? 'page' : undefined}
       className={cn(
-        'btn-haptic touch-target flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium transition-colors',
-        isActive ? 'text-[#4A90A4]' : 'text-muted-foreground hover:text-foreground',
+        'motion-press flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium transition-colors',
+        isActive
+          ? 'text-accent-energy'
+          : 'text-text-secondary hover:text-text-primary',
       )}
     >
-      <Icon className="h-5 w-5" aria-hidden="true" />
+      <Icon icon={IconCmp} size={20} aria-hidden />
       <span className="max-w-18 truncate">
-        {t(`navigation.${item.key}`, item.key.charAt(0).toUpperCase() + item.key.slice(1))}
+        {t(`navigation.${item.key}`, item.label ?? item.key)}
       </span>
     </Link>
   );

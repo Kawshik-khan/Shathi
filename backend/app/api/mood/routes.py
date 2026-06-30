@@ -32,6 +32,7 @@ from app.services.mood_inference import (
 )
 from app.models.user import User
 from app.models.mood import MoodLog as MoodLogModel
+from app.services.gamification import award_xp, evaluate_badges
 
 router = APIRouter()
 
@@ -65,6 +66,9 @@ async def create_mood_log_endpoint(
     """Create a new mood log entry."""
     try:
         mood_log = await create_mood_log_service(db, current_user.id, log)
+        await award_xp(db, current_user.id, "mood_log")
+        await evaluate_badges(db, current_user.id)
+        await db.commit()
         await invalidate_user_context(current_user.id, redis)
         await invalidate_user_context_sections(current_user.id, redis, ["mood", "inferred_mood"])
         return mood_log_response(mood_log)
@@ -154,6 +158,9 @@ async def create_sleep_timing_endpoint(
     """Create a sleep timing signal for scoreless mood inference."""
     try:
         entry = await create_sleep_timing_service(db, current_user.id, payload)
+        await award_xp(db, current_user.id, "sleep_log")
+        await evaluate_badges(db, current_user.id)
+        await db.commit()
         await invalidate_user_context(current_user.id, redis)
         await invalidate_user_context_sections(current_user.id, redis, ["sleep", "inferred_mood"])
         return SleepTimingSchema.model_validate(entry)

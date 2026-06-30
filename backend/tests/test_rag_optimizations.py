@@ -137,8 +137,13 @@ def _stub_generate_embedding(monkeypatch: pytest.MonkeyPatch, vector: Optional[l
     """Replace ``memory_service.generate_embedding`` with a constant
     vector so ``retrieve_memories`` does not try to call OpenAI/HF in
     tests that don't care about the embedding itself.
+
+    Default width tracks ``settings.EMBEDDING_DIM`` so the stub vector
+    matches whatever Pinecone index the test env points at.
     """
-    vec = vector if vector is not None else [0.1] * 1536
+    if vector is None:
+        vector = [0.1] * int(memory_service.settings.EMBEDDING_DIM)
+    vec = vector
 
     async def _stub(text: str, *args: Any, **kwargs: Any) -> list[float]:
         return list(vec)
@@ -218,7 +223,7 @@ async def test_embedding_cache_does_not_cache_hf_fallback(monkeypatch):
     text = "hf path text"
 
     async def fake_hf(text: str) -> list[float]:
-        return [0.9] * 384  # HF returns 384-d; we pad to 1536
+        return [0.9] * 384  # HF MiniLM returns 384-d; the real wrapper pads to EMBEDDING_DIM
 
     monkeypatch.setattr(memory_service, "_generate_hf_embedding", fake_hf)
 

@@ -1,9 +1,7 @@
 import { create } from 'zustand';
-import { apiFetch, logoutBackendSession } from './api';
+import { apiFetch } from './api';
 import {
-  User,
   AuthUser,
-  TokenResponse,
   MoodOverview,
   SleepData,
   Goal,
@@ -11,20 +9,24 @@ import {
   TrainingDay,
   JournalEntry,
   AIInsight,
-  CheckInMood
+  CheckInMood,
+  User
 } from '@/types';
 
 interface AuthState {
   isHydrated: boolean;
   isAuthenticated: boolean;
   user: AuthUser | null;
-  accessToken: string | null;
-  refreshToken: string | null;
-  refreshTimeout?: NodeJS.Timeout;
-  login: (user: AuthUser, tokens: TokenResponse) => void;
-  logout: () => void;
+  refreshTimeout?: ReturnType<typeof setTimeout>;
+  /**
+   * Marks the user as signed in. The actual JWT rides in the HttpOnly
+   * ``sathi_at`` cookie set by /api/backend-auth/login (see
+   * ``src/lib/server/auth-cookies.ts``); the browser never holds the
+   * value. We only persist the user object on the client for UX.
+   */
+  login: (user: AuthUser) => void;
+  logout: () => Promise<void>;
   setUser: (user: AuthUser) => void;
-  updateTokens: (tokens: TokenResponse) => void;
   refreshTokens: () => Promise<void>;
 }
 
@@ -37,188 +39,156 @@ interface DashboardState {
 
   // Mood
   moodOverview: MoodOverview;
-  
+
   // Sleep
   sleepData: SleepData;
-  
+
   // Goals
   goals: Goal[];
-  
+
   // Habits
   habits: Habit[];
-  
+
   // Calendar
   trainingDays: TrainingDay[];
-  
+
   // Journal
   latestEntry: JournalEntry;
-  
+
   // AI Insight
   aiInsight: AIInsight;
-  
+
   // Check-in
   checkInMoods: CheckInMood[];
   selectedMood: number | null;
-  
+
   // Actions
   toggleGoal: (id: string) => void;
   setSelectedMood: (mood: number) => void;
   saveCheckIn: (note: string) => void;
 }
 
-function clearAuthCookie() {
-  if (typeof document === 'undefined') return;
+/**
+ * Schedule a refresh 5 minutes before the access token expires (30 minute
+ * default in the FastAPI backend, mirrored in
+ * ``ACCESS_TOKEN_MAX_AGE_S``). Cookies are HttpOnly; ``/api/backend-auth/refresh``
+ * reads the ``sathi_rt`` cookie, exchanges it with FastAPI, and re-issues
+ * fresh cookies on success. We never inspect token contents here.
+ */
+const REFRESH_LEAD_MS = 5 * 60 * 1000;
+const REFRESH_INTERVAL_MS = 25 * 60 * 1000;
 
-  document.cookie = 'sathi_auth=; Path=/; Max-Age=0; SameSite=Lax';
+function scheduleRefresh(timeout: ReturnType<typeof setTimeout> | undefined, fn: () => void) {
+  if (timeout) {
+    clearTimeout(timeout);
+  }
+  return setTimeout(fn, REFRESH_INTERVAL_MS);
 }
 
-function clearServerAuthCookie() {
+function persistUser(user: AuthUser | null) {
   if (typeof window === 'undefined') return;
-  void logoutBackendSession().catch(() => {
-    // Local auth state is still cleared even if the marker cookie clear fails.
-  });
+  if (user) {
+    localStorage.setItem('auth', JSON.stringify({ user }));
+  } else {
+    localStorage.removeItem('auth');
+  }
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   isHydrated: false,
   isAuthenticated: false,
   user: null,
-  accessToken: null,
-  refreshToken: null,
 
-  login: (user: AuthUser, tokens: TokenResponse) => {
-    set((state) => {
-      // Clear any existing timeout
-      if (state.refreshTimeout) {
-        clearTimeout(state.refreshTimeout);
-      }
-
-      // Schedule refresh
-      const timeout = setTimeout(() => {
-        state.refreshTokens();
-      }, (tokens.expires_in - 300) * 1000); // 5 minutes before expiry
-
-      return {
-        isHydrated: true,
-        isAuthenticated: true,
-        user,
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token,
-        refreshTimeout: timeout,
-      };
+  login: (user: AuthUser) => {
+    const timeout = get().refreshTimeout;
+    const nextTimeout = scheduleRefresh(timeout, () => {
+      void useAuthStore.getState().refreshTokens();
     });
-
-    // Persist to localStorage
-    localStorage.setItem('auth', JSON.stringify({ user, ...tokens }));
+    set({
+      isHydrated: true,
+      isAuthenticated: true,
+      user,
+      refreshTimeout: nextTimeout,
+    });
+    persistUser(user);
   },
 
-  logout: () => {
-    set((state) => {
-      if (state.refreshTimeout) {
-        clearTimeout(state.refreshTimeout);
-      }
-      return {
-        isHydrated: true,
-        isAuthenticated: false,
-        user: null,
-        accessToken: null,
-        refreshToken: null,
-        refreshTimeout: undefined,
-      };
+  logout: async () => {
+    const state = get();
+    if (state.refreshTimeout) {
+      clearTimeout(state.refreshTimeout);
+    }
+    set({
+      isHydrated: true,
+      isAuthenticated: false,
+      user: null,
+      refreshTimeout: undefined,
     });
-    localStorage.removeItem('auth');
-    clearAuthCookie();
-    clearServerAuthCookie();
+    persistUser(null);
+    // Best-effort cookie clear. The browser already forgets the response
+    // cookies once ``clear-cookie`` headers are processed; we trigger the
+    // BFF so the backend can also drop any server-side session bookkeeping.
+    try {
+      await apiFetch('/api/backend-auth/logout', { method: 'POST' });
+    } catch {
+      /* ignore — local state is already cleared */
+    }
   },
 
   setUser: (user: AuthUser) => {
     set({ user, isAuthenticated: true, isHydrated: true });
-
-    const auth = localStorage.getItem('auth');
-    if (auth) {
-      const parsed = JSON.parse(auth);
-      localStorage.setItem('auth', JSON.stringify({ ...parsed, user }));
-    }
-
+    persistUser(user);
     useDashboardStore.getState().setUser(user);
   },
 
-  updateTokens: (tokens: TokenResponse) => {
-    set((state) => {
-      // Clear existing timeout
-      if (state.refreshTimeout) {
-        clearTimeout(state.refreshTimeout);
-      }
-
-      // Schedule new refresh
-      const timeout = setTimeout(() => {
-        state.refreshTokens();
-      }, (tokens.expires_in - 300) * 1000); // 5 minutes before expiry
-
-      return {
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token,
-        refreshTimeout: timeout,
-      };
-    });
-
-    const auth = localStorage.getItem('auth');
-    if (auth) {
-      const parsed = JSON.parse(auth);
-      localStorage.setItem('auth', JSON.stringify({ ...parsed, ...tokens }));
-    }
-  },
-
   refreshTokens: async () => {
-    const state = get();
-    if (!state.refreshToken) return;
-
     try {
-      const tokens: TokenResponse = await apiFetch('/api/v1/auth/refresh', {
-        method: 'POST',
-        body: JSON.stringify({ refresh_token: state.refreshToken }),
+      await apiFetch('/api/backend-auth/refresh', { method: 'POST' });
+      // New cookies are already on the response; just reschedule.
+      const state = get();
+      const nextTimeout = scheduleRefresh(state.refreshTimeout, () => {
+        void useAuthStore.getState().refreshTokens();
       });
-
-      state.updateTokens(tokens);
-      if (tokens.user) {
-        useDashboardStore.getState().setUser(tokens.user);
-      }
+      set({ refreshTimeout: nextTimeout });
     } catch {
-      // On refresh failure, logout
-      state.logout();
+      // Refresh failed → force logout.
+      await useAuthStore.getState().logout();
     }
   },
 }));
 
-// Initialize auth from localStorage
+// Initialize auth from localStorage. Tokens are cookie-only now (P1 1.3),
+// so we only rehydrate the ``user`` shape for UX purposes.
 const initAuth = () => {
   if (typeof window === 'undefined') return; // Only run on client side
 
   const auth = localStorage.getItem('auth');
   if (!auth) {
-    clearAuthCookie();
     useAuthStore.setState({ isHydrated: true });
     return;
   }
 
   try {
-    const { user, access_token, refresh_token } = JSON.parse(auth);
-
-    if (!user || !access_token || !refresh_token) {
-      throw new Error('Invalid stored auth payload');
+    const parsed = JSON.parse(auth) as { user?: AuthUser };
+    if (!parsed.user) {
+      throw new Error('Missing user payload');
     }
-
-    useAuthStore.getState().login(user, { access_token, refresh_token, token_type: 'bearer', expires_in: 1800 });
-    useDashboardStore.getState().setUser(user);
+    useAuthStore.setState({
+      isHydrated: true,
+      isAuthenticated: true,
+      user: parsed.user,
+    });
+    useDashboardStore.getState().setUser(parsed.user);
+    const initialTimeout = scheduleRefresh(undefined, () => {
+      void useAuthStore.getState().refreshTokens();
+    });
+    useAuthStore.setState({ refreshTimeout: initialTimeout });
   } catch {
     localStorage.removeItem('auth');
-    clearAuthCookie();
     useAuthStore.setState({
       isHydrated: true,
       isAuthenticated: false,
       user: null,
-      accessToken: null,
-      refreshToken: null,
     });
   }
 };
@@ -328,11 +298,5 @@ export const useDashboardStore = create<DashboardState>((set) => ({
       return { selectedMood: null };
     }),
 }));
-
-function get() {
-  // Return the current auth store state. This mirrors zustand's `get` provided
-  // to store initializer functions so code elsewhere can call `get()`.
-  return useAuthStore.getState();
-}
 
 initAuth();

@@ -6,19 +6,16 @@ import type { NextConfig } from "next";
  * - `poweredByHeader: false` removes the `X-Powered-By: Next.js` fingerprint.
  * - `compress: true` enables Next's built-in gzip/brotli for static assets
  *   (the API is on FastAPI/GZipMiddleware).
- * - `async headers()` sets a baseline CSP, HSTS, frame-deny, referrer and
- *   permissions policy for every route. Per-route overrides go BELOW the
- *   catch-all in `next.config.js` style so the last match wins.
+ * - `async headers()` sets a baseline HSTS, frame-deny, referrer and
+ *   permissions policy for every route. The Content-Security-Policy is
+ *   generated per-request inside ``src/proxy.ts`` because the nonce must
+ *   be unique for every page render.
  * - `experimental.serverActions.allowedOrigins` pins server actions to
  *   the public origin so a stale proxy header can't be used to redirect
  *   them. The `experimental` nesting is intentional in this Next.js
  *   version — `serverActions` has not been promoted to a top-level key
  *   here yet.
  */
-const isProduction = process.env.NODE_ENV === "production";
-
-const apiOrigin = process.env.NEXT_PUBLIC_API_URL ?? "";
-
 const baseSecurityHeaders = [
   // Belt-and-braces: even though we don't render user HTML in iframes,
   // deny framing outright.
@@ -46,43 +43,14 @@ const baseSecurityHeaders = [
   },
 ];
 
-// CSP is built per-environment because the dev origin (Next dev server)
-// is different from prod. The `script-src` line uses `'self'` plus the
-// nonce the proxy will inject; `'unsafe-inline'` is omitted so we don't
-// regress Lighthouse "best-practices" on inline handlers.
-const buildCsp = (): string => {
-  const scriptSrc = [
-    "'self'",
-    // Next.js hydration helpers; safe to allow per Next docs.
-    "'unsafe-inline'",
-    "https://accounts.google.com",
-  ];
-  const connectSrc = ["'self'", apiOrigin, "https://accounts.google.com"].filter(
-    Boolean,
-  );
-  const frameSrc = ["'self'", "https://accounts.google.com"];
-  const imgSrc = ["'self'", "data:", "blob:", apiOrigin].filter(Boolean);
-  const styleSrc = [
-    "'self'",
-    "'unsafe-inline'", // Tailwind + Radix inject inline styles.
-  ];
-  return [
-    "default-src 'self'",
-    `script-src ${scriptSrc.join(" ")}`,
-    `style-src ${styleSrc.join(" ")}`,
-    `img-src ${imgSrc.join(" ")}`,
-    `font-src 'self' data:`,
-    `connect-src ${connectSrc.join(" ")}`,
-    `frame-src ${frameSrc.join(" ")}`,
-    "base-uri 'self'",
-    "form-action 'self'",
-    "object-src 'none'",
-    "frame-ancestors 'none'",
-    isProduction ? "upgrade-insecure-requests" : "",
-  ]
-    .filter(Boolean)
-    .join("; ");
-};
+// CSP is constructed per-request inside ``src/proxy.ts`` because the
+// nonce must be unique for every page render. ``next.config.ts`` only
+// ships the static security headers (HSTS, frame-deny, etc.) so that
+// assets which bypass the proxy (e.g. ``_next/static``) still inherit
+// a sensible baseline.
+//
+// If you need to add a new directive, do it in the proxy — there is no
+// build-time CSP here.
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
@@ -94,10 +62,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/:path*",
-        headers: [
-          ...baseSecurityHeaders,
-          { key: "Content-Security-Policy", value: buildCsp() },
-        ],
+        headers: baseSecurityHeaders,
       },
     ];
   },

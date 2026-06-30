@@ -1,28 +1,39 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { Sparkles } from "lucide-react";
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Icon } from "@/components/ui/icon";
 import { AICompanionCard } from "@/components/widgets/ai-companion-card";
 import { SleepTracking } from "@/components/widgets/sleep-tracking";
 import { MoodPreviewCard } from "@/components/landing/preview-widgets";
 
-// Note: Using existing widgets which handle their own mock data
-
 export function FeatureGrid() {
   return (
-    <section id="features" className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-background to-muted/30">
-      <div className="max-w-7xl mx-auto">
+    <section
+      id="features"
+      className="relative section-y page-x"
+    >
+      <div className="mx-auto max-w-7xl">
         {/* Section Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mb-12"
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.5 }}
+          className="mb-12 text-center"
         >
-          <h2 className="text-3xl lg:text-4xl font-bold mb-4">
+          <span className="section-eyebrow mb-4">
+            <Icon icon={Sparkles} size={12} className="text-accent-energy" />
+            Comprehensive
+          </span>
+          <h2 className="mt-4 font-display text-3xl font-medium tracking-tight lg:text-4xl">
             Comprehensive Wellness Tracking
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Monitor every aspect of your mental and physical health with our AI-powered dashboard
+          <p className="mx-auto mt-4 max-w-2xl text-base text-text-secondary lg:text-lg">
+            Monitor every aspect of your mental and physical health with our
+            AI-powered dashboard.
           </p>
         </motion.div>
 
@@ -30,16 +41,16 @@ export function FeatureGrid() {
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
+          viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.6 }}
-          className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8"
+          className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8"
         >
-          {/* AI Companion - Full width on mobile, 3 cols on desktop */}
+          {/* AI Companion - Full width on desktop */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ delay: 0.1, duration: 0.5 }}
             className="lg:col-span-3"
           >
             <AICompanionCard />
@@ -49,8 +60,8 @@ export function FeatureGrid() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ delay: 0.2, duration: 0.5 }}
           >
             <MoodPreviewCard />
           </motion.div>
@@ -59,24 +70,33 @@ export function FeatureGrid() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.3 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ delay: 0.3, duration: 0.5 }}
           >
             <SleepTracking />
           </motion.div>
 
-          {/* Placeholder for third column */}
+          {/* Coming Soon placeholder */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.4 }}
-            className="glass-card p-6 hover-lift"
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ delay: 0.4, duration: 0.5 }}
           >
-            <div className="text-center">
-              <h3 className="text-xl font-semibold mb-2">Coming Soon</h3>
-              <p className="text-muted-foreground">More wellness features on the way</p>
-            </div>
+            <Card
+              variant="feature"
+              accent="energy"
+              className="h-full items-center justify-center text-center"
+            >
+              <CardHeader className="items-center">
+                <CardTitle>Coming Soon</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-text-secondary">
+                  More wellness features on the way.
+                </p>
+              </CardContent>
+            </Card>
           </motion.div>
         </motion.div>
       </div>

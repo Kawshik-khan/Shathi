@@ -19,6 +19,12 @@ class AdminUserSummary(BaseSchema):
     subscription_status: str
     subscription_started_at: Optional[datetime] = None
     subscription_ends_at: Optional[datetime] = None
+    llm_message_count: int = 0
+    llm_input_tokens: int = 0
+    llm_output_tokens: int = 0
+    llm_cache_tokens: int = 0
+    llm_total_tokens: int = 0
+    llm_last_message_at: Optional[datetime] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
 

@@ -1,44 +1,40 @@
 'use client';
 
-import { cn } from '@/lib/utils';
-import { useAuthStore, useDashboardStore } from '@/lib/store';
-import { SidebarPlanCard } from '@/components/layout/sidebar-plan-card';
-import { adminNavigationItems } from '@/components/layout/admin-navigation';
-import { motion } from 'framer-motion';
+/**
+ * Desktop sidebar (PR3 redesign).
+ *
+ * - Fixed-position column at lg+, mirrors `mobile-sidebar.tsx` styling.
+ * - Uses nav-config + adminNavigationItems as the single source of items.
+ * - Surfaces the redesigned `Icon` facade, `motion-slide-right`, the
+ *   `surface-card-elevated` shell, and the new sage/sand palette.
+ *
+ * The previous implementation hardcoded the brand teal gradient; PR3
+ * pulls both the active marker and the inactive chip from semantic
+ * tokens (`--color-bg-selected`, `--color-accent-energy`, etc.).
+ */
+import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import {
-  LayoutDashboard,
-  Sparkles,
-  Smile,
-  BookHeart,
-  CheckCircle2,
-  Moon,
-  BarChart3,
-  Library,
-  Settings,
-  ChevronDown,
-} from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 
-type NavigationItem = {
-  key: string;
-  label?: string;
-  href: string;
-  icon: typeof LayoutDashboard;
-};
+import { cn } from '@/lib/utils';
+import { useAuthStore, useDashboardStore } from '@/lib/store';
+import { Icon } from '@/components/ui/icon';
+import { userNavigation, type NavItem } from '@/components/layout/nav-config';
+import {
+  adminNavigationItems,
+  type AdminNavigationItem,
+} from '@/components/layout/admin-navigation';
+import { SidebarPlanCard } from '@/components/layout/sidebar-plan-card';
 
-const userNavigation: NavigationItem[] = [
-  { key: 'dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { key: 'aiCompanion', href: '/ai-companion', icon: Sparkles },
-  { key: 'mood', href: '/mood', icon: Smile },
-  { key: 'journal', href: '/journal', icon: BookHeart },
-  { key: 'habits', href: '/habits', icon: CheckCircle2 },
-  { key: 'sleep', href: '/sleep', icon: Moon },
-  { key: 'insights', href: '/insights', icon: BarChart3 },
-  { key: 'resources', href: '/resources', icon: Library },
-  { key: 'settings', href: '/settings', icon: Settings },
-];
+type RailItem =
+  | (NavItem & { admin: false })
+  | (AdminNavigationItem & { admin: true; key: string });
+
+function planLabel(plan: string): string {
+  return `${plan.charAt(0).toUpperCase()}${plan.slice(1)} Plan`;
+}
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -48,79 +44,135 @@ export function Sidebar() {
   const { t } = useTranslation();
   const isAdmin = authUser?.system_role === 'admin';
   const activeAdminTab = searchParams.get('tab') ?? 'overview';
-  const navigationItems = isAdmin ? adminNavigationItems : userNavigation;
-  const profilePlanLabel = user.plan === 'free'
-    ? 'Free Plan'
-    : `${user.plan.charAt(0).toUpperCase()}${user.plan.slice(1)} Plan`;
+  const items: RailItem[] = isAdmin
+    ? adminNavigationItems.map((i) => ({ ...i, admin: true as const }))
+    : userNavigation.map((i) => ({ ...i, admin: false as const }));
+  const profilePlanLabel = planLabel(user.plan);
 
   return (
     <motion.aside
-      initial={{ opacity: 0, x: -20 }}
+      initial={{ opacity: 0, x: -16 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
-      className="fixed left-4 top-4 bottom-4 w-64 glass-card-strong z-50 flex flex-col py-6 px-4"
+      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      data-slot="sidebar"
+      className="shell-rail fixed left-4 top-0 bottom-0 z-40 flex w-[250px] flex-col rounded-r-[28px] border border-[var(--color-border-subtle)] bg-[var(--color-bg-deep)] px-3.5 py-6 shadow-card"
     >
-      {/* Logo */}
-      <div className="flex items-center gap-3 px-2 mb-8">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6FA8C7] to-[#4A90A4] flex items-center justify-center shadow-lg shadow-[#4A90A4]/20">
-          <span className="text-white font-bold text-lg">S</span>
-        </div>
-        <span className="font-semibold text-lg text-foreground">Shathi</span>
-      </div>
+      {/* Logo / brand */}
+      <Link
+        href={isAdmin ? '/admin' : '/dashboard'}
+        className="mb-7 flex items-center gap-3 rounded-lg px-2 focus-ring"
+        aria-label="Shathi home"
+      >
+        <span
+          aria-hidden="true"
+          className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-[#55715B] to-[#6E8E73] text-base font-bold text-white shadow-card"
+        >
+          S
+        </span>
+        <span className="font-display text-lg font-semibold tracking-tight text-text-primary">
+          Shathi
+        </span>
+      </Link>
 
-      {/* Navigation — no scroll container: the sidebar is a fixed column that
-         lays out top-to-bottom; if it overflows the viewport, the bottom
-         section is clipped rather than scrollable. Scrolling is reserved for
-         the page content. */}
-      <nav className="space-y-1">
-        {navigationItems.map((item, index) => {
+      {/* Navigation */}
+      <nav
+        aria-label={t('navigation.main', 'Main navigation')}
+        className="flex-1 space-y-2"
+      >
+        {items.map((item, index) => {
           const isActive = isAdmin
-            ? pathname === '/admin' && item.key === activeAdminTab
-            : pathname === item.href;
-          const Icon = item.icon;
+            ? pathname === '/admin' &&
+              (item as AdminNavigationItem).key === activeAdminTab
+            : pathname === (item as NavItem).href;
+
+          const label = isAdmin
+            ? (item as AdminNavigationItem).label
+            : (item as NavItem).label ?? t(`navigation.${item.key}`);
+
+          const href = item.href;
+          const showBadge = !isAdmin && (item as NavItem).badge === true;
+          const IconComponent = item.icon;
 
           return (
             <motion.div
-              key={item.key}
+              key={`${item.admin ? 'a' : 'u'}-${item.key}`}
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.05, duration: 0.3 }}
+              transition={{
+                delay: Math.min(index * 0.03, 0.3),
+                duration: 0.25,
+                ease: [0.25, 0.1, 0.25, 1],
+              }}
             >
               <Link
-                href={item.href}
+                href={href}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200',
+                  'group relative flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-sm font-medium transition-colors',
+                  'focus-ring',
                   isActive
-                    ? 'bg-[#E3F0F3] text-[#4A90A4] shadow-sm shadow-[#4A90A4]/10'
-                    : 'text-muted-foreground hover:bg-[#F1F5F7] hover:text-foreground'
+                    ? 'bg-gradient-to-br from-[#55715B] to-[#6E8E73] text-white shadow-lg shadow-[#55715B]/20'
+                    : 'bg-transparent text-text-secondary hover:bg-[var(--color-bg-hover)] hover:text-text-primary',
                 )}
+                aria-current={isActive ? 'page' : undefined}
               >
-                <Icon className={cn('w-5 h-5', isActive && 'text-[#4A90A4]')} />
-                <span>{item.label ?? t(`navigation.${item.key}`)}</span>
-                {!isAdmin && item.key === 'aiCompanion' && (
-                  <span className="ml-auto w-2 h-2 rounded-full bg-[#4A90A4] animate-pulse" />
-                )}
+                <div
+                  className={cn(
+                    'flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors',
+                    isActive
+                      ? 'bg-white/20'
+                      : 'bg-transparent group-hover:bg-white/60',
+                  )}
+                >
+                  <Icon
+                    icon={IconComponent}
+                    size={20}
+                    className={cn(
+                      'transition-colors',
+                      isActive
+                        ? 'text-white'
+                        : 'text-text-secondary group-hover:text-text-primary',
+                    )}
+                  />
+                </div>
+                <span className="truncate">{label}</span>
+                {showBadge ? (
+                  <span
+                    aria-hidden="true"
+                    className="ml-auto h-2 w-2 animate-pulse rounded-full bg-accent-energy"
+                  />
+                ) : null}
               </Link>
             </motion.div>
           );
         })}
       </nav>
 
-      {!isAdmin && <SidebarPlanCard fallbackPlan={user.plan} />}
+      {!isAdmin ? <SidebarPlanCard fallbackPlan={user.plan} /> : null}
 
-      {/* User Profile */}
+      {/* User profile link */}
       <Link
         href="/profile"
-        className="flex items-center gap-3 px-2 py-3 rounded-xl hover:bg-[#F1F5F7] transition-colors"
+        className={cn(
+          'mt-2 flex items-center gap-3 rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]/55 px-2 py-3 transition-colors',
+          'hover:bg-[var(--color-bg-hover)] focus-ring',
+        )}
       >
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#A8D0D9] to-[#6FA8C7] flex items-center justify-center text-white font-medium">
-          {user.name.charAt(0)}
+        <div className="relative">
+          <span
+            aria-hidden="true"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-[#55715B] to-[#6E8E73] text-sm font-semibold text-white shadow-sm"
+          >
+            {user.name.charAt(0).toUpperCase()}
+          </span>
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-foreground truncate">{user.name}</p>
-          <p className="text-xs text-muted-foreground">{isAdmin ? 'Administrator' : profilePlanLabel}</p>
-        </div>
-        <ChevronDown className="w-4 h-4 text-muted-foreground" />
+        <span className="flex min-w-0 flex-1 flex-col text-left">
+          <span className="truncate text-sm font-medium text-text-primary">
+            {user.name}
+          </span>
+          <span className="truncate text-xs text-text-secondary">
+            {isAdmin ? 'Administrator' : profilePlanLabel}
+          </span>
+        </span>
       </Link>
     </motion.aside>
   );

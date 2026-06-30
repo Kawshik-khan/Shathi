@@ -17,6 +17,7 @@ from app.api.i18n import router as i18n_router
 from app.api.offline import router as offline_router
 from app.api.sms import router as sms_router
 from app.api.subscription_requests import router as subscription_requests_router
+from app.api.gamification.routes import router as gamification_router
 
 # Create main API router
 api_router = APIRouter()
@@ -42,4 +43,5 @@ api_router.include_router(
     prefix="/subscription-requests",
     tags=["subscription-requests"],
 )
+api_router.include_router(gamification_router, prefix="/gamification", tags=["gamification"])
 

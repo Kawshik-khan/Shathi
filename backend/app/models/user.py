@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import String, DateTime, Boolean, ForeignKey
+from sqlalchemy import String, DateTime, Boolean, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -29,6 +29,14 @@ class User(Base):
     hashed_password: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     avatar_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Monotonic token counter, bumped on every credential change
+    # (password update, forced logout, etc). The current value is
+    # embedded as the ``tv`` claim in every JWT issued for this user,
+    # and ``dependencies.get_current_user`` rejects tokens whose ``tv``
+    # is older than the column. This is the cheapest way to invalidate
+    # outstanding sessions without maintaining a server-side token
+    # blocklist — see P1 1.2 / OWASP A07.
+    token_version: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     language: Mapped[str] = mapped_column(String(10), default="en")
     system_role: Mapped[str] = mapped_column(String(30), default="user", nullable=False)
     plan: Mapped[str] = mapped_column(String(30), default="free", nullable=False)

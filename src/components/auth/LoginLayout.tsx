@@ -1,52 +1,81 @@
 "use client";
 
 import React from "react";
-import { usePathname } from "next/navigation";
-import OrbIllustration from "../../components/illustrations/OrbIllustration";
+import { motion, useReducedMotion } from "framer-motion";
+import Image from "next/image";
 
 type Props = { children: React.ReactNode };
 
+/**
+ * Auth shell used by both `/auth/login` and `/auth/signup`.
+ *
+ * After the hero panel was removed, the layout collapsed to a
+ * single centred form on a sand radial background. A compact brand
+ * row (Shathi logo + "AI-Powered Health Companion" pill) is kept
+ * above the form so the page still reads as on-brand.
+ *
+ * The radial sand gradient comes straight from the design system
+ * PRD (#F8F6F1 → #F1ECE2 → #E6DFD1) and the panel respects
+ * ``prefers-reduced-motion``.
+ */
 export default function AuthLayout({ children }: Props) {
-  const pathname = usePathname();
-  const isSignup = pathname?.includes('/signup');
+  const reduce = useReducedMotion();
+  const fade = reduce
+    ? {}
+    : {
+        initial: { opacity: 0, y: 16 },
+        animate: { opacity: 1, y: 0 },
+        transition: { duration: 0.6, ease: "easeOut" as const },
+      };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#FAFBFC] p-3 sm:p-4 md:p-6 lg:p-8">
-      <div className="w-full max-w-xs sm:max-w-sm md:max-w-2xl lg:max-w-5xl xl:max-w-7xl rounded-2xl sm:rounded-3xl lg:rounded-4xl shadow-[0_10px_40px_rgba(0,0,0,0.04)] overflow-hidden bg-white/60 backdrop-blur-sm">
-        <div className="grid grid-cols-1 lg:grid-cols-2">
-          {/* Left Panel - Illustration (hidden on mobile/tablet, visible on lg+) */}
-          <div className="hidden lg:flex p-6 sm:p-8 lg:p-10 xl:p-12 flex-col justify-center gap-6 sm:gap-7 lg:gap-8 bg-gradient-to-b from-[#F1F5F7] to-[#EAF2F4]">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/70 flex items-center justify-center shadow-sm text-lg sm:text-xl">🌿</div>
-                <div className="text-sm sm:text-base font-medium text-[#0F172A]">Shathi</div>
-              </div>
-            </div>
+    <div
+      className="relative min-h-screen w-full overflow-hidden"
+      style={{
+        background:
+          "radial-gradient(120% 80% at 0% 0%, #F8F6F1 0%, #F1ECE2 45%, #E6DFD1 100%)",
+      }}
+    >
+      {/* Soft ambient emerald wash, low opacity, behind everything. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10"
+        style={{
+          background:
+            "radial-gradient(50% 40% at 20% 30%, rgba(34,197,94,0.12), transparent 70%)",
+        }}
+      />
 
-            <div>
-              <div className="inline-flex items-center gap-2 sm:gap-3 bg-[#EAF2F4] text-[#2C6373] px-3 py-1 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm">
-                <span className="w-2 h-2 rounded-full bg-[#5F9DB0] block" />
-                <span>Your AI Companion for Mind & Body</span>
-              </div>
-
-              <h1 className="mt-4 sm:mt-6 text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#0F172A] leading-tight sm:leading-snug">
-                {isSignup ? 'Join Shathi' : 'Welcome back'}<br />to Shathi <span className="text-[#5F9DB0]">🌿</span>
-              </h1>
-              <p className="mt-3 sm:mt-4 text-sm sm:text-base text-[#475569] max-w-md leading-relaxed">
-                {isSignup ? 'Start your journey towards a healthier, happier you.' : 'Continue your journey towards a healthier, happier you.'}
-              </p>
-            </div>
-
-            <div className="mt-4 sm:mt-6 lg:mt-8">
-              <OrbIllustration />
-            </div>
+      <main className="mx-auto flex min-h-screen w-full max-w-[640px] flex-col items-center justify-center px-4 py-10 sm:px-6">
+        {/* Compact brand row, replaces the removed hero panel. */}
+        <div className="mb-6 flex w-full items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/70 shadow-[0_8px_24px_rgba(31,42,36,0.06)] ring-1 ring-white/60 backdrop-blur-md">
+              <Image
+                src="/favicon.ico"
+                alt="Shathi logo"
+                width={22}
+                height={22}
+                className="h-5 w-5"
+              />
+            </span>
+            <span className="font-display text-xl font-medium tracking-tight text-[#1F2A24]">
+              Shathi
+            </span>
           </div>
-
-          {/* Right Panel - Form */}
-          <div className="flex items-center justify-center p-4 sm:p-6 md:p-8 lg:p-10 xl:p-12">
-            <div className="w-full max-w-xs sm:max-w-sm md:max-w-md">{children}</div>
-          </div>
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/70 px-3 py-1.5 text-xs font-medium text-emerald-700 shadow-[0_4px_12px_rgba(31,42,36,0.04)] backdrop-blur-md">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            AI-Powered Health Companion
+          </span>
         </div>
-      </div>
+
+        <motion.section
+          {...fade}
+          className="w-full rounded-[28px] bg-[#F8F6F1]/95 px-6 py-10 shadow-[0_30px_80px_-30px_rgba(31,42,36,0.18)] ring-1 ring-white/60 backdrop-blur-md sm:px-10 sm:py-12 lg:px-14 lg:py-16"
+        >
+          {children}
+        </motion.section>
+      </main>
     </div>
   );
 }

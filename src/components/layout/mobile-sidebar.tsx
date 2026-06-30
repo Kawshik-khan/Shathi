@@ -1,52 +1,42 @@
 'use client';
 
-import { cn } from '@/lib/utils';
-import { useAuthStore, useDashboardStore } from '@/lib/store';
-import { SidebarPlanCard } from '@/components/layout/sidebar-plan-card';
-import { adminNavigationItems } from '@/components/layout/admin-navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+/**
+ * Mobile sidebar / drawer (PR3 redesign).
+ *
+ * Composed of:
+ *   - Fixed top-bar (logo + profile + menu trigger)
+ *   - Drawer (slides in from left on demand)
+ *   - Spacer for the top-bar height
+ *
+ * Mirrors the desktop `Sidebar.tsx` styling but renders only below the
+ * `lg` breakpoint. Both share `nav-config.ts` so adding a page updates
+ * every nav surface.
+ */
+import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import {
-  LayoutDashboard,
-  Sparkles,
-  Smile,
-  BookHeart,
-  CheckCircle2,
-  Moon,
-  BarChart3,
-  Library,
-  Settings,
-  ChevronDown,
-  X,
-  Menu,
-  LogOut,
-} from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { LogOut, Menu, X } from 'lucide-react';
+
+import { cn } from '@/lib/utils';
+import { useAuthStore, useDashboardStore } from '@/lib/store';
+import { Icon } from '@/components/ui/icon';
+import { Button } from '@/components/ui/button';
 import { LanguageToggle } from '@/components/language-toggle';
+import { SidebarPlanCard } from '@/components/layout/sidebar-plan-card';
+import { userNavigation } from '@/components/layout/nav-config';
+import {
+  adminNavigationItems,
+  type AdminNavigationItem,
+} from '@/components/layout/admin-navigation';
 
-type NavigationItem = {
-  key: string;
-  label?: string;
-  href: string;
-  icon: typeof LayoutDashboard;
-};
-
-const userNavigation: NavigationItem[] = [
-  { key: 'dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { key: 'aiCompanion', href: '/ai-companion', icon: Sparkles },
-  { key: 'mood', href: '/mood', icon: Smile },
-  { key: 'journal', href: '/journal', icon: BookHeart },
-  { key: 'habits', href: '/habits', icon: CheckCircle2 },
-  { key: 'sleep', href: '/sleep', icon: Moon },
-  { key: 'insights', href: '/insights', icon: BarChart3 },
-  { key: 'resources', href: '/resources', icon: Library },
-  { key: 'settings', href: '/settings', icon: Settings },
-];
+function planLabel(plan: string): string {
+  return `${plan.charAt(0).toUpperCase()}${plan.slice(1)} Plan`;
+}
 
 export function MobileSidebar() {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = React.useState(false);
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -56,184 +46,240 @@ export function MobileSidebar() {
   const { t } = useTranslation();
   const isAdmin = authUser?.system_role === 'admin';
   const activeAdminTab = searchParams.get('tab') ?? 'overview';
-  const navigationItems = isAdmin ? adminNavigationItems : userNavigation;
-  const profilePlanLabel = user.plan === 'free'
-    ? 'Free Plan'
-    : `${user.plan.charAt(0).toUpperCase()}${user.plan.slice(1)} Plan`;
 
-  const handleLogout = () => {
+  const handleLogout = React.useCallback(() => {
     setIsOpen(false);
     logout();
     router.push('/landing');
-  };
+  }, [logout, router]);
 
-  // Prevent body scroll when sidebar is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
+  // Prevent body scroll when the drawer is open.
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
     return () => {
-      document.body.style.overflow = '';
+      document.body.style.overflow = prev;
+      document.removeEventListener('keydown', onKey);
     };
   }, [isOpen]);
 
   return (
     <>
-      {/* Mobile Header Bar */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 glass-card-strong px-4 py-3 flex items-center justify-between">
+      {/* Top bar — fixed, only visible on small screens */}
+      <header
+        data-slot="mobile-top-bar"
+        className="top-bar-shell fixed inset-x-0 top-0 z-40 flex h-14 items-center justify-between border-b border-border-subtle bg-bg-card/85 px-4 backdrop-blur-xl lg:hidden"
+      >
         <Link
           href="/landing"
-          className="flex items-center gap-3"
+          className="flex items-center gap-2 focus-ring rounded-lg"
           aria-label="Go to landing page"
         >
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#6FA8C7] to-[#4A90A4] flex items-center justify-center shadow-lg shadow-[#4A90A4]/20">
-            <span className="text-white font-bold">S</span>
-          </div>
-          <span className="font-semibold text-foreground">Shathi</span>
+          <span
+            aria-hidden="true"
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-sage-300 to-sage-500 text-sm font-bold text-white shadow-flat"
+          >
+            S
+          </span>
+          <span className="font-display text-base font-semibold text-text-primary">
+            Shathi
+          </span>
         </Link>
 
         <div className="flex items-center gap-2">
           <LanguageToggle />
           <Link
             href="/profile"
-            className="w-8 h-8 rounded-full bg-gradient-to-br from-[#A8D0D9] to-[#6FA8C7] flex items-center justify-center text-white text-sm font-medium overflow-hidden"
             aria-label="Open profile"
+            className="focus-ring flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-linear-to-br from-sand-100 to-sage-300 text-xs font-semibold text-white"
           >
             {user.avatar ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={user.avatar} alt="" className="w-full h-full object-cover" />
+              <img
+                src={user.avatar}
+                alt=""
+                className="h-full w-full object-cover"
+              />
             ) : (
-              user.name.charAt(0)
+              user.name.charAt(0).toUpperCase()
             )}
           </Link>
-          
-          {/* Menu Button */}
-          <button
+          <Button
+            variant="ghost"
+            size="icon-sm"
             onClick={() => setIsOpen(true)}
-            className="p-2 rounded-lg hover:bg-[#F1F5F7] transition-colors"
             aria-label="Open menu"
+            className="h-10 w-10 rounded-full"
           >
-            <Menu className="w-5 h-5 text-foreground" />
-          </button>
+            <Icon icon={Menu} size={20} aria-hidden />
+          </Button>
         </div>
       </header>
 
       {/* Overlay */}
       <AnimatePresence>
-        {isOpen && (
-          <motion.div
+        {isOpen ? (
+          <motion.button
+            type="button"
+            aria-label="Close menu"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={() => setIsOpen(false)}
-            className="lg:hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-50"
+            className="fixed inset-0 z-40 bg-text-primary/20 backdrop-blur-sm lg:hidden"
           />
-        )}
+        ) : null}
       </AnimatePresence>
 
-      {/* Mobile Sidebar Drawer */}
+      {/* Drawer */}
       <AnimatePresence>
-        {isOpen && (
+        {isOpen ? (
           <motion.aside
+            data-slot="mobile-sidebar"
             initial={{ x: '-100%' }}
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="lg:hidden fixed left-0 top-0 bottom-0 w-72 glass-card-strong z-50 flex flex-col py-6 px-4"
+            transition={{ type: 'spring', damping: 26, stiffness: 240 }}
+            className="shell-rail fixed inset-y-0 left-0 z-50 flex w-72 flex-col rounded-r-[28px] border border-border-subtle bg-bg-card/95 px-4 py-6 shadow-overlay backdrop-blur-xl lg:hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-label={t('navigation.main', 'Main navigation')}
           >
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="mb-6 flex items-center justify-between">
               <Link
                 href="/landing"
                 onClick={() => setIsOpen(false)}
-                className="flex items-center gap-3"
+                className="flex items-center gap-3 focus-ring rounded-lg"
                 aria-label="Go to landing page"
               >
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6FA8C7] to-[#4A90A4] flex items-center justify-center shadow-lg shadow-[#4A90A4]/20">
-                  <span className="text-white font-bold text-lg">S</span>
-                </div>
-                <span className="font-semibold text-lg text-foreground">Shathi</span>
+                <span
+                  aria-hidden="true"
+                  className="flex h-10 w-10 items-center justify-center rounded-2xl bg-linear-to-br from-sage-300 to-sage-500 text-base font-bold text-white shadow-card"
+                >
+                  S
+                </span>
+                <span className="font-display text-lg font-semibold text-text-primary">
+                  Shathi
+                </span>
               </Link>
-              <button
+              <Button
+                variant="ghost"
+                size="icon-sm"
                 onClick={() => setIsOpen(false)}
-                className="p-2 rounded-lg hover:bg-[#F1F5F7] transition-colors"
                 aria-label="Close menu"
+                className="h-10 w-10 rounded-full"
               >
-                <X className="w-5 h-5 text-muted-foreground" />
-              </button>
+                <Icon icon={X} size={20} aria-hidden />
+              </Button>
             </div>
 
-            {/* Navigation */}
-            <nav className="flex-1 space-y-1 overflow-y-auto custom-scrollbar">
-              {navigationItems.map((item, index) => {
-                const isActive = isAdmin
-                  ? pathname === '/admin' && item.key === activeAdminTab
+            <nav className="flex-1 space-y-1 overflow-y-auto">
+              {(isAdmin
+                ? adminNavigationItems
+                : userNavigation
+              ).map((item, index) => {
+                const adminItem = isAdmin
+                  ? (item as AdminNavigationItem)
+                  : null;
+                const isActive = adminItem
+                  ? pathname === '/admin' && adminItem.key === activeAdminTab
                   : pathname === item.href;
-                const Icon = item.icon;
+                const label = adminItem
+                  ? adminItem.label
+                  : item.label ?? t(`navigation.${item.key}`);
+                const showBadge =
+                  !isAdmin && (item as { badge?: boolean }).badge === true;
 
                 return (
                   <motion.div
-                    key={item.key}
-                    initial={{ opacity: 0, x: -10 }}
+                    key={`${isAdmin ? 'a' : 'u'}-${item.key}`}
+                    initial={{ opacity: 0, x: -8 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.03 }}
+                    transition={{ delay: Math.min(index * 0.025, 0.25) }}
                   >
                     <Link
                       href={item.href}
                       onClick={() => setIsOpen(false)}
                       className={cn(
-                        'flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200',
+                        'group relative flex items-center gap-3 rounded-pill px-3 py-3 text-sm font-medium transition-colors',
+                        'focus-ring',
                         isActive
-                          ? 'bg-[#E3F0F3] text-[#4A90A4] shadow-sm shadow-[#4A90A4]/10'
-                          : 'text-muted-foreground hover:bg-[#F1F5F7] hover:text-foreground'
+                          ? 'sidebar-active-marker bg-bg-selected text-text-primary shadow-flat'
+                          : 'text-text-secondary hover:bg-bg-hover hover:text-text-primary',
                       )}
-                      >
-                      <Icon className={cn('w-5 h-5', isActive && 'text-[#4A90A4]')} />
-                      <span>{item.label ?? t(`navigation.${item.key}`)}</span>
-                      {!isAdmin && item.key === 'aiCompanion' && (
-                        <span className="ml-auto w-2 h-2 rounded-full bg-[#4A90A4] animate-pulse" />
-                      )}
+                      aria-current={isActive ? 'page' : undefined}
+                    >
+                      <Icon
+                        icon={item.icon}
+                        size={20}
+                        className={cn(
+                          'transition-colors',
+                          isActive
+                            ? 'text-accent-energy'
+                            : 'text-text-secondary group-hover:text-text-primary',
+                        )}
+                      />
+                      <span className="truncate">{label}</span>
+                      {showBadge ? (
+                        <span
+                          aria-hidden="true"
+                          className="ml-auto h-2 w-2 animate-pulse rounded-full bg-accent-energy"
+                        />
+                      ) : null}
                     </Link>
                   </motion.div>
                 );
               })}
             </nav>
 
-            {!isAdmin && <SidebarPlanCard fallbackPlan={user.plan} onNavigate={() => setIsOpen(false)} />}
+            {!isAdmin ? (
+              <SidebarPlanCard
+                fallbackPlan={user.plan}
+                onNavigate={() => setIsOpen(false)}
+              />
+            ) : null}
 
-            {/* User Profile */}
             <Link
               href="/profile"
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-3 px-2 py-3 rounded-xl hover:bg-[#F1F5F7] transition-colors"
+              className="mt-2 flex items-center gap-3 rounded-pill px-2 py-3 transition-colors hover:bg-bg-hover focus-ring"
             >
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#A8D0D9] to-[#6FA8C7] flex items-center justify-center text-white font-medium">
-                {user.name.charAt(0)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{user.name}</p>
-                <p className="text-xs text-muted-foreground">{isAdmin ? 'Administrator' : profilePlanLabel}</p>
-              </div>
-              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+              <span
+                aria-hidden="true"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-br from-sand-100 to-sage-300 text-sm font-semibold text-white shadow-flat"
+              >
+                {user.name.charAt(0).toUpperCase()}
+              </span>
+              <span className="flex min-w-0 flex-1 flex-col text-left">
+                <span className="truncate text-sm font-medium text-text-primary">
+                  {user.name}
+                </span>
+                <span className="truncate text-xs text-text-secondary">
+                  {isAdmin ? 'Administrator' : planLabel(user.plan)}
+                </span>
+              </span>
             </Link>
 
-            <button
-              type="button"
+            <Button
+              variant="ghost"
               onClick={handleLogout}
-              className="mt-2 flex w-full items-center gap-3 px-2 py-3 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+              className="mt-2 w-full justify-start gap-3 rounded-pill px-3 py-3 text-sm font-medium text-accent-crisis hover:bg-feedback-danger/10"
             >
-              <LogOut className="w-5 h-5" />
+              <Icon icon={LogOut} size={20} aria-hidden />
               <span>{t('header.logout')}</span>
-            </button>
+            </Button>
           </motion.aside>
-        )}
+        ) : null}
       </AnimatePresence>
 
-      {/* Spacer for mobile header */}
-      <div className="lg:hidden h-14" />
+      {/* Spacer for fixed top bar */}
+      <div aria-hidden="true" className="h-14 lg:hidden" />
     </>
   );
 }
