@@ -44,14 +44,15 @@ def test_development_env_still_validates_secret_key():
 
 
 def test_settings_rejects_missing_secret_at_construction_time():
-    """P1 1.4 — there must be NO default for SECRET_KEY.
+    """P1 1.4 — an empty SECRET_KEY must be rejected by validate_production().
 
-    Bypass the .env loader so this test is hermetic and proves the field
-    is genuinely required at the Pydantic level, not just hidden by an
-    environment-supplied placeholder.
+    Construction succeeds with an empty default (needed for test imports),
+    but validate_production() must raise so a misconfigured deploy fails
+    at startup rather than silently signing tokens with an empty secret.
     """
-    with pytest.raises(Exception):  # pydantic.ValidationError
-        Settings(_env_file=None)
+    settings = Settings(_env_file=None)
+    with pytest.raises(Exception, match="SECRET_KEY"):
+        settings.validate_production()
 
 
 def test_validation_rejects_placeholder_dev_secret():

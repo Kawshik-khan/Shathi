@@ -219,6 +219,13 @@ async def test_embedding_cache_does_not_cache_hf_fallback(monkeypatch):
     monkeypatch.setattr(memory_service, "openai_client", None)
     monkeypatch.setattr(memory_service, "_EMBEDDING_LRU", memory_service.OrderedDict())
 
+    # Ensure the HF_API_TOKEN guard in generate_embedding passes so the
+    # patched _generate_hf_embedding is actually reached.
+    from app.core.config import get_settings as _get_settings
+    _settings = _get_settings()
+    original_hf_token = _settings.HF_API_TOKEN
+    _settings.HF_API_TOKEN = "fake-hf-token-for-test"
+
     redis = FakeRedis()
     text = "hf path text"
 
@@ -227,12 +234,15 @@ async def test_embedding_cache_does_not_cache_hf_fallback(monkeypatch):
 
     monkeypatch.setattr(memory_service, "_generate_hf_embedding", fake_hf)
 
-    out = await memory_service.generate_embedding(text, redis=redis)
-    assert out == [0.9] * 384
+    try:
+        out = await memory_service.generate_embedding(text, redis=redis)
+        assert out == [0.9] * 384
 
-    # Neither cache should have stored anything.
-    assert memory_service._lru_get(memory_service._embedding_key(text)) is None
-    assert memory_service._embedding_redis_key(text) not in redis.store
+        # Neither cache should have stored anything.
+        assert memory_service._lru_get(memory_service._embedding_key(text)) is None
+        assert memory_service._embedding_redis_key(text) not in redis.store
+    finally:
+        _settings.HF_API_TOKEN = original_hf_token
 
 
 # ---------------------------------------------------------------------------
