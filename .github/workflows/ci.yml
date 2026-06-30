@@ -37,6 +37,8 @@ jobs:
       - run: PYTHONPATH=. python -m pytest -p no:cacheprovider tests
         env:
           APP_ENV: test
+          SECRET_KEY: "ci-test-secret-key-not-used-in-production-32chars"
+          CORS_ORIGINS: "http://localhost:3000"
 
   # Quality gates that don't fit the per-stack jobs: secrets scan (always)
   # and Lighthouse budget (optional — only when LH_ENABLED=true).
