@@ -51,6 +51,9 @@ def test_settings_rejects_missing_secret_at_construction_time():
     at startup rather than silently signing tokens with an empty secret.
     """
     settings = Settings(_env_file=None)
+    # Force SECRET_KEY to empty regardless of any env var set in CI,
+    # so this test is hermetic and proves the validation logic itself.
+    settings.SECRET_KEY = ""
     with pytest.raises(Exception, match="SECRET_KEY"):
         settings.validate_production()
 
