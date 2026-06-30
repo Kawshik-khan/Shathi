@@ -267,11 +267,10 @@ function ThemeControl() {
     () => true,
     () => false,
   );
-  // useTheme may throw during the SSR pass because the ThemeProvider
-  // defers its context until the client has mounted. Guard the call so
-  // prerendering doesn't crash.
-  const theme = mounted ? useThemeSafe() : null;
-  if (!theme) {
+  // Always call the hook unconditionally to satisfy Rules of Hooks.
+  // The `mounted` flag guards the render output instead.
+  const theme = useThemeSafe();
+  if (!mounted || !theme) {
     return (
       <span
         aria-hidden="true"
